@@ -1,5 +1,10 @@
 module.exports = {
   testEnvironment: 'node',
+  modulePathIgnorePatterns: [
+    '<rootDir>/.output/',
+    '<rootDir>/.vercel/',
+    '<rootDir>/.nitro/',
+  ],
   testMatch: ['<rootDir>/tests/**/*.test.ts'],
   transform: {
     '^.+\\.tsx?$': [
