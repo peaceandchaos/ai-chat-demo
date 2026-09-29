@@ -84,6 +84,27 @@ export const submissionSchema = z.strictObject({
 });
 export type Submission = z.infer<typeof submissionSchema>;
 
+// Even a worst-case escaped part is below the Vercel HTTP body limit.
+export const contextPartCharacters = 300_000;
+const stagedIdentity = {
+  attemptId: idSchema,
+  chatId: idSchema,
+  parts: z.number().int().positive().safe(),
+  characters: z.number().int().positive().safe(),
+};
+export const contextPartSchema = z.strictObject({
+  kind: z.literal('stage'),
+  ...stagedIdentity,
+  index: z.number().int().nonnegative().safe(),
+  text: z.string().min(1).max(contextPartCharacters),
+});
+export const commitInputSchema = z.strictObject({
+  kind: z.literal('commit'),
+  ...stagedIdentity,
+});
+export type ContextPart = z.infer<typeof contextPartSchema>;
+export type CommitInput = z.infer<typeof commitInputSchema>;
+
 export const attemptStatusSchema = z.enum([
   'accepted',
   'selecting',
@@ -157,6 +178,8 @@ export type EventPayload =
 
 export const socketCommandSchema = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('submit'), submission: submissionSchema }),
+  contextPartSchema,
+  commitInputSchema,
   z.strictObject({
     kind: z.literal('attach'),
     attemptId: idSchema,
@@ -165,7 +188,41 @@ export const socketCommandSchema = z.discriminatedUnion('kind', [
 ]);
 export type SocketCommand = z.infer<typeof socketCommandSchema>;
 
+export function* submissionCommands(
+  submission: Submission,
+): Generator<SocketCommand> {
+  const text = JSON.stringify(submission);
+  if (text.length <= contextPartCharacters) {
+    yield { kind: 'submit', submission };
+    return;
+  }
+  const identity = {
+    attemptId: submission.attemptId,
+    chatId: submission.chatId,
+    parts: Math.ceil(text.length / contextPartCharacters),
+    characters: text.length,
+  };
+  for (let index = 0; index < identity.parts; index += 1) {
+    yield {
+      kind: 'stage',
+      ...identity,
+      index,
+      text: text.slice(
+        index * contextPartCharacters,
+        (index + 1) * contextPartCharacters,
+      ),
+    };
+  }
+  yield { kind: 'commit', ...identity };
+}
+
 export const serverMessageSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('detached'), attemptId: idSchema }),
+  z.strictObject({
+    kind: z.literal('staged'),
+    attemptId: idSchema,
+    index: z.number().int().nonnegative().safe(),
+  }),
   z.strictObject({
     kind: z.literal('accepted'),
     snapshot: attemptSnapshotSchema,

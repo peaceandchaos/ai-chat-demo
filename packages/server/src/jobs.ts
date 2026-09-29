@@ -133,7 +133,11 @@ export class JobRepository {
     input: Submission,
     dispatch: Dispatcher,
   ): Promise<StoredJob> {
-    validateAncestry(input);
+    try {
+      validateAncestry(input);
+    } catch {
+      throw new RequestError(400, 'Conversation ancestry is inconsistent.');
+    }
     const serialized = JSON.stringify(input);
     const fingerprint = createHash('sha256').update(serialized).digest('hex');
     return this.database.transaction(async db => {
@@ -373,6 +377,10 @@ export class JobRepository {
       ]);
       await db.query(
         'INSERT INTO deleted_chats (owner, chat_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [owner, chatId],
+      );
+      await db.query(
+        'DELETE FROM chat_input_parts WHERE owner = $1 AND chat_id = $2',
         [owner, chatId],
       );
       const rows = await db.query(
