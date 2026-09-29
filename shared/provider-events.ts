@@ -104,6 +104,8 @@ export function parseGatewayEvent(raw: string): ParsedProviderEvent {
 export class SseDecoder {
   private buffer = '';
 
+  constructor(private readonly maxRecordCharacters = 1_048_576) {}
+
   push(chunk: string): string[] {
     this.buffer += chunk;
     const records: string[] = [];
@@ -119,7 +121,7 @@ export class SseDecoder {
       if (data.length > 0) records.push(data.join('\n'));
       boundary = /\r?\n\r?\n/u.exec(this.buffer);
     }
-    if (this.buffer.length > 1_048_576)
+    if (this.buffer.length > this.maxRecordCharacters)
       throw new Error('A stream record is too large.');
     return records;
   }

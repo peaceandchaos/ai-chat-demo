@@ -1,4 +1,5 @@
 import { defineWebSocketHandler } from 'nitro';
+import { z } from 'zod';
 import {
   decodeJson,
   socketCommandSchema,
@@ -75,6 +76,12 @@ export default defineWebSocketHandler({
       await send({
         kind: 'error',
         attemptId,
+        status:
+          error instanceof RequestError
+            ? error.status
+            : error instanceof z.ZodError || error instanceof SyntaxError
+              ? 400
+              : 503,
         message:
           error instanceof RequestError
             ? error.message
