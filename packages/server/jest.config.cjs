@@ -7,7 +7,15 @@ module.exports = {
       {
         babelrc: false,
         configFile: false,
-        presets: [['@babel/preset-env', { targets: { node: 'current' } }]],
+        presets: [
+          [
+            '@babel/preset-env',
+            {
+              targets: { node: 'current' },
+              exclude: ['transform-dynamic-import'],
+            },
+          ],
+        ],
         plugins: ['@babel/plugin-transform-typescript'],
       },
     ],
