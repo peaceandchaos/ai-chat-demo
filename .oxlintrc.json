@@ -36,13 +36,17 @@
     "node": true
   },
   "ignorePatterns": [
-    "node_modules/**",
-    "android/**",
-    "ios/**",
-    "patches/**",
+    "**/node_modules/**",
+    "packages/app/android/**",
+    "packages/app/ios/**",
+    "packages/app/patches/**",
     "tools/vendor/**",
     "tools/fixtures/**",
-    "coverage/**"
+    "**/coverage/**",
+    "**/.nitro/**",
+    "**/.output/**",
+    "**/.vercel/**",
+    "**/.workflow-data/**"
   ],
   "rules": {
     "anti-slop/no-unknown-parameters": "error",
@@ -83,37 +87,35 @@
   "overrides": [
     {
       "files": [
-        ".eslintrc.js",
-        ".prettierrc.js",
-        "App.tsx",
-        "__tests__/App.test.tsx",
-        "babel.config.js",
-        "index.js",
-        "jest.config.js",
-        "metro.config.js",
-        "src/components/AttachmentMenu.tsx",
-        "src/components/ChatMessages.tsx",
-        "src/components/Composer.tsx",
-        "src/components/EmptyState.tsx",
-        "src/components/Glass.tsx",
-        "src/components/Header.tsx",
-        "src/components/Icon.tsx",
-        "src/components/MessageBubble.tsx",
-        "src/components/ReasoningSheet.tsx",
-        "src/components/ScrollToBottomButton.tsx",
-        "src/components/ShimmerText.tsx",
-        "src/config.example.ts",
-        "src/hooks/useAttachments.ts",
-        "src/markdownStyle.ts",
-        "src/notImplemented.ts",
-        "src/openai/connectionManager.ts",
-        "src/openai/protocol.ts",
-        "src/rag/searchKnowledgeBase.ts",
-        "src/screens/ChatScreen.tsx",
-        "src/screens/RecentsScreen.tsx",
-        "src/screens/RootDrawer.tsx",
-        "src/state/chatStore.ts",
-        "src/theme.ts"
+        "packages/app/App.tsx",
+        "packages/app/__tests__/App.test.tsx",
+        "packages/app/babel.config.js",
+        "packages/app/index.js",
+        "packages/app/jest.config.js",
+        "packages/app/metro.config.js",
+        "packages/app/src/components/AttachmentMenu.tsx",
+        "packages/app/src/components/ChatMessages.tsx",
+        "packages/app/src/components/Composer.tsx",
+        "packages/app/src/components/EmptyState.tsx",
+        "packages/app/src/components/Glass.tsx",
+        "packages/app/src/components/Header.tsx",
+        "packages/app/src/components/Icon.tsx",
+        "packages/app/src/components/MessageBubble.tsx",
+        "packages/app/src/components/ReasoningSheet.tsx",
+        "packages/app/src/components/ScrollToBottomButton.tsx",
+        "packages/app/src/components/ShimmerText.tsx",
+        "packages/app/src/config.example.ts",
+        "packages/app/src/hooks/useAttachments.ts",
+        "packages/app/src/markdownStyle.ts",
+        "packages/app/src/notImplemented.ts",
+        "packages/app/src/openai/connectionManager.ts",
+        "packages/app/src/openai/protocol.ts",
+        "packages/app/src/rag/searchKnowledgeBase.ts",
+        "packages/app/src/screens/ChatScreen.tsx",
+        "packages/app/src/screens/RecentsScreen.tsx",
+        "packages/app/src/screens/RootDrawer.tsx",
+        "packages/app/src/state/chatStore.ts",
+        "packages/app/src/theme.ts"
       ],
       "rules": {
         "anti-slop/no-unknown-parameters": "off",
@@ -165,7 +167,7 @@
       }
     },
     {
-      "files": ["../packages/server/**"],
+      "files": ["packages/server/**"],
       "rules": {
         "promise/no-multiple-resolved": "error"
       }

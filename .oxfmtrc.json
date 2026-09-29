@@ -7,17 +7,20 @@
   "sortImports": false,
   "sortPackageJson": false,
   "ignorePatterns": [
-    "android/**",
-    "ios/**",
-    "patches/**",
-    "vendor/**",
+    "packages/app/android/**",
+    "packages/app/ios/**",
+    "packages/app/patches/**",
+    "packages/app/vendor/**",
     "tools/vendor/**",
-    "node_modules/**",
     "**/node_modules/**",
     "package-lock.json",
     "yarn.lock",
-    "coverage/**",
+    "**/coverage/**",
     "*.log",
-    "tools/fixtures/**"
+    "tools/fixtures/**",
+    "**/.nitro/**",
+    "**/.output/**",
+    "**/.vercel/**",
+    "**/.workflow-data/**"
   ]
 }

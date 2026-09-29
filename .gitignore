@@ -42,7 +42,7 @@ npm-debug.log
 yarn-error.log
 
 # Demo-only secrets (OpenAI key lives here, never commit)
-app/src/config.ts
+packages/app/src/config.ts
 
 # fastlane
 #
@@ -61,15 +61,15 @@ app/src/config.ts
 
 # Ruby / CocoaPods
 **/Pods/
-/app/vendor/bundle/
+/packages/app/vendor/bundle/
 
 # Temporary files created by Metro to check the health of the file watcher
 .metro-health-check*
 
 # testing
-/app/coverage
-/app/tools/fixtures/
-/app/rnsec-report.*
+/packages/app/coverage
+/tools/fixtures/
+rnsec-report.*
 
 # Yarn
 .yarn/*
@@ -78,3 +78,11 @@ app/src/config.ts
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Server build and local workflow state
+.nitro/
+.output/
+.vercel/
+.workflow-data/
+.env
+.env.local

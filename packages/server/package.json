@@ -1,0 +1,9 @@
+{
+  "name": "@personal-chat/server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.23.3"
+  }
+}

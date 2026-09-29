@@ -19,20 +19,17 @@ jobs:
           [lint, format, typecheck, test, credentials, security, react-compiler]
     env:
       HUSKY: 0
-    defaults:
-      run:
-        working-directory: app
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
           cache: npm
-          cache-dependency-path: app/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci
       # The demo still imports this ignored file until the server slice replaces it.
       # Example values permit static checks and do not authorize live API access.
-      - run: cp src/config.example.ts src/config.ts
+      - run: cp packages/app/src/config.example.ts packages/app/src/config.ts
       - if: matrix.check == 'lint'
         run: npm run lint
       - if: matrix.check == 'format'
@@ -40,7 +37,7 @@ jobs:
       - if: matrix.check == 'typecheck'
         run: npm run typecheck
       - if: matrix.check == 'test'
-        run: npm test -- --runInBand --watch=false
+        run: npm test
       - if: matrix.check == 'credentials'
         run: npm run secrets
       - if: matrix.check == 'security'
