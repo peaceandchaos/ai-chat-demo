@@ -1,0 +1,127 @@
+import { z } from 'zod';
+import { decodeJson } from './contracts';
+
+export type ParsedProviderEvent =
+  | { kind: 'status'; label: string }
+  | { kind: 'delta'; text: string }
+  | { kind: 'reasoning'; text: string }
+  | { kind: 'completed'; responseId: string }
+  | { kind: 'error'; message: string }
+  | { kind: 'ignored'; type: string };
+
+const responsesEventSchema = z.object({
+  type: z.string(),
+  delta: z.string().optional(),
+  item: z.object({ type: z.string() }).optional(),
+  response: z
+    .object({ id: z.string(), status: z.string().optional() })
+    .optional(),
+});
+
+export function parseResponsesEvent(raw: string): ParsedProviderEvent {
+  const event = decodeJson(responsesEventSchema, raw);
+  switch (event.type) {
+    case 'response.created':
+    case 'response.in_progress':
+      return { kind: 'status', label: 'Thinking' };
+    case 'response.output_item.added':
+      return outputItemStatus(event.item?.type);
+    case 'response.reasoning_summary_text.delta':
+      if (event.delta === undefined)
+        throw new Error('Missing reasoning delta.');
+      return { kind: 'reasoning', text: event.delta };
+    case 'response.output_text.delta':
+      if (event.delta === undefined) throw new Error('Missing text delta.');
+      return { kind: 'delta', text: event.delta };
+    case 'response.completed':
+      if (!event.response?.id || event.response.status !== 'completed') {
+        throw new Error('Invalid completed response.');
+      }
+      return { kind: 'completed', responseId: event.response.id };
+    case 'response.failed':
+    case 'error':
+      return {
+        kind: 'error',
+        message: 'The provider could not finish this reply. You can retry.',
+      };
+    case 'response.incomplete':
+      return {
+        kind: 'error',
+        message: 'The provider returned a limited answer. You can retry.',
+      };
+    case 'response.cancelled':
+      return { kind: 'error', message: 'The provider stopped this reply.' };
+    default:
+      return { kind: 'ignored', type: event.type };
+  }
+}
+
+function outputItemStatus(type: string | undefined): ParsedProviderEvent {
+  if (type === 'message') return { kind: 'status', label: 'Responding' };
+  if (type === 'reasoning') return { kind: 'status', label: 'Thinking' };
+  if (type === 'function_call')
+    return {
+      kind: 'error',
+      message: 'This version does not support model tools.',
+    };
+  return { kind: 'ignored', type: type ?? 'unknown' };
+}
+
+const gatewayChunkSchema = z.object({
+  object: z.literal('chat.completion.chunk'),
+  choices: z.array(
+    z.object({
+      index: z.number().int(),
+      delta: z.object({ content: z.string().nullable().optional() }),
+      finish_reason: z.string().nullable().optional(),
+    }),
+  ),
+});
+
+export function parseGatewayEvent(raw: string): ParsedProviderEvent {
+  if (raw === '[DONE]') return { kind: 'completed', responseId: '' };
+  const chunk = decodeJson(gatewayChunkSchema, raw);
+  const choice = chunk.choices.find(item => item.index === 0);
+  if (!choice) return { kind: 'ignored', type: 'usage' };
+  if (choice.finish_reason && choice.finish_reason !== 'stop') {
+    return {
+      kind: 'error',
+      message: 'The provider returned a limited answer. You can retry.',
+    };
+  }
+  if (choice.delta.content)
+    return { kind: 'delta', text: choice.delta.content };
+  return { kind: 'ignored', type: choice.finish_reason ?? 'metadata' };
+}
+
+// SSE records can split at any byte, newline, or JSON token. TextDecoder handles
+// UTF-8 boundaries; this parser retains incomplete records between calls.
+export class SseDecoder {
+  private buffer = '';
+
+  push(chunk: string): string[] {
+    this.buffer += chunk;
+    const records: string[] = [];
+    let boundary = /\r?\n\r?\n/u.exec(this.buffer);
+    while (boundary) {
+      const record = this.buffer.slice(0, boundary.index);
+      this.buffer = this.buffer.slice(boundary.index + boundary[0].length);
+      const data: string[] = [];
+      for (const line of record.split(/\r?\n/u)) {
+        if (line.startsWith('data:'))
+          data.push(line.slice(5).replace(/^ /u, ''));
+      }
+      if (data.length > 0) records.push(data.join('\n'));
+      boundary = /\r?\n\r?\n/u.exec(this.buffer);
+    }
+    if (this.buffer.length > 1_048_576)
+      throw new Error('A stream record is too large.');
+    return records;
+  }
+
+  finish(): void {
+    if (this.buffer.trim())
+      throw new Error('The stream ended inside a record.');
+    this.buffer = '';
+  }
+}
