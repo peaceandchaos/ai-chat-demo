@@ -68,6 +68,8 @@ app/src/config.ts
 
 # testing
 /app/coverage
+/app/tools/fixtures/
+/app/rnsec-report.*
 
 # Yarn
 .yarn/*

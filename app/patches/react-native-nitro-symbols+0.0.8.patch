@@ -14,18 +14,18 @@ index 1724ac5..4c047db 100644
              self.controller = hosting
          } else {
              let legacyView = UIView()
-@@ -114,3 +119,10 @@ class HybridSymbolView: HybridSymbolViewSpec {
+@@ -114,3 +119,9 @@ class HybridSymbolView: HybridSymbolViewSpec {
      }
  }
- 
+- 
+\ No newline at end of file
++
 +// Recyclable so the glyph survives react-freeze.
 +extension HybridSymbolView: RecyclableView {
 +    // Don't reset symbolName: there's no reload path on reuse, so clearing would
 +    // blank the glyph on a react-freeze reveal.
 +    func prepareForRecycle() {}
 +}
-+ 
-\ No newline at end of file
 diff --git a/node_modules/react-native-nitro-symbols/ios/NativeSymbolSwiftUIView.swift b/node_modules/react-native-nitro-symbols/ios/NativeSymbolSwiftUIView.swift
 index 7cf8d15..1791496 100644
 --- a/node_modules/react-native-nitro-symbols/ios/NativeSymbolSwiftUIView.swift

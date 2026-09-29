@@ -22,7 +22,7 @@ Ask it anything. For general questions it just replies; for Margelo questions it
 
 Runs on **iOS and Android** (New Architecture). Liquid Glass needs **iOS 26+**; on older iOS and on Android those surfaces fall back to a plain rounded style.
 
-- Xcode + CocoaPods, Node `>= 22.11`, and the [React Native environment](https://reactnative.dev/docs/set-up-your-environment).
+- Xcode + CocoaPods, Node `22.23.3` (see `.node-version`), and the [React Native environment](https://reactnative.dev/docs/set-up-your-environment).
 - An **OpenAI API key** and a populated **Pinecone index** for the knowledge-base tool.
 
 > **Note:** this is a demo. The API keys live in the app bundle, which is fine locally but unsafe for production - anyone can extract them. For anything real, put a relay server in front and keep the keys server-side.
@@ -50,13 +50,41 @@ npm run android    # build + launch on the Android emulator/device
 Other scripts (also run in CI):
 
 ```sh
-npm run lint                 # eslint
+npm run lint                 # oxlint, including type-aware rules; warnings fail
 npm run typecheck            # tsc --noEmit
-npm run format               # prettier --write
-npm run format:check         # prettier --check
+npm run format               # oxfmt; preserves import and package-field order
+npm run format:check         # oxfmt --check
+npm run secrets              # inspect tracked files without printing secret values
+npm run security             # rnsec; findings need review
 npm run react-compiler-check # react-compiler healthcheck
 npm test                     # jest
 ```
+
+Husky runs lint, formatting, and a staged-credential check before each commit.
+Use the pinned Node version; the vendored TypeScript lint plugin requires native
+type stripping. The 13 selected anti-slop rules are registered as errors. Their
+source commit and license are in `app/tools/vendor/anti-slop/UPSTREAM.md`.
+
+The exact legacy-file override in `.oxlintrc.json` preserves the existing demo
+during the first tooling slice. It does not exempt future files in those folders.
+Remove a file from that override when its feature logic is replaced. A raw-input
+decoder can suppress `anti-slop/no-unknown-parameters` on its parameter declaration
+with a named rule and a reason after `--`. The lint fixtures verify this exception
+and rejection of undocumented suppressions. The Effect plugin stays unregistered.
+
+CI runs each check separately. The existing app-shell test mocks native navigation;
+it does not establish device rendering, keyboard behavior, or streaming fidelity.
+The React Compiler healthcheck is a report, not proof that every component compiled.
+
+The first rnsec baseline has six findings in the inherited demo: unvalidated links
+and JSON, raw connection-error logging, an exported Android launcher, and no Android
+network security configuration. The security CI job remains a blocking check.
+Review or fix these findings during the implementation slices; do not suppress the
+whole baseline. Native builds still need verification after Xcode license acceptance.
+
+All four native patches apply during a clean `npm ci`. The Nitro Symbols patch now
+records the upstream file's missing final newline correctly, preserving its Swift
+extension and closing brace. Package installation fails if any patch fails.
 
 ### Project structure
 
