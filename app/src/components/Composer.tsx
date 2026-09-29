@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   type LayoutChangeEvent,
   Pressable,
@@ -6,19 +6,19 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import {NitroImage} from 'react-native-nitro-image';
-import {AttachmentMenu} from './AttachmentMenu';
-import {Glass} from './Glass';
-import {Icon} from './Icon';
-import {useAttachments} from '../hooks/useAttachments';
-import type {Attachment} from '../state/chatStore';
-import {theme} from '../theme';
+import { NitroImage } from 'react-native-nitro-image';
+import { AttachmentMenu } from './AttachmentMenu';
+import { Glass } from './Glass';
+import { Icon } from './Icon';
+import { useAttachments } from '../hooks/useAttachments';
+import type { Attachment } from '../state/chatStore';
+import { theme } from '../theme';
 
 const INPUT_MAX_HEIGHT = 120;
 
@@ -34,7 +34,6 @@ type ComposerProps = {
   onLayout: (event: LayoutChangeEvent) => void;
 };
 
-
 export const Composer = React.memo(function ({
   onSubmit,
   onStop,
@@ -44,7 +43,8 @@ export const Composer = React.memo(function ({
 }: ComposerProps) {
   const insets = useSafeAreaInsets();
   const [value, setValue] = useState('');
-  const {attachments, pickImages, removeAttachment, clearAttachments} = useAttachments();
+  const { attachments, pickImages, removeAttachment, clearAttachments } =
+    useAttachments();
   const canSend = value.trim().length > 0 || attachments.length > 0;
 
   const onSend = () => {
@@ -57,7 +57,7 @@ export const Composer = React.memo(function ({
   };
 
   // The thumbnail strip lives in a height-clipped container so the pill can
-  // smoothly swell/shrink as images are added/removed. 
+  // smoothly swell/shrink as images are added/removed.
   const hasAttachments = attachments.length > 0;
   const [thumbsContentHeight, setThumbsContentHeight] = useState(0);
   const thumbsStyle = useAnimatedStyle(() => ({
@@ -70,7 +70,6 @@ export const Composer = React.memo(function ({
       easing: Easing.inOut(Easing.ease),
     }),
   }));
-
 
   // Keep the last non-empty attachment list so the thumbnails stay mounted
   // while the pill collapses.
@@ -88,21 +87,23 @@ export const Composer = React.memo(function ({
   };
   const collapsedInputStyle =
     value.length === 0 && oneLineHeight != null
-      ? {height: oneLineHeight}
+      ? { height: oneLineHeight }
       : undefined;
 
   return (
     <View
       ref={composerRef}
       onLayout={onLayout}
-      style={[styles.container, {paddingBottom: insets.bottom + 8}]}>
+      style={[styles.container, { paddingBottom: insets.bottom + 8 }]}
+    >
       <View style={styles.row}>
         <AttachmentMenu onPickPhotos={pickImages} />
         <View style={styles.inputPillWrap}>
           <Glass style={styles.inputPill}>
             <Animated.View
               style={[styles.thumbsClip, thumbsStyle]}
-              pointerEvents={hasAttachments ? 'auto' : 'none'}>
+              pointerEvents={hasAttachments ? 'auto' : 'none'}
+            >
               <View
                 style={styles.thumbs}
                 onLayout={event => {
@@ -110,17 +111,22 @@ export const Composer = React.memo(function ({
                   setThumbsContentHeight(current =>
                     Math.abs(current - nextHeight) <= 1 ? current : nextHeight,
                   );
-                }}>
+                }}
+              >
                 {displayedAttachments.map((attachment, index) => (
-                  <View key={`${attachment.uri}:${index}`} style={styles.thumbWrap}>
+                  <View
+                    key={`${attachment.uri}:${index}`}
+                    style={styles.thumbWrap}
+                  >
                     <NitroImage
-                      image={{filePath: attachment.uri}}
+                      image={{ filePath: attachment.uri }}
                       style={styles.thumb}
                     />
                     <Pressable
                       style={styles.thumbRemove}
                       hitSlop={8}
-                      onPress={() => removeAttachment(index)}>
+                      onPress={() => removeAttachment(index)}
+                    >
                       <View style={styles.thumbRemoveBadge}>
                         <Icon name="xmark" size={11} color="#FFFFFF" />
                       </View>
@@ -148,7 +154,8 @@ export const Composer = React.memo(function ({
         <Pressable
           onPress={streaming ? onStop : onSend}
           disabled={!streaming && !canSend}
-          hitSlop={6}>
+          hitSlop={6}
+        >
           <Glass interactive style={styles.circle}>
             <Icon
               name={streaming ? 'stop.fill' : 'arrow.up'}
