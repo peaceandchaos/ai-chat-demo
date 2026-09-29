@@ -93,6 +93,33 @@ inside the app package. Metro watches the workspace; Android and iOS resolve the
 root `node_modules`. The CocoaPods lockfile preserves versions with updated paths.
 Run `pod install` before the first native build after moving the checkout.
 
+### Connection foundation checkpoint
+
+`packages/app/src/network/client.ts` implements the server protocol behind injected
+HTTP, WebSocket, and text-decoder drivers. Manual Gateway submissions use HTTP;
+GPT and Auto use a shared socket. Recovery reads an existing attempt. Reader abort
+and explicit Stop use separate operations. Runtime schemas validate delivery, and
+large inputs upload acknowledged parts before one commit. This layer never retries
+a submission automatically. Its consumer must persist acceptance, results, and
+cursors before acknowledging them to the server.
+
+This layer is not connected to the app yet. The user owns the UI work. The existing
+screens, mocked Recents list, demo store, and native connection behavior are unchanged.
+The saved-chat session controller and native transport binding remain separate work.
+
+Before native integration, fix or replace the streaming adapter in the installed
+`react-native-nitro-fetch` package. Inspection of `src/fetch.ts` found that
+`nitroStreamFetch` does not connect `init.signal` or stream cancellation to the native
+request. It also does not enforce `init.redirect`. The iOS builder follows redirects
+after its callback. The new driver must stop native readers and reject credentialed
+redirects. Disable header recording in the network inspector before using the device
+credential. These are source findings; native behavior still needs a device check.
+
+Focused client tests use injected drivers. They verify protocol routing, parallel
+reply isolation, multipart handoff, interrupted delivery, explicit cancellation,
+large snapshots, and invalid data. They do not prove native networking or end-to-end
+app recovery. Hosted CI requires a push; local checks are reported separately.
+
 ```
 packages/app/
   src/

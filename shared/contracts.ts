@@ -232,6 +232,7 @@ export const serverMessageSchema = z.discriminatedUnion('kind', [
     kind: z.literal('error'),
     attemptId: idSchema.nullable(),
     message: z.string(),
+    status: z.number().int().min(400).max(599).optional(),
   }),
 ]);
 export type ServerMessage = z.infer<typeof serverMessageSchema>;
