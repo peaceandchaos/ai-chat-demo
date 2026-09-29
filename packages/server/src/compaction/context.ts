@@ -164,7 +164,6 @@ export async function prepareContext(
       );
     items = [...checkpoint.items];
     start = anchor + 1;
-    didCompact = true;
   }
   // Leave room for the compaction instruction and the model's completion budget.
   const threshold = Math.min(

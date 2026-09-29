@@ -59,10 +59,19 @@ export class LiveProviders implements Providers {
         beforeCall,
         onChunk,
       );
+      const before = context.items.flatMap(item =>
+        item.type === 'compaction' ? [item.encrypted_content] : [],
+      );
+      const changed = items.some(
+        item =>
+          item.type === 'compaction' &&
+          !before.includes(item.encrypted_content),
+      );
       return {
-        checkpoint: items.some(item => item.type === 'compaction')
-          ? makeCheckpoint(model, input.attemptId, items)
-          : null,
+        checkpoint:
+          context.checkpoint || changed
+            ? makeCheckpoint(model, input.attemptId, items)
+            : null,
       };
     }
     const text = await this.gateway.generate(

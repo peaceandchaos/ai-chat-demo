@@ -145,6 +145,18 @@ export class JobRepository {
       await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
         owner + input.chatId,
       ]);
+      await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        owner + input.attemptId,
+      ]);
+      const cancelled = await db.query(
+        'SELECT attempt_id::text AS data FROM cancelled_attempts WHERE owner = $1 AND attempt_id = $2',
+        [owner, input.attemptId],
+      );
+      if (cancelled.rows.length)
+        throw new RequestError(
+          410,
+          'This reply was stopped before acceptance.',
+        );
       const deleted = await db.query(
         'SELECT chat_id::text AS data FROM deleted_chats WHERE owner = $1 AND chat_id = $2',
         [owner, input.chatId],
@@ -325,8 +337,33 @@ export class JobRepository {
   }
 
   async cancel(owner: string, attemptId: string): Promise<AttemptSnapshot> {
+    await this.get(owner, attemptId);
+    const result = await this.requestCancellation(owner, attemptId);
+    if (!result) throw new RequestError(404, 'Reply not found.');
+    return result;
+  }
+
+  async requestCancellation(
+    owner: string,
+    attemptId: string,
+  ): Promise<AttemptSnapshot | null> {
+    // Serialize Stop against submission, including a handoff still in flight.
     return this.database.transaction(async db => {
-      const job = await readJob(db, owner, attemptId, true);
+      await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        owner + attemptId,
+      ]);
+      const rows = await db.query(
+        'SELECT state::text AS data FROM chat_jobs WHERE owner = $1 AND attempt_id = $2 FOR UPDATE',
+        [owner, attemptId],
+      );
+      if (!rows.rows[0]) {
+        await db.query(
+          'INSERT INTO cancelled_attempts (owner, attempt_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+          [owner, attemptId],
+        );
+        return null;
+      }
+      const job = decodeJson(storedJobSchema, rows.rows[0].data);
       if (isTerminal(job.snapshot.status)) return job.snapshot;
       job.snapshot.cancelRequested = true;
       job.snapshot.status = 'stopped';

@@ -27,6 +27,11 @@ CREATE TABLE IF NOT EXISTS deleted_chats (
   chat_id uuid NOT NULL,
   PRIMARY KEY (owner, chat_id)
 );
+CREATE TABLE IF NOT EXISTS cancelled_attempts (
+  owner text NOT NULL,
+  attempt_id uuid NOT NULL,
+  PRIMARY KEY (owner, attempt_id)
+);
 CREATE TABLE IF NOT EXISTS chat_input_parts (
   owner text NOT NULL,
   attempt_id uuid NOT NULL,

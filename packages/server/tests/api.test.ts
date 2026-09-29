@@ -95,9 +95,36 @@ test('contract errors and foreign-device reads return errors without reaching a 
         ),
         f.services,
       );
-      expect(result.status).toBe(404);
+      expect(result.status).toBe(suffix === '/stop' ? 204 : 404);
     }
+    expect(
+      (await f.jobs.get(owner, input.attemptId)).snapshot.cancelRequested,
+    ).toBe(false);
     expect(f.dispatch).toHaveBeenCalledTimes(1);
+  } finally {
+    await f.postgres.close();
+  }
+});
+
+test('Stop before acceptance leaves a tombstone that blocks the late handoff', async () => {
+  const f = await fixture();
+  try {
+    const input = submission();
+    const stopped = await handleRequest(
+      request(`jobs/${input.attemptId}/stop`, 'POST'),
+      f.services,
+    );
+    expect(stopped.status).toBe(204);
+    const submitted = await handleRequest(
+      request(
+        'chat',
+        'POST',
+        JSON.stringify({ kind: 'submit', submission: input }),
+      ),
+      f.services,
+    );
+    expect(submitted.status).toBe(410);
+    expect(f.dispatch).not.toHaveBeenCalled();
   } finally {
     await f.postgres.close();
   }

@@ -122,8 +122,10 @@ async function handleJobRoute(
     await jobs.get(owner, attemptId);
     return jobStream(jobs, owner, attemptId, request.signal);
   }
-  if (request.method === 'POST' && action === 'stop')
-    return Response.json(await jobs.cancel(owner, attemptId));
+  if (request.method === 'POST' && action === 'stop') {
+    const result = await jobs.requestCancellation(owner, attemptId);
+    return result ? Response.json(result) : new Response(null, { status: 204 });
+  }
   if (request.method === 'POST' && action === 'ack') {
     const body = decodeJson(acknowledgeSchema, await readBody(request));
     await jobs.acknowledge(owner, attemptId, body.sequence);
