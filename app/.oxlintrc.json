@@ -1,0 +1,174 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "react",
+    "import",
+    "oxc",
+    "unicorn",
+    "jest",
+    "promise"
+  ],
+  "jsPlugins": [
+    {
+      "name": "anti-slop",
+      "specifier": "./tools/vendor/anti-slop/index.ts"
+    },
+    {
+      "name": "project",
+      "specifier": "./tools/lint-policy.mjs"
+    }
+  ],
+  "categories": {
+    "correctness": "off",
+    "suspicious": "off",
+    "pedantic": "off",
+    "perf": "off",
+    "style": "off",
+    "restriction": "off",
+    "nursery": "off"
+  },
+  "options": {
+    "typeAware": true
+  },
+  "env": {
+    "es2024": true,
+    "node": true
+  },
+  "ignorePatterns": [
+    "node_modules/**",
+    "android/**",
+    "ios/**",
+    "patches/**",
+    "tools/vendor/**",
+    "tools/fixtures/**",
+    "coverage/**"
+  ],
+  "rules": {
+    "anti-slop/no-unknown-parameters": "error",
+    "anti-slop/no-unknown-returns": "error",
+    "anti-slop/no-unknown-type-aliases": "error",
+    "anti-slop/no-unsafe-dictionary-type": "error",
+    "anti-slop/no-object-parameters": "error",
+    "anti-slop/no-chained-type-assertions": "error",
+    "anti-slop/no-widen-then-assert": "error",
+    "anti-slop/no-known-value-widening": "error",
+    "anti-slop/require-safety-comment-for-type-assertion": "error",
+    "anti-slop/no-array-filter-map": "error",
+    "anti-slop/no-reduce-accumulator-copy": "error",
+    "anti-slop/no-reflect-get": "error",
+    "anti-slop/no-reflect-apply": "error",
+    "complexity": ["error", 20],
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "error",
+    "react/jsx-key": "error",
+    "react/no-unstable-nested-components": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/await-thenable": "error",
+    "typescript/no-unsafe-type-assertion": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+    "typescript/no-base-to-string": "error",
+    "typescript/restrict-template-expressions": "error",
+    "oxc/no-accumulating-spread": "error",
+    "oxc/no-map-spread": "error",
+    "import/no-cycle": "error",
+    "import/no-self-import": "error",
+    "import/no-duplicates": "error",
+    "eslint/eqeqeq": "error",
+    "unicorn/no-abusive-eslint-disable": "error",
+    "project/require-disable-reason": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        ".eslintrc.js",
+        ".prettierrc.js",
+        "App.tsx",
+        "__tests__/App.test.tsx",
+        "babel.config.js",
+        "index.js",
+        "jest.config.js",
+        "metro.config.js",
+        "src/components/AttachmentMenu.tsx",
+        "src/components/ChatMessages.tsx",
+        "src/components/Composer.tsx",
+        "src/components/EmptyState.tsx",
+        "src/components/Glass.tsx",
+        "src/components/Header.tsx",
+        "src/components/Icon.tsx",
+        "src/components/MessageBubble.tsx",
+        "src/components/ReasoningSheet.tsx",
+        "src/components/ScrollToBottomButton.tsx",
+        "src/components/ShimmerText.tsx",
+        "src/config.example.ts",
+        "src/hooks/useAttachments.ts",
+        "src/markdownStyle.ts",
+        "src/notImplemented.ts",
+        "src/openai/connectionManager.ts",
+        "src/openai/protocol.ts",
+        "src/rag/searchKnowledgeBase.ts",
+        "src/screens/ChatScreen.tsx",
+        "src/screens/RecentsScreen.tsx",
+        "src/screens/RootDrawer.tsx",
+        "src/state/chatStore.ts",
+        "src/theme.ts"
+      ],
+      "rules": {
+        "anti-slop/no-unknown-parameters": "off",
+        "anti-slop/no-unknown-returns": "off",
+        "anti-slop/no-unknown-type-aliases": "off",
+        "anti-slop/no-unsafe-dictionary-type": "off",
+        "anti-slop/no-object-parameters": "off",
+        "anti-slop/no-chained-type-assertions": "off",
+        "anti-slop/no-widen-then-assert": "off",
+        "anti-slop/no-known-value-widening": "off",
+        "anti-slop/require-safety-comment-for-type-assertion": "off",
+        "anti-slop/no-array-filter-map": "off",
+        "anti-slop/no-reduce-accumulator-copy": "off",
+        "anti-slop/no-reflect-get": "off",
+        "anti-slop/no-reflect-apply": "off",
+        "complexity": "off",
+        "react/rules-of-hooks": "off",
+        "react/exhaustive-deps": "off",
+        "react/jsx-key": "off",
+        "react/no-unstable-nested-components": "off",
+        "typescript/no-explicit-any": "off",
+        "typescript/no-floating-promises": "off",
+        "typescript/no-misused-promises": "off",
+        "typescript/await-thenable": "off",
+        "typescript/no-unsafe-type-assertion": "off",
+        "typescript/switch-exhaustiveness-check": "off",
+        "typescript/no-base-to-string": "off",
+        "typescript/restrict-template-expressions": "off",
+        "oxc/no-accumulating-spread": "off",
+        "oxc/no-map-spread": "off",
+        "import/no-cycle": "off",
+        "import/no-self-import": "off",
+        "import/no-duplicates": "off",
+        "eslint/eqeqeq": "off",
+        "unicorn/no-abusive-eslint-disable": "off",
+        "project/require-disable-reason": "off"
+      }
+    },
+    {
+      "files": ["**/*.test.*", "**/*.spec.*", "**/__tests__/**"],
+      "env": {
+        "jest": true
+      },
+      "rules": {
+        "jest/no-focused-tests": "error",
+        "jest/no-disabled-tests": "error",
+        "jest/valid-expect": "error",
+        "jest/no-conditional-expect": "error"
+      }
+    },
+    {
+      "files": ["../packages/server/**"],
+      "rules": {
+        "promise/no-multiple-resolved": "error"
+      }
+    }
+  ]
+}
