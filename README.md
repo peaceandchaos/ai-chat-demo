@@ -30,24 +30,23 @@ Runs on **iOS and Android** (New Architecture). Liquid Glass needs **iOS 26+**; 
 ### Setup
 
 ```sh
-cd app
-npm install
-cp src/config.example.ts src/config.ts   # then fill in your keys
-cd ios && pod install && cd ..
+npm ci
+cp packages/app/src/config.example.ts packages/app/src/config.ts
+cd packages/app/ios && pod install
 ```
 
-Open `src/config.ts` and add your OpenAI key, Pinecone key, and index host. This file is gitignored and never committed.
+The inherited demo still reads `packages/app/src/config.ts`; the next slice replaces
+its direct provider access. Keep the example values for local static checks.
 
 ### Run
 
 ```sh
-cd app
 npm start          # Metro
 npm run ios        # build + launch on the iOS simulator/device
 npm run android    # build + launch on the Android emulator/device
 ```
 
-Other scripts (also run in CI):
+Run these scripts from the repository root (also run in CI):
 
 ```sh
 npm run lint                 # oxlint, including type-aware rules; warnings fail
@@ -63,9 +62,9 @@ npm test                     # jest
 Husky runs lint, formatting, and a staged-credential check before each commit.
 Use the pinned Node version; the vendored TypeScript lint plugin requires native
 type stripping. The 13 selected anti-slop rules are registered as errors. Their
-source commit and license are in `app/tools/vendor/anti-slop/UPSTREAM.md`.
+source commit and license are in `tools/vendor/anti-slop/UPSTREAM.md`.
 
-The exact legacy-file override in `.oxlintrc.json` preserves the existing demo
+The exact legacy-file override in the root `.oxlintrc.json` preserves the existing demo
 during the first tooling slice. It does not exempt future files in those folders.
 Remove a file from that override when its feature logic is replaced. A raw-input
 decoder can suppress `anti-slop/no-unknown-parameters` on its parameter declaration
@@ -88,8 +87,14 @@ extension and closing brace. Package installation fails if any patch fails.
 
 ### Project structure
 
+The npm workspace has two packages: `packages/app` and `packages/server`.
+Install dependencies and run quality checks at the root. The native projects stay
+inside the app package. Metro watches the workspace; Android and iOS resolve the
+root `node_modules`. The CocoaPods lockfile preserves versions with updated paths.
+Run `pod install` before the first native build after moving the checkout.
+
 ```
-app/
+packages/app/
   src/
     config.ts                 # API keys (gitignored; copy from config.example.ts)
     theme.ts                  # dark theme + shared markdown design tokens

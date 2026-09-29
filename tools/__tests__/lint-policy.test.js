@@ -9,6 +9,20 @@ const configFile = join(app, '.lint-policy-test.json');
 
 beforeAll(() => {
   mkdirSync(directory, { recursive: true });
+  writeFileSync(
+    join(directory, 'tsconfig.json'),
+    JSON.stringify({
+      compilerOptions: {
+        target: 'ES2022',
+        module: 'ESNext',
+        moduleResolution: 'Bundler',
+        strict: true,
+        noEmit: true,
+        skipLibCheck: true,
+      },
+      include: ['input.ts'],
+    }),
+  );
   const config = require('../../.oxlintrc.json');
   writeFileSync(configFile, JSON.stringify({ ...config, ignorePatterns: [] }));
 });
