@@ -47,9 +47,18 @@ const compactedItemSchema = z.strictObject({
   id: z.string().optional(),
   encrypted_content: z.string().min(1),
 });
+const reasoningItemSchema = z.strictObject({
+  type: z.literal('reasoning'),
+  id: z.string().optional(),
+  encrypted_content: z.string().nullable().optional(),
+  summary: z.array(
+    z.strictObject({ type: z.literal('summary_text'), text: z.string() }),
+  ),
+});
 export const responseInputItemSchema = z.union([
   responseMessageSchema,
   compactedItemSchema,
+  reasoningItemSchema,
 ]);
 export type ResponseInputItem = z.infer<typeof responseInputItemSchema>;
 

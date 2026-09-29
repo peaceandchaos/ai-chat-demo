@@ -3,7 +3,7 @@ import { decodeJson } from './contracts';
 
 export type ParsedProviderEvent =
   | { kind: 'status'; label: string }
-  | { kind: 'delta'; text: string }
+  | { kind: 'delta'; text: string; stopped?: boolean }
   | { kind: 'reasoning'; text: string }
   | { kind: 'completed'; responseId: string }
   | { kind: 'error'; message: string }
@@ -31,6 +31,7 @@ export function parseResponsesEvent(raw: string): ParsedProviderEvent {
         throw new Error('Missing reasoning delta.');
       return { kind: 'reasoning', text: event.delta };
     case 'response.output_text.delta':
+    case 'response.refusal.delta':
       if (event.delta === undefined) throw new Error('Missing text delta.');
       return { kind: 'delta', text: event.delta };
     case 'response.completed':
@@ -90,7 +91,11 @@ export function parseGatewayEvent(raw: string): ParsedProviderEvent {
     };
   }
   if (choice.delta.content)
-    return { kind: 'delta', text: choice.delta.content };
+    return {
+      kind: 'delta',
+      text: choice.delta.content,
+      ...(choice.finish_reason === 'stop' ? { stopped: true } : {}),
+    };
   return { kind: 'ignored', type: choice.finish_reason ?? 'metadata' };
 }
 
