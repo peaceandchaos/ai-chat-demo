@@ -27,4 +27,15 @@ CREATE TABLE IF NOT EXISTS deleted_chats (
   chat_id uuid NOT NULL,
   PRIMARY KEY (owner, chat_id)
 );
+CREATE TABLE IF NOT EXISTS chat_input_parts (
+  owner text NOT NULL,
+  attempt_id uuid NOT NULL,
+  chat_id uuid NOT NULL,
+  part_index integer NOT NULL,
+  parts integer NOT NULL,
+  characters bigint NOT NULL,
+  content text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (owner, attempt_id, part_index)
+);
 `;
