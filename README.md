@@ -76,7 +76,7 @@ cursors before acknowledging them to the server.
 This layer is not connected to the app yet. The user owns the UI work. The existing
 screens and mocked Recents list retain their UI. The demo store now validates tool inputs,
 and the old connection no longer logs raw errors. Its native connection behavior is unchanged.
-The saved-chat session controller and native transport binding remain separate work.
+The native transport binding remains separate work.
 
 Before native integration, fix or replace the streaming adapter in the installed
 `react-native-nitro-fetch` package. Inspection of `src/fetch.ts` found that
@@ -90,6 +90,28 @@ Focused client tests use injected drivers. They verify protocol routing, paralle
 reply isolation, multipart handoff, interrupted delivery, explicit cancellation,
 large snapshots, and invalid data. They do not prove native networking or end-to-end
 app recovery. Hosted CI requires a push; local checks are reported separately.
+
+### Session controller checkpoint
+
+`packages/app/src/state/session.ts` connects the saved-chat archive to the
+transport. It is not connected to the screens yet. `attempt.ts` reads each
+saved reply into one phase: unsent, accepted, Stop pending, final but not yet
+confirmed to the server, or settled. Each phase has one next operation. Every
+reply has its own runner, so one chat's failure, refusal, or reconnect does not
+pause another. Token updates stay in memory and reach storage on a bounded
+checkpoint. Acceptance, final results, and Stop are saved before the session
+continues. The phone acknowledges a reply only after its final result is saved.
+Recovery resends the same attempt or receipt and never creates a new version.
+A submit refusal is trusted only when a resend of the same attempt is refused
+again. `nativeSession.ts` forwards React Native `AppState` to the session;
+backgrounding detaches readers without cancelling server work.
+
+Integration tests in `packages/server/tests/session-*.test.ts` run the real
+archive, `ServerTransport`, and session against `handleRequest` and the socket
+route's `SocketConnection` over PGlite, with the real worker and scripted fake
+providers. They live in the server suite because PGlite does not load under the
+React Native jest preset. They do not prove native networking, device lifecycle
+behavior, or the hosted Workflow runtime.
 
 ### Open-source libraries
 
