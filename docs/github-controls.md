@@ -19,7 +19,9 @@ The user selected a GitHub App bot on the current Mac account. `PeaceAndChaos Co
 
 Use an **installation access token**, which identifies the bot. A user access token would act as the owner. Do not give the app a ruleset bypass. The owner approves its PRs; the bot must not merge them automatically.
 
-Workflows write lets the bot push a new workflow to an unprotected `submission/**` branch. A push by an app token starts workflows, and that workflow runs as the GitHub Actions app, ID `15368`. It can request `statuses: write` and `checks: write` and publish a `target-health` status or a `quality-gate` check on any commit. The ruleset cannot tell those results from real ones, and the workflow never appears in a reviewed PR. Until the owner removes this permission, required results do not prove anything against the bot. The owner decides when to remove it; the baseline push needs it because the baseline adds workflows.
+Workflows write lets the bot push a new workflow to an unprotected `submission/**` branch. A push by an app token starts workflows, and that workflow runs as the GitHub Actions app, ID `15368`. It can request `statuses: write` and `checks: write` and publish a `target-health` status or a `quality-gate` check on any commit. The ruleset cannot tell those results from real ones, and the workflow never appears in a reviewed PR. The baseline push needs Workflows write because the baseline adds workflows. The enforcement exercise also uses it for scenarios that change `ci.yml`. After that exercise, the owner removes Workflows write from the app, and a final hosted scenario proves that GitHub rejects a bot push that adds a workflow. From then on the bot has no route to a status or check. It has no Statuses or Checks permission, Actions read cannot dispatch workflows, and CI runs with a read-only token. A later workflow change needs a temporary owner grant for that one reviewed PR.
+
+No permission removes one limit. CI runs the candidate's own code, so a candidate can weaken its own tests or check list. Those results are real, not forged, and CODEOWNERS review of every test and checking file is the control against them.
 
 The private key is stored in macOS Keychain. The local helper verifies the app and installation identities, requests a short-lived installation token, and checks that it grants exactly the permissions above to this one repository. The replaced key was revoked after verification, and the downloaded PEM was removed. Do not put private keys or tokens in chat, tracked files, URLs, shell history, or build artifacts.
 
@@ -54,12 +56,22 @@ With one human reviewer, `require_last_push_approval` means the owner cannot app
 The first baseline is a bootstrap case. Its target does not contain the trusted workflows yet. `pull_request_target`, `workflow_run`, and `workflow_dispatch` all read the workflow file from the default branch, so the baseline PR receives no `target-health` result at all. That missing result is not a pass. The owner approves the one-time installation order explicitly:
 
 1. Enable workflows on the fork's **Actions** tab if GitHub still shows them as disabled.
-2. Apply the bootstrap ruleset. It is `integration-rules.json` without the `target-health` entry, so `main` requires a PR, owner review, and `quality-gate` before the baseline can merge. Until the owner applies it, the bot's Contents write can update `main` directly.
+2. Apply the bootstrap ruleset from the owner account. It is `integration-rules.json` without the `target-health` entry, so `main` requires a PR, owner review, and `quality-gate` before the baseline can merge. Until the owner applies it, the bot's Contents write can update `main` directly.
+
+   ```sh
+   node tools/github/ruleset.cjs bootstrap | gh api -X POST repos/peaceandchaos/ai-chat-demo/rulesets --input -
+   ```
+
 3. Review the nine original commits in the agreed three groups and review the new controls. All candidate checks must pass.
 4. Merge with **Rebase and merge**. It keeps each commit as a separate commit on `main`, with new SHAs. **Squash and merge** collapses them into one commit.
 5. Confirm that push CI and `post-push-gate` pass for the resulting `main` commit.
-6. Update the ruleset to the full `integration-rules.json`, including `target-health`.
-7. Test the rules before accepting another change.
+6. Update the ruleset to the full `integration-rules.json`, including `target-health`. Use the `id` that step 2 returned.
+
+   ```sh
+   node tools/github/ruleset.cjs full | gh api -X PUT repos/peaceandchaos/ai-chat-demo/rulesets/<id> --input -
+   ```
+
+7. Test the rules before accepting another change, then remove the app's Workflows write permission and confirm the bot can no longer push a workflow.
 
 Before claiming enforcement, verify a deliberately failing candidate cannot merge; a missing/skipped/cancelled check blocks; a stale base blocks; a target rerun holds unrelated PRs; and an exact owner-approved repair retains every candidate check. Also verify bot permissions, CODEOWNERS matching, and rule coverage on a feature target. Record the current-account credential limitation separately. Local controller fixtures cannot prove these GitHub behaviors.
 
