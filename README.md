@@ -27,7 +27,7 @@ npm run typecheck
 npm test                     # ordinary local test feedback
 npm run test:verified        # also reject empty/skipped/unfinished suites
 npm run secrets
-npm run security             # iOS/shared scan; findings currently block
+npm run security             # iOS/shared scan; HIGH or undisposed app findings block
 npm run audit:check          # all high/critical findings block
 npm run build:server
 npm run build:ios-js          # release JS bundle; not native compilation
@@ -39,7 +39,7 @@ npm run verify:commit -- HEAD
 
 The pre-commit hook checks lint, formatting, and credentials in a snapshot of the Git index. It performs a fresh locked install there. It cannot use unstaged fixes or your local `node_modules`. The pre-push hook runs the full implemented suite for each commit being published.
 
-`verify:commit` runs the selected commit's own checking code in a fresh checkout. It records the commit, tree, commands, results, and source integrity in ignored `.quality-results/`. Only committed example configuration enters that checkout. Checks cannot silently change source while running. Logs and results remain available after the temporary checkout is removed.
+`verify:commit` runs the selected commit's own checking code in a fresh checkout. It records the commit, tree, commands, results, and source integrity in ignored `.quality-results/`. A commit that tracks files under `.quality-results/` fails, so a candidate cannot supply its own result records. Only committed example configuration enters that checkout. Checks cannot silently change source while running. Logs and results remain available after the temporary checkout is removed.
 
 Local hooks are feedback controls and remain bypassable by the machine owner. Acceptance also requires protected GitHub checks and owner review. CI checks both the PR head and proposed merge result, then checks the exact resulting commit after a push. Only PR runs publish the required `quality-gate` check; push runs publish `post-push-gate`. Every implemented check must finish successfully. The compiler report fails only if the tool crashes, so it is a report, not a gate. Dependency and scanner failures remain failures.
 
@@ -51,7 +51,7 @@ The 13 selected anti-slop rules remain errors. Their source and license are in `
 
 Every high/critical dependency advisory blocks acceptance, regardless of exposure. Moderate/low findings have dated dispositions in `tools/verification/dependency-dispositions.json`; new or expired findings need review. No update or override is automatic.
 
-The scanner excludes Android-specific files and scans the remaining app. Stream and tool arguments receive schema validation; raw network errors are not logged. Reply links require HTTP/HTTPS, structural validation, and OS support. Checks exercise React Native's actual JavaScript URL implementation. The fresh scanner run reports no shared-code findings and six medium dependency entries. The separate dependency gate checks their advisory dispositions; neither check proves native networking safety. All four native patches and the Metro patch must apply during `npm ci`.
+The scanner excludes Android-specific files and scans the remaining app. Stream and tool arguments receive schema validation; raw network errors are not logged. Reply links require HTTP/HTTPS, structural validation, and OS support. Checks exercise React Native's actual JavaScript URL implementation. The fresh scanner run reports no shared-code findings and six medium dependency entries. The separate dependency gate checks their advisory dispositions. Any other scanner finding fails unless `tools/verification/security-dispositions.json` records a current, reasoned disposition for it. Neither check proves native networking safety. All four native patches and the Metro patch must apply during `npm ci`.
 
 ## Test review
 
