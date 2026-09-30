@@ -1,0 +1,45 @@
+# Repository instructions
+
+This repository is becoming a personal iOS chat app. Read `README.md` for the current implementation and `PLANS.md` for the active milestone. Read `docs/providers.md` when changing provider behavior. Do not treat planned behavior as verified behavior.
+
+## Scope and authority
+
+- Work on iOS and shared app/server code. Android implementation and verification are outside the current scope.
+- The user owns the UI. Keep screens and visual behavior unchanged unless the task explicitly includes them.
+- Quality controls come first. Native iOS networking is next. The session controller, app integration, hosted acceptance, and release come later.
+- Approved local edits, disposable fixtures, builds without paid services, and local commits do not need repeated confirmation. Preserve unrelated changes.
+- Review specific dependency changes before applying them. Do not run automatic audit fixes. Scoped overrides require a documented compatibility argument.
+- Use a separate limited GitHub actor. Never use the owner's accessible admin credentials for agent writes. Do not merge, revert, deploy, publish, spend money, or call paid providers without task authorization.
+
+## Commands
+
+Use Node `22.23.3` from `.node-version`. Run commands from the repository root.
+
+```sh
+npm ci
+cp packages/app/src/config.example.ts packages/app/src/config.ts
+npm run lint
+npm run format:check
+npm run typecheck
+npm test
+npm run security
+npm run audit:check
+npm run build:server
+npm run verify:commit -- HEAD
+```
+
+The example config has no live credentials. Never copy personal config or environment files into verification checkouts. `verify:staged` checks the index; `verify:commit` installs locked dependencies in a fresh checkout and records the tested commit/tree. `verify:current` is for a clean CI checkout. Working-tree checks are useful feedback, not proof about another commit. Read `tools/verification/checks.cjs` for the implemented suite.
+
+## Checks and repairs
+
+Use the repository `test-prune` skill when reviewing test quality. Prefer meaningful integration checks for important flows. Keep small boundary checks when they provide clearer evidence. Do not optimize test count, coverage, or scores.
+
+For bug fixes, show that the relevant check fails with the bug and passes with the fix where practical. Keep the first failure. After two unsuccessful repair attempts for the same failure, stop that repair and report the evidence and options. Continue independent authorized work.
+
+Do not weaken assertions, reduce discovery, ignore exits, skip checks, expand exclusions, or relax lint/security policy to get green. All test and control changes require owner review before merge. Automated guards cannot prove every assertion's meaning.
+
+Every high/critical dependency advisory blocks acceptance. Moderate/low findings need a disposition and review date; serious application risk also blocks. An unavailable, skipped, cancelled, or stale required result is not a pass. The compiler report does not prove device compilation. Native-driver fakes do not prove iOS behavior.
+
+## Completion evidence
+
+Report the scope, commit, commands, results, and remaining limitations. Run proportionate checks after relevant changes; do not repeat passing checks without a reason. Acceptance requires the full implemented suite for the actual commit, protected GitHub checks, and required owner review. Submission branches and local commits remain unaccepted candidates. Do not claim enforcement before remote rules and the separate actor are verified.

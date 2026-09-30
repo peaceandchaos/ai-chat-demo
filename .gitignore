@@ -67,6 +67,7 @@ packages/app/src/config.ts
 .metro-health-check*
 
 # testing
+.quality-results/
 /packages/app/coverage
 /tools/fixtures/
 rnsec-report.*
