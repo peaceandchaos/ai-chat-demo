@@ -2,7 +2,7 @@
 
 This is the reviewed local setup, not evidence that remote enforcement is active. On 29 September 2026, the public personal fork `peaceandchaos/ai-chat-demo` had no rulesets. Its default Actions token was read-only and Actions approval of PR reviews was disabled. Preserve those settings. The read-only default is a default, not a ceiling. Any workflow can request `statuses: write` or `checks: write` in its `permissions` block, as `target-health.yml` does.
 
-On 30 September 2026, GitHub listed no registered workflows for the fork, although `main` contains a `ci.yml`. GitHub disables workflows on a new fork until the owner enables them on the **Actions** tab. The bot cannot read or change that setting.
+Actions run on this fork. GitHub registered `ci.yml` and started CI on the first bot push on 30 September 2026.
 
 ## Bot identity
 
@@ -55,23 +55,22 @@ With one human reviewer, `require_last_push_approval` means the owner cannot app
 
 The first baseline is a bootstrap case. Its target does not contain the trusted workflows yet. `pull_request_target`, `workflow_run`, and `workflow_dispatch` all read the workflow file from the default branch, so the baseline PR receives no `target-health` result at all. That missing result is not a pass. The owner approves the one-time installation order explicitly:
 
-1. Enable workflows on the fork's **Actions** tab if GitHub still shows them as disabled.
-2. Apply the bootstrap ruleset from the owner account. It is `integration-rules.json` without the `target-health` entry, so `main` requires a PR, owner review, and `quality-gate` before the baseline can merge. Until the owner applies it, the bot's Contents write can update `main` directly.
+1. Apply the bootstrap ruleset from the owner account. It is `integration-rules.json` without the `target-health` entry, so `main` requires a PR, owner review, and `quality-gate` before the baseline can merge. Until the owner applies it, the bot's Contents write can update `main` directly.
 
    ```sh
    node tools/github/ruleset.cjs bootstrap | gh api -X POST repos/peaceandchaos/ai-chat-demo/rulesets --input -
    ```
 
-3. Review the nine original commits in the agreed three groups and review the new controls. All candidate checks must pass.
-4. Merge with **Rebase and merge**. It keeps each commit as a separate commit on `main`, with new SHAs. **Squash and merge** collapses them into one commit.
-5. Confirm that push CI and `post-push-gate` pass for the resulting `main` commit.
-6. Update the ruleset to the full `integration-rules.json`, including `target-health`. Use the `id` that step 2 returned.
+2. Review the nine original commits in the agreed three groups and review the new controls. All candidate checks must pass.
+3. Merge with **Rebase and merge**. It keeps each commit as a separate commit on `main`, with new SHAs. **Squash and merge** collapses them into one commit.
+4. Confirm that push CI and `post-push-gate` pass for the resulting `main` commit.
+5. Update the ruleset to the full `integration-rules.json`, including `target-health`. Use the `id` that step 1 returned.
 
    ```sh
    node tools/github/ruleset.cjs full | gh api -X PUT repos/peaceandchaos/ai-chat-demo/rulesets/<id> --input -
    ```
 
-7. Test the rules before accepting another change, then remove the app's Workflows write permission and confirm the bot can no longer push a workflow.
+6. Test the rules before accepting another change, then remove the app's Workflows write permission and confirm the bot can no longer push a workflow.
 
 Before claiming enforcement, verify a deliberately failing candidate cannot merge; a missing/skipped/cancelled check blocks; a stale base blocks; a target rerun holds unrelated PRs; and an exact owner-approved repair retains every candidate check. Also verify bot permissions, CODEOWNERS matching, and rule coverage on a feature target. Record the current-account credential limitation separately. Local controller fixtures cannot prove these GitHub behaviors.
 
