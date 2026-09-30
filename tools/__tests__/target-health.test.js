@@ -13,6 +13,8 @@ function fixture() {
     base,
     run: {
       id: 42,
+      run_attempt: 1,
+      event: 'push',
       head_sha: base,
       head_branch: 'main',
       status: 'completed',
@@ -31,6 +33,8 @@ function fixture() {
     ],
     statuses: [],
     queries: [],
+    runLookups: 0,
+    onRunLookup: null,
     approvals: [],
     changedHead: false,
   };
@@ -47,6 +51,8 @@ function fixture() {
     actions: {
       listWorkflowRuns: async query => {
         state.queries.push(query);
+        state.runLookups += 1;
+        state.onRunLookup?.(state.runLookups);
         return { data: { workflow_runs: state.run ? [state.run] : [] } };
       },
       listJobsForWorkflowRun: async query => {
@@ -144,6 +150,9 @@ test('owner repair binds PR, head, and base; a changed target invalidates it', a
   };
   await inspect(f.github, f.context, f.core);
   expect(f.state.approvals).toHaveLength(1);
+  expect(f.state.approvals[0].external_id).toBe(
+    `1:${f.state.pr.head.sha}:${f.state.base}:42:1`,
+  );
   expect(f.state.statuses.at(-1).state).toBe('success');
   f.context.eventName = 'workflow_run';
   f.state.base = 'd'.repeat(40);
@@ -155,4 +164,115 @@ test('owner repair binds PR, head, and base; a changed target invalidates it', a
     'Only the owner',
   );
   expect(f.state.approvals).toHaveLength(1);
+});
+
+test('owner repair requires an exact completed failed target push run', async () => {
+  const faults = [
+    f => {
+      f.state.run = null;
+    },
+    f => {
+      f.state.run.status = 'in_progress';
+    },
+    f => {
+      f.state.run.conclusion = 'cancelled';
+    },
+    f => {
+      f.state.run.conclusion = 'success';
+    },
+    f => {
+      f.state.run.head_sha = 'c'.repeat(40);
+      f.state.run.conclusion = 'failure';
+    },
+    f => {
+      f.state.run.event = 'pull_request';
+      f.state.run.conclusion = 'failure';
+    },
+  ];
+  for (const fault of faults) {
+    const f = fixture();
+    fault(f);
+    f.context.eventName = 'workflow_dispatch';
+    f.context.payload.inputs = {
+      operation: 'approve-repair',
+      pr: '1',
+      head: f.state.pr.head.sha,
+      base: f.state.base,
+    };
+    await expect(inspect(f.github, f.context, f.core)).rejects.toThrow(
+      'completed failed push run',
+    );
+    expect(f.state.approvals).toHaveLength(0);
+  }
+});
+
+test('an approved repair expires when the target run or attempt changes', async () => {
+  const f = fixture();
+  f.state.run.conclusion = 'failure';
+  f.context.eventName = 'workflow_dispatch';
+  f.context.payload.inputs = {
+    operation: 'approve-repair',
+    pr: '1',
+    head: f.state.pr.head.sha,
+    base: f.state.base,
+  };
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('success');
+
+  f.context.eventName = 'workflow_run';
+  f.state.run.run_attempt = 2;
+  f.state.run.status = 'in_progress';
+  f.state.run.conclusion = null;
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('failure');
+
+  f.state.run.status = 'completed';
+  f.state.run.conclusion = 'failure';
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('failure');
+
+  f.state.run.run_attempt = 1;
+  f.state.run.conclusion = 'cancelled';
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('failure');
+  f.state.run.run_attempt = 2;
+  f.state.run.conclusion = 'failure';
+
+  f.context.eventName = 'workflow_dispatch';
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('success');
+  expect(f.state.approvals.at(-1).external_id).toBe(
+    `1:${f.state.pr.head.sha}:${f.state.base}:42:2`,
+  );
+
+  f.context.eventName = 'workflow_run';
+  f.state.run.id = 43;
+  f.state.run.run_attempt = 1;
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('failure');
+});
+
+test('a target rerun during inspection prevents repaired success', async () => {
+  const f = fixture();
+  f.state.run.conclusion = 'failure';
+  f.context.eventName = 'workflow_dispatch';
+  f.context.payload.inputs = {
+    operation: 'approve-repair',
+    pr: '1',
+    head: f.state.pr.head.sha,
+    base: f.state.base,
+  };
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('success');
+
+  f.context.eventName = 'workflow_run';
+  f.state.runLookups = 0;
+  f.state.onRunLookup = count => {
+    if (count !== 2) return;
+    f.state.run.run_attempt = 2;
+    f.state.run.status = 'in_progress';
+    f.state.run.conclusion = null;
+  };
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('failure');
 });
