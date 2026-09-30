@@ -8,18 +8,18 @@ Actions run on this fork. GitHub registered `ci.yml` and started CI on the first
 
 The user selected a GitHub App bot on the current Mac account. `PeaceAndChaos Codex Agent` is installed only on `peaceandchaos/ai-chat-demo`. Its webhook and user OAuth flow are disabled. Local authentication was verified on 30 September 2026.
 
-| Repository permission                                   | Access         | Purpose                            |
-| ------------------------------------------------------- | -------------- | ---------------------------------- |
-| Contents                                                | Read and write | Publish candidate branches         |
-| Pull requests                                           | Read and write | Open and update PRs                |
-| Workflows                                               | Read and write | Push commits that change workflows |
-| Actions                                                 | Read-only      | Inspect CI results                 |
-| Metadata                                                | Read-only      | Identify the repository            |
-| Administration, checks, statuses, secrets, environments | None           | Remain outside the bot's authority |
+| Repository permission                                   | Access         | Purpose                                |
+| ------------------------------------------------------- | -------------- | -------------------------------------- |
+| Contents                                                | Read and write | Publish candidate branches             |
+| Pull requests                                           | Read and write | Open and update PRs                    |
+| Workflows                                               | None           | Removed after the enforcement exercise |
+| Actions                                                 | Read-only      | Inspect CI results                     |
+| Metadata                                                | Read-only      | Identify the repository                |
+| Administration, checks, statuses, secrets, environments | None           | Remain outside the bot's authority     |
 
 Use an **installation access token**, which identifies the bot. A user access token would act as the owner. Do not give the app a ruleset bypass. The owner approves its PRs; the bot must not merge them automatically.
 
-Workflows write lets the bot push a new workflow to an unprotected `submission/**` branch. A push by an app token starts workflows, and that workflow runs as the GitHub Actions app, ID `15368`. It can request `statuses: write` and `checks: write` and publish a `target-health` status or a `quality-gate` check on any commit. The ruleset cannot tell those results from real ones, and the workflow never appears in a reviewed PR. The baseline push needs Workflows write because the baseline adds workflows. The enforcement exercise also uses it for scenarios that change `ci.yml`. After that exercise, the owner removes Workflows write from the app, and a final hosted scenario proves that GitHub rejects a bot push that adds a workflow. From then on the bot has no route to a status or check. It has no Statuses or Checks permission, Actions read cannot dispatch workflows, and CI runs with a read-only token. A later workflow change needs a temporary owner grant for that one reviewed PR.
+The owner removed Workflows write from the app on 30 September 2026, after the baseline push and the enforcement exercise. GitHub then rejected bot pushes that add or edit a workflow, and returned HTTP 403 when the bot tried to create a status, a check run, or a workflow dispatch. The bot has no Statuses, Checks, or Actions write permission, and CI runs with a read-only token, so it has no route to a required result. A later workflow change needs a temporary owner grant for that one reviewed PR. While Workflows write existed, a bot workflow on an unreviewed `submission/**` branch could have published results as the GitHub Actions app, ID `15368`.
 
 No permission removes one limit. CI runs the candidate's own code, so a candidate can weaken its own tests or check list. Those results are real, not forged, and CODEOWNERS review of every test and checking file is the control against them.
 
@@ -70,8 +70,8 @@ The first baseline is a bootstrap case. Its target does not contain the trusted 
    node tools/github/ruleset.cjs full | gh api -X PUT repos/peaceandchaos/ai-chat-demo/rulesets/<id> --input -
    ```
 
-6. Test the rules before accepting another change, then remove the app's Workflows write permission and confirm the bot can no longer push a workflow.
+6. Test the rules before accepting another change, then remove the app's Workflows write permission and confirm the bot can no longer push a workflow. All six steps were completed on 30 September 2026.
 
-Before claiming enforcement, verify a deliberately failing candidate cannot merge; a missing/skipped/cancelled check blocks; a stale base blocks; a target rerun holds unrelated PRs; and an exact owner-approved repair retains every candidate check. Also verify bot permissions, CODEOWNERS matching, and rule coverage on a feature target. Record the current-account credential limitation separately. Local controller fixtures cannot prove these GitHub behaviors.
+The hosted exercise on 30 September 2026 used labelled test PRs #2 to #8 and #11 to #13, which stay open as history. With a fresh owner approval and a passing `target-health`, GitHub blocked each candidate whose `quality-gate` failed, was missing, was skipped, or was cancelled. A skipped gate job reports under its unevaluated name expression, so the required check stays missing. A content change after approval dismissed the approval, and an outdated base was blocked. A bot rebase kept the displayed approval, but the last-push rule still required a fresh one. Rerunning `main`'s push run held open PRs until it passed. On the disposable target `exercise/creation-from-green`, an owner-approved repair released only its bound PR, an unrelated PR stayed held, and a target rerun revoked the approval. Two defects appeared only on GitHub and are fixed: unrestricted protected-branch creation, and repair approvals that GitHub's `details_url` rewrite made unusable. Owner credentials remain reachable on this Mac account, and `target-health` updates are asynchronous.
 
 Nobody can create a protected branch while the ruleset is active. The `creation` rule applies to every branch except `submission/**`, and the ruleset has no bypass actors. On 30 September 2026, before this rule existed, the bot created `exercise/creation-from-green` at a commit that carried both required results. Every open PR head carries both results before review, so the bot could create an undeletable protected branch from unreviewed code. Creation at the `main` tip was rejected because that commit carries `post-push-gate`, not `quality-gate` or `target-health`. To add a new integration target, the owner edits the ruleset deliberately, creates the branch from a reviewed `main` commit, and restores the rule.
