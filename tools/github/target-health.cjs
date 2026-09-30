@@ -4,7 +4,7 @@ const ownerLogin = 'peaceandchaos';
 const ciContract = {
   workflow: 'ci.yml',
   verifyJob: 'verify (commit)',
-  gateJob: 'quality-gate',
+  gateJob: 'post-push-gate',
   verifySteps: ['Verify committed source', 'Upload results'],
 };
 
@@ -146,9 +146,13 @@ async function repairAllowed(github, context, pr, target) {
         run_id: Number(runId),
       })
     ).data;
+    // run-name records the dispatch inputs, so a check cannot borrow an unrelated owner run.
     if (
       run.event === 'workflow_dispatch' &&
       run.run_attempt === 1 &&
+      run.display_title ===
+        `approve-repair ${pr.number} ${pr.head.sha} ${target.sha}` &&
+      (run.conclusion === 'success' || run.id === context.runId) &&
       run.path.split('@')[0] === controllerPath &&
       run.actor.login === ownerLogin &&
       run.triggering_actor.login === ownerLogin &&

@@ -31,7 +31,7 @@ function fixture() {
           conclusion: 'success',
         })),
       },
-      { name: 'quality-gate', conclusion: 'success' },
+      { name: 'post-push-gate', conclusion: 'success' },
     ],
     statuses: [],
     queries: [],
@@ -39,6 +39,7 @@ function fixture() {
     onRunLookup: null,
     approvals: [],
     approvalRunAttempt: 1,
+    approvalConclusion: 'success',
     changedHead: false,
   };
   const api = {
@@ -62,8 +63,11 @@ function fixture() {
         state.queries.push(query);
         return state.jobs;
       },
-      getWorkflowRun: async () => ({
+      getWorkflowRun: async ({ run_id }) => ({
         data: {
+          id: run_id,
+          display_title: Object.values(context.payload.inputs).join(' '),
+          conclusion: state.approvalConclusion,
           event: 'workflow_dispatch',
           path: '.github/workflows/target-health.yml',
           actor: { login: 'peaceandchaos' },
@@ -347,9 +351,35 @@ test('the controller reads job and step names that the CI workflow defines', () 
   expect(ci).toContain(`name: ${template}`);
   expect(ci).toContain(`'["commit"]'`);
   expect(verifyJob).toBe(template.replace('${{ matrix.revision }}', 'commit'));
-  expect(ci).toMatch(
-    new RegExp(`^  ${gateJob}:\\n    name: ${gateJob}$`, 'mu'),
+  // Push runs must not publish the PR's required check name on the same head SHA.
+  expect(gateJob).not.toBe('quality-gate');
+  expect(ci).toContain(
+    `  quality-gate:\n    name: \${{ github.event_name == 'pull_request' && 'quality-gate' || '${gateJob}' }}\n`,
   );
   for (const step of verifySteps)
     expect(ci).toMatch(new RegExp(`^      - name: ${step}$`, 'mu'));
+});
+
+test('repair approval must come from a successful dispatch with the same inputs', async () => {
+  const f = fixture();
+  f.state.run.conclusion = 'failure';
+  repairDispatch(f);
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('success');
+
+  f.context.eventName = 'workflow_run';
+  f.context.runId = 74;
+  f.state.approvalConclusion = 'failure';
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('failure');
+
+  f.state.approvalConclusion = 'success';
+  f.context.payload.inputs = {
+    operation: 'refresh',
+    pr: '',
+    head: '',
+    base: '',
+  };
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('failure');
 });
