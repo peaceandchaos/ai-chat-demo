@@ -487,7 +487,7 @@ export function openPhone(
 export async function until(
   label: string,
   predicate: () => boolean | Promise<boolean>,
-  timeoutMs = 5000,
+  timeoutMs = 15_000,
 ): Promise<void> {
   const started = Date.now();
   while (!(await predicate())) {

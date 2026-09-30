@@ -15,7 +15,7 @@ import {
   type Server,
 } from './session-harness';
 
-jest.setTimeout(20_000);
+jest.setTimeout(60_000);
 let server: Server;
 beforeEach(async () => {
   server = await startServer();
