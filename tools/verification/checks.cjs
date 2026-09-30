@@ -8,5 +8,6 @@ module.exports = {
   security: ['run', 'security'],
   dependencies: ['run', 'audit:check'],
   'server-build': ['run', 'build:server'],
+  'ios-js-bundle': ['run', 'build:ios-js'],
   'react-compiler': ['run', 'react-compiler-check'],
 };
