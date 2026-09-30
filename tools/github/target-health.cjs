@@ -7,11 +7,7 @@ function requiredJobsPassed(jobs) {
   const gate = jobs.find(job => job.name === 'quality-gate');
   if (verification?.conclusion !== 'success' || gate?.conclusion !== 'success')
     return false;
-  return [
-    'Install locked dependencies',
-    'Verify committed source',
-    'Upload results',
-  ].every(name =>
+  return ['Verify committed source', 'Upload results'].every(name =>
     verification.steps.some(
       step => step.name === name && step.conclusion === 'success',
     ),

@@ -160,7 +160,9 @@ try {
   } else if (mode === 'current') {
     if (git(root, ['status', '--porcelain']))
       throw new Error('CI checkout must be clean.');
-    verify(root, { mode, ...identity(root, 'HEAD') }, false);
+    if (existsSync(join(root, 'node_modules')))
+      throw new Error('CI must begin without installed dependencies.');
+    verify(root, { mode, ...identity(root, 'HEAD') }, true);
   } else if (mode === 'push') {
     const refs = readFileSync(0, 'utf8').trim().split('\n');
     const commits = new Set();

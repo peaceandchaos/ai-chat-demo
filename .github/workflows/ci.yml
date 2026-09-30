@@ -32,8 +32,6 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .node-version
-      - name: Install locked dependencies
-        run: npm ci --no-audit --no-fund
       - name: Verify committed source
         run: npm run verify:current
       - name: Upload results

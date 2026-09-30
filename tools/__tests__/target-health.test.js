@@ -22,11 +22,10 @@ function fixture() {
       {
         name: 'verify (commit)',
         conclusion: 'success',
-        steps: [
-          'Install locked dependencies',
-          'Verify committed source',
-          'Upload results',
-        ].map(name => ({ name, conclusion: 'success' })),
+        steps: ['Verify committed source', 'Upload results'].map(name => ({
+          name,
+          conclusion: 'success',
+        })),
       },
       { name: 'quality-gate', conclusion: 'success' },
     ],
