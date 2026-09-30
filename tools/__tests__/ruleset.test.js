@@ -6,6 +6,14 @@ test('the bootstrap ruleset differs from the full ruleset only by target-health'
   const checks = stage =>
     stage.rules.find(rule => rule.type === 'required_status_checks').parameters
       .required_status_checks;
+  expect(full.rules.map(rule => rule.type)).toEqual([
+    'creation',
+    'deletion',
+    'non_fast_forward',
+    'required_linear_history',
+    'pull_request',
+    'required_status_checks',
+  ]);
   expect(checks(full)).toEqual([
     { context: 'quality-gate', integration_id: 15368 },
     { context: 'target-health', integration_id: 15368 },
