@@ -102,8 +102,10 @@ pause another. Token updates stay in memory and reach storage on a bounded
 checkpoint. Acceptance, final results, and Stop are saved before the session
 continues. The phone acknowledges a reply only after its final result is saved.
 Recovery resends the same attempt or receipt and never creates a new version.
-A submit refusal is trusted only when a resend of the same attempt is refused
-again. `nativeSession.ts` forwards React Native `AppState` to the session;
+A refusal that names the attempt marks it failed; a socket error that names no
+attempt counts as a lost connection. Chat deletions finish on 404 or 410, retry
+network and server errors, and stop on other refusals until the app reopens.
+`nativeSession.ts` forwards React Native `AppState` to the session;
 backgrounding detaches readers without cancelling server work.
 
 Integration tests in `packages/server/tests/session-*.test.ts` run the real
