@@ -13,7 +13,12 @@ import {
   type Submission,
 } from '../../../../shared/contracts';
 import { SseDecoder } from '../../../../shared/provider-events';
-import { TransportError, type ChatTransport, type Receive } from './transport';
+import {
+  ReaderConflict,
+  TransportError,
+  type ChatTransport,
+  type Receive,
+} from './transport';
 
 export interface ClientSocket {
   readonly readyState: string;
@@ -399,11 +404,7 @@ export class ServerTransport implements ChatTransport {
     if (signal.aborted) return;
     const socket = await this.connect();
     if (signal.aborted) return;
-    if (this.feeds.has(id))
-      throw new TransportError(
-        409,
-        'This reply already has an attached reader.',
-      );
+    if (this.feeds.has(id)) throw new ReaderConflict();
     await new Promise<void>((resolve, reject) => {
       let finished = false;
       let stageReject: ((error: Error) => void) | null = null;
