@@ -17,6 +17,7 @@ const {
   fingerprint,
 } = require('../verification/snapshot.cjs');
 const { evaluate } = require('../audit-check.cjs');
+const security = require('../security-check.cjs');
 const checks = require('../verification/checks.cjs');
 const { assertComplete } = require('../test-verified.cjs');
 
@@ -276,4 +277,109 @@ test('dependency policy blocks high findings, missing reviews, expired reviews, 
   expect(() => evaluate({ error: 'offline' }, review, '2026-09-29')).toThrow(
     'Audit response',
   );
+});
+
+test('app security policy fails a real undisposed MEDIUM finding and keeps HIGH blocking', () => {
+  const fixture = mkdtempSync(join(tmpdir(), 'security-fixture-'));
+  try {
+    writeFileSync(
+      join(fixture, 'Chat.ts'),
+      "export const socket = new WebSocket('ws://example.invalid/chat');\n",
+    );
+    const report = security.scan(fixture);
+    expect(report.findings).toEqual([
+      expect.objectContaining({
+        ruleId: 'INSECURE_WEBSOCKET',
+        severity: 'MEDIUM',
+      }),
+    ]);
+    const key = 'INSECURE_WEBSOCKET Chat.ts:1';
+    const disposition = {
+      severity: 'MEDIUM',
+      reviewedAt: '2026-09-29',
+      reviewBy: '2026-10-01',
+      reason: 'Fixture socket never leaves the test host.',
+    };
+    expect(security.evaluate(report, {}, '2026-09-29', fixture)).toEqual([
+      `${key}: MEDIUM needs a current disposition`,
+    ]);
+    expect(
+      security.evaluate(report, { [key]: disposition }, '2026-09-29', fixture),
+    ).toEqual([]);
+    expect(
+      security.evaluate(report, { [key]: disposition }, '2026-10-02', fixture),
+    ).toEqual([`${key}: MEDIUM needs a current disposition`]);
+
+    const finding = (ruleId, severity) => ({
+      ruleId,
+      severity,
+      filePath: join(fixture, 'package.json'),
+      line: 3,
+    });
+    const scanned = findings => ({
+      findings,
+      scannedFiles: 1,
+      ignoredRules: [],
+    });
+    expect(
+      security.evaluate(
+        scanned([finding('NPM_VULNERABLE_DEPENDENCY', 'MEDIUM')]),
+        {},
+        '2026-09-29',
+        fixture,
+      ),
+    ).toEqual([]);
+    expect(
+      security.evaluate(
+        scanned([finding('NPM_VULNERABLE_DEPENDENCY', 'HIGH')]),
+        {},
+        '2026-09-29',
+        fixture,
+      ),
+    ).toEqual([
+      'NPM_VULNERABLE_DEPENDENCY package.json:3: HIGH has no exceptions',
+    ]);
+    expect(
+      security.evaluate(
+        scanned([finding('DEPRECATED_NPM_PACKAGE', 'LOW')]),
+        {},
+        '2026-09-29',
+        fixture,
+      ),
+    ).toEqual([
+      'DEPRECATED_NPM_PACKAGE package.json:3: LOW needs a current disposition',
+    ]);
+    const highKey = 'HARDCODED_SECRET package.json:3';
+    expect(
+      security.evaluate(
+        scanned([finding('HARDCODED_SECRET', 'HIGH')]),
+        { [highKey]: { ...disposition, severity: 'HIGH' } },
+        '2026-09-29',
+        fixture,
+      ),
+    ).toEqual([
+      `${highKey}: HIGH has no exceptions`,
+      `${highKey}: disposition matches no finding`,
+    ]);
+    expect(
+      security.evaluate(
+        { ...scanned([]), ignoredRules: ['INSECURE_WEBSOCKET'] },
+        {},
+        '2026-09-29',
+        fixture,
+      ),
+    ).toEqual([
+      'rnsec ignores INSECURE_WEBSOCKET; record dispositions instead.',
+    ]);
+    expect(() =>
+      security.evaluate(
+        { ...scanned([]), scannedFiles: 0 },
+        {},
+        '2026-09-29',
+        fixture,
+      ),
+    ).toThrow('scanned no files');
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
 });
