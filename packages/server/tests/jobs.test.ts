@@ -133,6 +133,18 @@ test('completion remains retrievable after a reader closes and until durable rec
   expect(final.text).toBe('The original answer.');
   expect(final.actualModel).toBe('gpt-6');
   const replay = await reopened.events(owner, input.attemptId, cursor);
+  expect(replay).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        kind: 'snapshot',
+        sequence: final.sequence,
+        snapshot: expect.objectContaining({
+          status: 'completed',
+          text: 'The original answer.',
+        }),
+      }),
+    ]),
+  );
   expect(replay.every(event => event.sequence > cursor)).toBe(true);
   await expect(
     jobs.acknowledge(owner, input.attemptId, cursor),

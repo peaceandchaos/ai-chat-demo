@@ -67,11 +67,13 @@ test('one Auto submission evaluates once and saves the selected model before tok
   await execute(input.attemptId);
   expect(selectionCalls).toBe(1);
   expect(generationCalls).toBe(1);
-  expect(
-    events.findIndex(
-      event => event.kind === 'status' && event.actualModel === 'deepseek',
-    ),
-  ).toBeLessThan(events.findIndex(event => event.kind === 'provider'));
+  const selectionIndex = events.findIndex(
+    event => event.kind === 'status' && event.actualModel === 'deepseek',
+  );
+  const providerIndex = events.findIndex(event => event.kind === 'provider');
+  expect(selectionIndex).toBeGreaterThanOrEqual(0);
+  expect(providerIndex).toBeGreaterThanOrEqual(0);
+  expect(selectionIndex).toBeLessThan(providerIndex);
   expect((await jobs.get(owner, input.attemptId)).snapshot).toMatchObject({
     status: 'completed',
     text: 'Saved answer',

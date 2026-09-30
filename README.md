@@ -56,7 +56,7 @@ The scanner excludes Android-specific files and scans the remaining app. Four sh
 
 The reusable `test-prune` skill lives in `.agents/skills/test-prune/SKILL.md`. This is the maintained source. Copy reviewed changes explicitly to the global Codex skill and compare hashes; do not link the two directories or update them during package installation.
 
-The test review selected an empty shell smoke check for removal and two event-order/replay assertions for strengthening in a separate commit. SQL, local-socket, archive, protocol, and parser checks retain their distinct behavioral protection. Full app E2E and native transport verification remain later milestones.
+The test review removed an empty shell smoke check and strengthened two existing event-order/replay assertions. Deliberately missing model events and empty replay results now fail those checks. SQL, local-socket, archive, protocol, and parser checks retain their distinct behavioral protection. Full app E2E and native transport verification remain later milestones.
 
 ## Workspace
 

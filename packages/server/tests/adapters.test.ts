@@ -87,7 +87,7 @@ test('OpenAI opaque context is never translated into a Gateway request', () => {
   ).toThrow('cannot read');
 });
 
-test('Responses uses a real socket, store:false, and a saved compacted window', async () => {
+test('Responses uses a real socket, store:false, and receives official compaction', async () => {
   const server = new WebSocketServer({ port: 0, host: '127.0.0.1' });
   await new Promise<void>((resolve, reject) => {
     server.once('listening', resolve);
