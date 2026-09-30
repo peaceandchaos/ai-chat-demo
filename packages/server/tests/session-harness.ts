@@ -1,14 +1,10 @@
 import type { PGlite } from '@electric-sql/pglite';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { z } from 'zod';
-import {
-  decodeJson,
-  socketCommandSchema,
-  type ContextCheckpoint,
-  type ModelKey,
-  type Picker,
-  type ServerMessage,
-  type Submission,
+import type {
+  ContextCheckpoint,
+  ModelKey,
+  Picker,
+  Submission,
 } from '../../../shared/contracts';
 import { ChatArchive, type ArchiveStorage } from '../../app/src/state/archive';
 import {
@@ -19,10 +15,9 @@ import {
   type ClientSocket,
 } from '../../app/src/network/client';
 import { ChatSession } from '../../app/src/state/session';
-import { executeCommand, handleRequest, type ApiServices } from '../src/api';
+import { handleRequest, SocketConnection, type ApiServices } from '../src/api';
 import { deviceOwner } from '../src/auth';
-import { deliverJob } from '../src/delivery';
-import { ProviderFailure, RequestError } from '../src/errors';
+import { ProviderFailure } from '../src/errors';
 import { JobRepository } from '../src/jobs';
 import type {
   PreparedContext,
@@ -246,6 +241,9 @@ export type Server = {
   dispatched: string[];
   duplicateDelivery: boolean;
   phones: Phone[];
+  sockets: InProcessSocket[];
+  // While set, durable dispatch waits, so a submission stays unaccepted.
+  dispatchGate: Promise<void> | null;
   settle: () => Promise<void>;
 };
 
@@ -257,13 +255,15 @@ export async function startServer(): Promise<Server> {
   const providers = new FakeProviders();
   const dispatched: string[] = [];
   const workers = new Set<Promise<void>>();
+  let gate: Promise<void> | null = null;
   const services: ApiServices = {
     allowlist: device,
     jobs: () => Promise.resolve(jobs),
     rank: () => Promise.resolve([]),
     // Durable dispatch starts the real worker asynchronously, as Workflow does.
-    dispatch(dispatchOwner, attemptId) {
+    async dispatch(dispatchOwner, attemptId) {
       dispatched.push(attemptId);
+      await gate;
       const runId = `run-${dispatched.length}`;
       const worker = runAttempt({
         jobs,
@@ -278,7 +278,7 @@ export async function startServer(): Promise<Server> {
       });
       workers.add(worker);
       void worker.finally(() => workers.delete(worker));
-      return Promise.resolve(runId);
+      return runId;
     },
   };
   return {
@@ -291,6 +291,13 @@ export async function startServer(): Promise<Server> {
     dispatched,
     duplicateDelivery: false,
     phones: [],
+    sockets: [],
+    get dispatchGate() {
+      return gate;
+    },
+    set dispatchGate(value) {
+      gate = value;
+    },
     async settle() {
       await Promise.allSettled([...workers]);
     },
@@ -333,38 +340,43 @@ function fetchDriver(server: Server, network: Network): ClientDrivers['fetch'] {
   };
 }
 
-// The Nitro WebSocket route cannot run in-process: it reads process.env and
-// the runtime database. This socket repeats that route's message handling
-// (packages/server/src/http/routes/v1/responses.ts) over the same server
-// functions: executeCommand for commands and deliverJob for delivery.
-class InProcessSocket implements ClientSocket {
+// A WebSocket frame shell around the route's own SocketConnection. Frames
+// cross asynchronously, as they would over a network.
+export class InProcessSocket implements ClientSocket {
   readyState = 'CONNECTING';
   onopen: (() => void) | null = null;
   onmessage: ((event: { data: string }) => void) | null = null;
   onclose: ((event: { code: number }) => void) | null = null;
   onerror: ((error: string) => void) | null = null;
-  private readonly readers = new Map<string, AbortController>();
-  private readonly owner: string | null;
+  private readonly connection: SocketConnection;
 
   constructor(
-    private readonly server: Server,
+    server: Server,
     network: Network,
     headers: Record<string, string>,
   ) {
-    let owner: string | null = null;
-    try {
-      owner = deviceOwner(new Headers(headers), server.services.allowlist);
-    } catch {
-      owner = null;
-    }
-    this.owner = owner;
+    this.connection = new SocketConnection(
+      new Headers(headers),
+      () => server.services,
+      {
+        isOpen: () => this.readyState === 'OPEN',
+        send: data => {
+          if (this.readyState === 'OPEN')
+            setTimeout(() => this.onmessage?.({ data }), 0);
+        },
+        close: code => this.close(code),
+      },
+    );
+    server.sockets.push(this);
     setTimeout(() => {
       if (!network.online) {
         this.readyState = 'CLOSED';
         this.onerror?.('offline');
         return;
       }
-      if (!this.owner) {
+      try {
+        deviceOwner(new Headers(headers), server.services.allowlist);
+      } catch {
         this.close(1008);
         return;
       }
@@ -373,85 +385,19 @@ class InProcessSocket implements ClientSocket {
     }, 0);
   }
 
-  private emit(message: ServerMessage) {
-    if (this.readyState !== 'OPEN') return Promise.resolve();
-    const data = JSON.stringify(message);
-    setTimeout(() => this.onmessage?.({ data }), 0);
-    return Promise.resolve();
-  }
-
   send(data: string): void {
-    void this.handle(data);
+    void this.connection.message(() => data);
   }
 
-  private async handle(raw: string) {
-    let attemptId: string | null = null;
-    const owner = this.owner;
-    if (!owner) return;
-    try {
-      if (Buffer.byteLength(raw, 'utf8') > 4_000_000)
-        throw new RequestError(413, 'Split large input into context parts.');
-      const command = decodeJson(socketCommandSchema, raw);
-      attemptId =
-        command.kind === 'submit'
-          ? command.submission.attemptId
-          : command.attemptId;
-      const result = await executeCommand(owner, command, this.server.services);
-      if (this.readyState !== 'OPEN') return;
-      if (result.kind !== 'accepted') {
-        await this.emit(result);
-        return;
-      }
-      const replyId = attemptId;
-      this.readers.get(replyId)?.abort();
-      const controller = new AbortController();
-      this.readers.set(replyId, controller);
-      void deliverJob(
-        this.server.jobs,
-        owner,
-        replyId,
-        controller.signal,
-        message => this.emit(message),
-      )
-        .then(() => {
-          if (!controller.signal.aborted)
-            return this.emit({ kind: 'detached', attemptId: replyId });
-        })
-        .catch(() =>
-          this.emit({
-            kind: 'error',
-            attemptId: replyId,
-            message:
-              'Delivery was interrupted. Reconnect to recover this reply.',
-          }),
-        )
-        .finally(() => {
-          if (this.readers.get(replyId) === controller)
-            this.readers.delete(replyId);
-        });
-    } catch (error) {
-      await this.emit({
-        kind: 'error',
-        attemptId,
-        status:
-          error instanceof RequestError
-            ? error.status
-            : error instanceof z.ZodError || error instanceof SyntaxError
-              ? 400
-              : 503,
-        message:
-          error instanceof RequestError
-            ? error.message
-            : 'The server could not accept this request.',
-      });
-    }
+  // A frame from some other command on this connection.
+  inject(data: string): void {
+    void this.connection.message(() => data);
   }
 
   close(code = 1000): void {
     if (this.readyState === 'CLOSED') return;
     this.readyState = 'CLOSED';
-    for (const reader of this.readers.values()) reader.abort();
-    this.readers.clear();
+    this.connection.close();
     this.onclose?.({ code });
   }
 }
