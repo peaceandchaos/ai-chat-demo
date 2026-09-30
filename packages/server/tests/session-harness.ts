@@ -173,6 +173,9 @@ export class Network {
   private readonly readers = new Set<CuttableReader>();
   readonly requests: string[] = [];
   beforeRequest: ((method: string, path: string) => void) | null = null;
+  // Answers a request before it reaches the server, as a proxy or an older
+  // server version would.
+  respond: ((method: string, path: string) => number | null) | null = null;
 
   // The server handles the next matching request, but its response is lost.
   loseResponse(match: (url: string, method: string) => boolean): void {
@@ -328,6 +331,16 @@ function fetchDriver(server: Server, network: Network): ClientDrivers['fetch'] {
     network.requests.push(`${method} ${path}`);
     network.beforeRequest?.(method, path);
     if (!network.online) throw new TypeError('Network request failed');
+    const answered = network.respond?.(method, path);
+    if (answered) {
+      const refusal: ClientResponse = {
+        ok: false,
+        status: answered,
+        text: () => Promise.resolve('{"error":"Answered before the server."}'),
+        body: null,
+      };
+      return refusal;
+    }
     const { stream: _stream, ...requestInit } = init;
     const response = await handleRequest(
       new Request(url, requestInit),

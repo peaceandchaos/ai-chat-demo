@@ -200,3 +200,21 @@ export function planFailure(
           };
   }
 }
+
+// The server answers 204 for unknown and repeated deletions. 404 and 410 from
+// an older server or a proxy also mean nothing is left to delete.
+export function planDeletionFailure(
+  status: number | null,
+): 'deleted' | 'retry' | 'refused' {
+  if (status === 404 || status === 410) return 'deleted';
+  if (
+    status === null ||
+    status === 401 ||
+    status === 408 ||
+    status === 429 ||
+    status < 400 ||
+    status >= 500
+  )
+    return 'retry';
+  return 'refused';
+}
