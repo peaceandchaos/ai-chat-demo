@@ -144,6 +144,9 @@ export function applyEvent(message: SavedMessage, event: JobEvent): Applied {
 
 export type FailurePlan =
   | { kind: 'retry'; error: string }
+  // Resend the same attempt once before trusting a refusal. The transport
+  // reports a socket error that names no attempt to every open reader.
+  | { kind: 'recheck'; error: string }
   // The server refused an attempt it never accepted.
   | { kind: 'reject'; error: string }
   // The server no longer has an attempt it accepted.
@@ -159,6 +162,7 @@ export function planFailure(
   operation: Operation,
   status: number | null,
   serverMessage: string,
+  refusedBefore: boolean,
 ): FailurePlan {
   if (status === 401)
     return {
@@ -181,7 +185,9 @@ export function planFailure(
     return { kind: 'retry', error: connectionLost };
   switch (operation) {
     case 'submit':
-      return { kind: 'reject', error: serverMessage };
+      return refusedBefore
+        ? { kind: 'reject', error: serverMessage }
+        : { kind: 'recheck', error: connectionLost };
     case 'watch':
       return status === 404
         ? {

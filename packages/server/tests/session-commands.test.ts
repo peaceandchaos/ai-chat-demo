@@ -416,3 +416,30 @@ test('a chat deleted offline stays deleted across a restart and its server work 
   expect(restarted.network.requests).toEqual([`DELETE /v1/chats/${chat.id}`]);
   expect(restarted.session.notice()).toBeNull();
 });
+
+test('a server error for another command does not fail an unsent reply that shares its socket', async () => {
+  const phone = openPhone(server);
+  const chat = phone.archive.createChat();
+  let release = () => {};
+  server.dispatchGate = new Promise<void>(resolve => {
+    release = resolve;
+  });
+  const reply = phone.session.send(chat.id, 'Held before acceptance', []);
+  await until('the submission reached the server', () =>
+    server.dispatched.includes(reply.id),
+  );
+  server.sockets[0].inject('{"kind":"malformed"}');
+  await until(
+    'the unattributed error ended the reader',
+    () => phone.session.activity(reply.id).kind !== 'connected',
+  );
+  release();
+  server.dispatchGate = null;
+  server.providers.script(reply.id).text('Delivered').end();
+  await settled(phone, reply.id);
+  expect(phone.archive.message(reply.id)).toMatchObject({
+    status: 'completed',
+    text: 'Delivered',
+  });
+  expect(server.dispatched).toEqual([reply.id]);
+});
