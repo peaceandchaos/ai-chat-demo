@@ -1,3 +1,5 @@
+const { readFileSync } = require('node:fs');
+const { resolve } = require('node:path');
 const inspect = require('../github/target-health.cjs');
 
 function fixture() {
@@ -36,6 +38,7 @@ function fixture() {
     runLookups: 0,
     onRunLookup: null,
     approvals: [],
+    approvalRunAttempt: 1,
     changedHead: false,
   };
   const api = {
@@ -66,6 +69,7 @@ function fixture() {
           actor: { login: 'peaceandchaos' },
           triggering_actor: { login: 'peaceandchaos' },
           head_branch: 'main',
+          run_attempt: state.approvalRunAttempt,
         },
       }),
     },
@@ -166,7 +170,7 @@ test('owner repair binds PR, head, and base; a changed target invalidates it', a
   expect(f.state.approvals).toHaveLength(1);
 });
 
-test('owner repair requires an exact completed failed target push run', async () => {
+test('owner repair requires an exact completed target push run that failed verification', async () => {
   const faults = [
     f => {
       f.state.run = null;
@@ -200,7 +204,7 @@ test('owner repair requires an exact completed failed target push run', async ()
       base: f.state.base,
     };
     await expect(inspect(f.github, f.context, f.core)).rejects.toThrow(
-      'completed failed push run',
+      'no exact completed push run that failed verification',
     );
     expect(f.state.approvals).toHaveLength(0);
   }
@@ -275,4 +279,77 @@ test('a target rerun during inspection prevents repaired success', async () => {
   };
   await inspect(f.github, f.context, f.core);
   expect(f.state.statuses.at(-1).state).toBe('failure');
+});
+
+function repairDispatch(f) {
+  f.context.eventName = 'workflow_dispatch';
+  f.context.payload.inputs = {
+    operation: 'approve-repair',
+    pr: '1',
+    head: f.state.pr.head.sha,
+    base: f.state.base,
+  };
+}
+
+test('owner repair covers every completed target run that fails verification', async () => {
+  const faults = [
+    f => {
+      f.state.run.conclusion = 'timed_out';
+    },
+    f => {
+      f.state.run.conclusion = 'startup_failure';
+    },
+    f => {
+      f.state.jobs[0].steps[0].name = 'Renamed verification step';
+    },
+  ];
+  for (const fault of faults) {
+    const f = fixture();
+    fault(f);
+    await inspect(f.github, f.context, f.core);
+    expect(f.state.statuses.at(-1).state).toBe('failure');
+    repairDispatch(f);
+    await inspect(f.github, f.context, f.core);
+    expect(f.state.approvals.map(value => value.external_id)).toEqual([
+      `1:${f.state.pr.head.sha}:${f.state.base}:42:1`,
+    ]);
+    expect(f.state.statuses.at(-1).state).toBe('success');
+  }
+});
+
+test('a rerun of an approval dispatch cannot approve or count as approval', async () => {
+  const f = fixture();
+  f.state.run.conclusion = 'failure';
+  repairDispatch(f);
+  f.state.approvalRunAttempt = 2;
+  await expect(inspect(f.github, f.context, f.core)).rejects.toThrow(
+    'fresh owner dispatch',
+  );
+  expect(f.state.approvals).toHaveLength(0);
+
+  f.state.approvalRunAttempt = 1;
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('success');
+
+  f.state.approvalRunAttempt = 2;
+  f.context.eventName = 'workflow_run';
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.at(-1).state).toBe('failure');
+});
+
+test('the controller reads job and step names that the CI workflow defines', () => {
+  const { workflow, verifyJob, gateJob, verifySteps } = inspect.ciContract;
+  const ci = readFileSync(
+    resolve(__dirname, '../../.github/workflows', workflow),
+    'utf8',
+  );
+  const template = 'verify (${{ matrix.revision }})';
+  expect(ci).toContain(`name: ${template}`);
+  expect(ci).toContain(`'["commit"]'`);
+  expect(verifyJob).toBe(template.replace('${{ matrix.revision }}', 'commit'));
+  expect(ci).toMatch(
+    new RegExp(`^  ${gateJob}:\\n    name: ${gateJob}$`, 'mu'),
+  );
+  for (const step of verifySteps)
+    expect(ci).toMatch(new RegExp(`^      - name: ${step}$`, 'mu'));
 });
