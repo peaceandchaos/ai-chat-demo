@@ -4,6 +4,7 @@ import type {
   ContextCheckpoint,
   ModelKey,
   Picker,
+  ServerMessage,
   Submission,
 } from '../../../shared/contracts';
 import { ChatArchive, type ArchiveStorage } from '../../app/src/state/archive';
@@ -191,6 +192,11 @@ export class Network {
   cutStreams(): void {
     for (const reader of this.readers) reader.cut();
   }
+  // The server ends each open reply stream cleanly, as it does when its
+  // delivery window closes before the reply finishes.
+  endStreams(): void {
+    for (const reader of this.readers) reader.end();
+  }
   get openStreams(): number {
     return this.readers.size;
   }
@@ -200,6 +206,10 @@ class CuttableReader implements ClientReader {
   private cutError: ((error: Error) => void) | null = null;
   private readonly cutSignal = new Promise<never>((_resolve, reject) => {
     this.cutError = reject;
+  });
+  private endStream: (() => void) | null = null;
+  private readonly endSignal = new Promise<{ done: true }>(resolve => {
+    this.endStream = () => resolve({ done: true });
   });
   constructor(
     private readonly inner: ReadableStreamDefaultReader<Uint8Array>,
@@ -212,8 +222,15 @@ class CuttableReader implements ClientReader {
   cut() {
     this.cutError?.(new TypeError('Network connection lost'));
   }
+  end() {
+    this.endStream?.();
+  }
   async read(): Promise<{ done: boolean; value?: Uint8Array }> {
-    const chunk = await Promise.race([this.inner.read(), this.cutSignal]);
+    const chunk = await Promise.race([
+      this.inner.read(),
+      this.cutSignal,
+      this.endSignal,
+    ]);
     if (chunk.done || !this.duplicate) return chunk;
     // At-least-once delivery: every record arrives twice.
     const value = new Uint8Array(chunk.value.length * 2);
@@ -392,6 +409,12 @@ export class InProcessSocket implements ClientSocket {
   // A frame from some other command on this connection.
   inject(data: string): void {
     void this.connection.message(() => data);
+  }
+
+  // A frame from the server, such as the route's end-of-window detach.
+  deliver(message: ServerMessage): void {
+    const data = JSON.stringify(message);
+    setTimeout(() => this.onmessage?.({ data }), 0);
   }
 
   close(code = 1000): void {
