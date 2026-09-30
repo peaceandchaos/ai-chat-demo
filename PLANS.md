@@ -1,6 +1,6 @@
 # Current implementation plan
 
-Updated 29 September 2026. Starting commit: `6fd91118260a377d4010c574534d18b8dd22adb7`.
+Updated 30 September 2026. Starting commit: `6fd91118260a377d4010c574534d18b8dd22adb7`.
 
 ## Current milestone: quality foundation
 
@@ -20,9 +20,11 @@ The user approved repository instructions, repository/global `test-prune`, check
 
 - `submission/**` refs hold unaccepted candidates. Every other acceptance/integration target requires the configured PR controls.
 - All test files, check scripts, workflows, configurations, suppressions, and instructions require owner review.
-- Post-merge failure holds unrelated merges and releases. Revert needs approval. A specifically approved repair waives only target health, never its own checks.
+- Post-merge failure holds unrelated merges and releases. Revert needs approval. A specifically approved repair waives only target health, never its own checks. Approval requires a completed push run that failed verification (not cancelled) and binds its run ID and attempt. A fresh successful approval dispatch must name the same PR, candidate, and target. Rerunning the target invalidates approval.
 - The target-health controller reads metadata from trusted default-branch code. It never checks out PR code. GitHub event delay is an accepted limit.
 - Preserve the original nine commits. Review tooling/workspace, server, and saved-chat/client foundations as three groups before one baseline PR.
+- Only PR runs publish `quality-gate`; push runs publish `post-push-gate`, which the target-health controller reads.
+- Use the GitHub App from the current Mac account, as the user selected. Agent writes use its repository-scoped installation token. Owner credentials remain accessible on this account, so this setup does not establish credential isolation.
 - Global skill guidance stays generic. `.agents/skills/test-prune/SKILL.md` is the maintained source; explicitly copy reviewed changes to the global install and compare hashes.
 
 ### Progress and evidence
@@ -32,7 +34,8 @@ The user approved repository instructions, repository/global `test-prune`, check
 - Approved parser/image-tool, Workflow, Metro, and Joi repairs are installed. The fresh audit reports zero high/critical and 15 moderate package entries with dated dispositions. The scanner reports no shared-code findings and six medium dependency entries, covered by the separate advisory policy.
 - Both Metro asset paths and the release iOS JavaScript bundle pass. The already-locked Babel export-namespace transform is now directly declared and enabled. The bundle joins the full committed suite; it is not native compilation.
 - Source-integrity diagnostics corrected the generated SWC cache allowance and lint-fixture cleanup. Unexpected source changes remain blocked. Run the full suite on the final commit before publication.
-- GitHub App provisioning, owner credential isolation, remote enforcement tests, and owner review remain pending. No push, PR, merge, deployment, or paid provider call has occurred.
+- The 30 September control review found that the bot's Workflows write permission lets it publish required results from an unreviewed `submission/**` workflow, and that the bot can update `main` until a ruleset exists. Both need owner decisions: a bootstrap ruleset before the baseline merges, and removal of Workflows write after the baseline push. The same review fixed repair deadlocks, rerun re-approval, borrowed approval runs, and duplicate `quality-gate` names. The compiler report is non-gating.
+- GitHub App installation and local authentication are verified. The replacement key is in macOS Keychain; the old key was revoked and the downloaded PEM removed. Remote enforcement tests and owner review remain pending. No push, PR, merge, deployment, or paid provider call has occurred.
 - Xcode license acceptance and native build verification remain with the owner. Native networking is the next separate task.
   Update this section with meaningful results, decisions, and unresolved failures as work proceeds. Keep task history concise.
 
