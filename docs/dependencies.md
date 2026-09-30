@@ -18,7 +18,7 @@ The approved Metro image-size 2.0.3 override uses a small patch that reads bytes
 
 The release bundle then exposed a missing transform for Zod's export-namespace syntax. The app now enables and directly declares the already-locked `@babel/plugin-transform-export-namespace-from` 7.29.7; its installed version did not change. The iOS release JavaScript bundle passed after this configuration repair. `build:ios-js` now joins the committed checks because these two real failures were not caught by type checks or Jest. It is JavaScript bundling, not native compilation. [Babel transform documentation](https://babeljs.io/docs/babel-plugin-transform-export-namespace-from).
 
-The fresh audit adds [GHSA-6h2x-m376-mqjq](https://github.com/advisories/GHSA-6h2x-m376-mqjq), a high-severity Joi ISO-date validation issue absent from the first snapshot. The fixed 17.13.7 fits both CLI parents' `^17.2.1` ranges. The user approved that additional update; verification follows separately. This intermediate lockfile is not an accepted quality baseline.
+The fresh audit added [GHSA-6h2x-m376-mqjq](https://github.com/advisories/GHSA-6h2x-m376-mqjq), a high-severity Joi ISO-date validation issue absent from the first snapshot. The approved 17.13.7 patch fits both CLI parents' `^17.2.1` ranges. A fresh install and actual CLI configuration loading passed, including iOS project and native dependency discovery. The final lockfile audit reports zero high/critical and 15 moderate package entries. Existing dated dispositions satisfy the lower-severity policy. Hosted and native acceptance remain pending.
 
 ## Coverage and limits
 

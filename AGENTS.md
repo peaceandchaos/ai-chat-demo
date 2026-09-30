@@ -25,6 +25,7 @@ npm test
 npm run security
 npm run audit:check
 npm run build:server
+npm run build:ios-js
 npm run verify:commit -- HEAD
 ```
 
