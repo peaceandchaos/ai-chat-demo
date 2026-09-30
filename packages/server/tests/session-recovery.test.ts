@@ -16,6 +16,7 @@ let server: Server;
 beforeEach(async () => {
   server = await startServer();
 });
+afterEach(() => shutdown(server));
 
 test('a turn is saved before any request and acknowledged only after its final result is saved', async () => {
   const phone = openPhone(server);
@@ -51,7 +52,6 @@ test('a turn is saved before any request and acknowledged only after its final r
     text: '',
   });
   expect(server.dispatched).toEqual([reply.id]);
-  await shutdown(server, phone);
 });
 
 test('partial text reaches storage on a bounded checkpoint, not on every token', async () => {
@@ -75,7 +75,6 @@ test('partial text reaches storage on a bounded checkpoint, not on every token',
   expect(replyWrites).toBeLessThan(tokens.length / 4);
   expect(reopen(phone.storage).message(reply.id).status).toBe('generating');
   server.providers.script(reply.id).end();
-  await shutdown(server, phone);
 });
 
 test('a restart recovers an accepted reply that finished while the app was closed, without a new version or generation', async () => {
@@ -110,7 +109,6 @@ test('a restart recovers an accepted reply that finished while the app was close
   ]);
   expect(server.dispatched).toEqual([reply.id]);
   expect(server.providers.generations).toHaveLength(1);
-  await shutdown(server, phone, restarted);
 });
 
 test('a turn saved while offline is submitted after a restart under the same attempt id', async () => {
@@ -138,7 +136,6 @@ test('a turn saved while offline is submitted after a restart under the same att
     text: 'Answered',
   });
   expect(server.dispatched).toEqual([reply.id]);
-  await shutdown(server, phone, restarted);
 });
 
 test('a lost acceptance is recovered by resending the same attempt, with one generation', async () => {
@@ -163,7 +160,6 @@ test('a lost acceptance is recovered by resending the same attempt, with one gen
   expect(server.dispatched).toEqual([reply.id]);
   expect(server.providers.generations).toHaveLength(1);
   expect(phone.archive.children(chat.id, reply.parentId)).toEqual([reply.id]);
-  await shutdown(server, phone);
 });
 
 test('an acknowledgement that is lost or never sent is resent, including after a restart', async () => {
@@ -213,7 +209,6 @@ test('an acknowledgement that is lost or never sent is resent, including after a
     delivered: true,
     text: '',
   });
-  await shutdown(server, phone, restarted);
 });
 
 test('a saved reply is never replaced by a server receipt that was already released', async () => {
@@ -237,7 +232,6 @@ test('a saved reply is never replaced by a server receipt that was already relea
     error:
       'The server released this reply before the phone saved it. Your saved text was preserved.',
   });
-  await shutdown(server, phone, restored);
 });
 
 test('a cut stream is repaired from the server snapshot without duplicating text', async () => {
@@ -258,7 +252,6 @@ test('a cut stream is repaired from the server snapshot without duplicating text
   });
   expect(phone.network.requests).toContain(`GET /v1/jobs/${reply.id}`);
   expect(server.dispatched).toEqual([reply.id]);
-  await shutdown(server, phone);
 });
 
 test('duplicate delivery is ignored without reconnecting or repeating text', async () => {
@@ -284,7 +277,6 @@ test('duplicate delivery is ignored without reconnecting or repeating text', asy
     'POST /v1/chat',
     `POST /v1/jobs/${reply.id}/ack`,
   ]);
-  await shutdown(server, phone);
 });
 
 test('backgrounding flushes and detaches without cancelling; returning recovers the finished reply', async () => {
@@ -320,7 +312,6 @@ test('backgrounding flushes and detaches without cancelling; returning recovers 
     text: 'Partial done',
   });
   expect(server.providers.generations).toHaveLength(1);
-  await shutdown(server, phone);
 });
 
 test('a storage failure halts that reply without acknowledging it, and it recovers after resume', async () => {
@@ -332,6 +323,12 @@ test('a storage failure halts that reply without acknowledging it, and it recove
     'the text is visible',
     () => phone.session.message(reply.id).text === 'Saved',
   );
+  const reported: string[] = [];
+  phone.session.subscribe(() => {
+    const activity = phone.session.activity(reply.id);
+    if (activity.kind === 'waiting' || activity.kind === 'halted')
+      reported.push(activity.error);
+  });
   phone.storage.failing = true;
   server.providers.script(reply.id).end();
   await until(
@@ -342,6 +339,9 @@ test('a storage failure halts that reply without acknowledging it, and it recove
     kind: 'halted',
     error: 'Saved chats could not be updated. Stored data was preserved.',
   });
+  expect(new Set(reported)).toEqual(
+    new Set(['Saved chats could not be updated. Stored data was preserved.']),
+  );
   expect(phone.network.requests).not.toContain(`POST /v1/jobs/${reply.id}/ack`);
   expect(await serverSnapshot(server, reply.id)).toMatchObject({
     status: 'completed',
@@ -355,7 +355,6 @@ test('a storage failure halts that reply without acknowledging it, and it recove
     status: 'completed',
     text: 'Saved',
   });
-  await shutdown(server, phone);
 });
 
 test('a corrupt saved reply is reported and preserved while other chats continue', async () => {
@@ -378,5 +377,4 @@ test('a corrupt saved reply is reported and preserved while other chats continue
   });
   expect(disk.values.get(`archive/message/${broken.id}`)).toBe(corrupt);
   expect(server.dispatched).toEqual([healthy.id]);
-  await shutdown(server, phone, restarted);
 });

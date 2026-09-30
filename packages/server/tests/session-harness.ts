@@ -245,6 +245,7 @@ export type Server = {
   providers: FakeProviders;
   dispatched: string[];
   duplicateDelivery: boolean;
+  phones: Phone[];
   settle: () => Promise<void>;
 };
 
@@ -289,6 +290,7 @@ export async function startServer(): Promise<Server> {
     providers,
     dispatched,
     duplicateDelivery: false,
+    phones: [],
     async settle() {
       await Promise.allSettled([...workers]);
     },
@@ -494,8 +496,10 @@ export function openPhone(
     retryBaseMs: 10,
     retryMaxMs: 60,
   });
+  const phone = { storage, archive, transport, session, network };
+  server.phones.push(phone);
   session.setLifecycle('active');
-  return { storage, archive, transport, session, network };
+  return phone;
 }
 
 export async function until(
@@ -515,8 +519,8 @@ export async function serverSnapshot(server: Server, attemptId: string) {
   return (await server.jobs.get(server.owner, attemptId)).snapshot;
 }
 
-export async function shutdown(server: Server, ...phones: Phone[]) {
-  for (const phone of phones) phone.session.setLifecycle('background');
+export async function shutdown(server: Server) {
+  for (const phone of server.phones) phone.session.setLifecycle('background');
   for (const id of server.dispatched)
     await server.jobs.requestCancellation(server.owner, id);
   await server.settle();
