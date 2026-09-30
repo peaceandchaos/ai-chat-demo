@@ -1,97 +1,66 @@
-<img src="img/demo.png" alt="MargeloChat running on iPhone 16" width="280" align="right">
+# Personal iOS chat: foundation checkpoint
 
-### MargeloChat
+This repository extends the [Margelo chat demo](https://blog.margelo.com/building-native-llm-chat-app-with-rag). The visible app still uses the inherited demo screens and direct-provider connection. The new server, saved-chat archive, and connection client are separate foundations. They are not connected to those screens yet.
 
-A ChatGPT-style mobile chat app with a twist: it knows about **Margelo**. You talk to a streaming AI assistant that renders replies as live markdown, shows its reasoning, and answers any question about Margelo (the company, its people, and its open-source libraries) by searching a real knowledge base instead of guessing.
+The user owns the UI. Current engineering scope is iOS and shared app/server code. Android sources remain inherited material outside this milestone.
 
-Ask it anything. For general questions it just replies; for Margelo questions it calls a retrieval tool, pulls matching facts from a vector database, and answers only from what it found.
+Read [AGENTS.md](AGENTS.md) for task boundaries and [PLANS.md](PLANS.md) for the current milestone. [Provider contracts](docs/providers.md) describe the approved provider behavior. [Dependency review](docs/dependencies.md) records all findings from the dated scan.
 
-> [!NOTE]
-> Read the full blog post about building a ChatGPT-Style AI Chat App in React Native here: https://blog.margelo.com/building-native-llm-chat-app-with-rag
+## Setup and commands
 
-### How it works
-
-- **Brain** - OpenAI's Responses API, streamed over a **WebSocket** ([`react-native-nitro-websockets`](https://github.com/mrousavy/nitro)) rather than HTTP. The socket is prewarmed natively at app start, before the JS bundle loads, so it's already open by the first message. Reply text and reasoning summaries stream token-by-token; turns are chained with `previous_response_id` so the model remembers the conversation.
-- **Knowledge base (RAG)** - the model can call a `search_margelo_kb` tool, which queries a [Pinecone](https://www.pinecone.io/) index (integrated embedding, so raw text goes up and Pinecone embeds it server-side) over [`react-native-nitro-fetch`](https://github.com/margelo/react-native-nitro-fetch). Margelo questions are answered from the retrieved context, never from the model's memory.
-- **Rendering** - replies render as native markdown with a streaming animation and tappable links ([`react-native-enriched-markdown`](https://github.com/software-mansion-labs/react-native-enriched-markdown)). The collapsible "thought process" opens in a bottom sheet ([`react-native-true-sheet`](https://github.com/lodev09/react-native-true-sheet)).
-- **List** - a keyboard-aware [`@legendapp/list`](https://github.com/LegendApp/legend-list) with anchored end-space, for ChatGPT-style scroll and anchor behavior while a reply streams in.
-- **Look** - real Liquid Glass surfaces on iOS 26+ ([`@callstack/liquid-glass`](https://github.com/callstack/liquid-glass)) with plain fallbacks everywhere else, a Skia shimmer "Thinking" label ([`@shopify/react-native-skia`](https://github.com/Shopify/react-native-skia)), and SF Symbols that fall back to Material Design Icons on Android.
-- **Attachments** - pick images ([`react-native-image-picker`](https://github.com/react-native-image-picker/react-native-image-picker)), sent to the model as base64 data URLs and shown as thumbnails ([`react-native-nitro-image`](https://github.com/mrousavy/react-native-nitro-image)).
-
-### Requirements
-
-Runs on **iOS and Android** (New Architecture). Liquid Glass needs **iOS 26+**; on older iOS and on Android those surfaces fall back to a plain rounded style.
-
-- Xcode + CocoaPods, Node `22.23.3` (see `.node-version`), and the [React Native environment](https://reactnative.dev/docs/set-up-your-environment).
-- An **OpenAI API key** and a populated **Pinecone index** for the knowledge-base tool.
-
-> **Note:** this is a demo. The API keys live in the app bundle, which is fine locally but unsafe for production - anyone can extract them. For anything real, put a relay server in front and keep the keys server-side.
-
-### Setup
+Use Node `22.23.3` from `.node-version`. Install from the repository root:
 
 ```sh
 npm ci
 cp packages/app/src/config.example.ts packages/app/src/config.ts
-cd packages/app/ios && pod install
 ```
 
-The inherited demo still reads `packages/app/src/config.ts`; the next slice replaces
-its direct provider access. Keep the example values for local static checks.
-
-### Run
+Keep the example values for static checks. Do not put provider credentials in the app. Native builds require Xcode, CocoaPods, and `pod install` in `packages/app/ios`. Xcode license acceptance and native build verification remain pending; the current local checks do not establish device behavior.
 
 ```sh
-npm start          # Metro
-npm run ios        # build + launch on the iOS simulator/device
-npm run android    # build + launch on the Android emulator/device
+npm start                    # Metro
+npm run ios                  # native build and launch
+npm run lint                 # selected Oxlint rules; warnings fail
+npm run format               # format without import/package-field sorting
+npm run format:check
+npm run typecheck
+npm test                     # ordinary local test feedback
+npm run test:verified        # also reject empty/skipped/unfinished suites
+npm run secrets
+npm run security             # iOS/shared scan; findings currently block
+npm run audit:check          # all high/critical findings block
+npm run build:server
+npm run react-compiler-check # report; not proof of native compilation
+npm run verify:commit -- HEAD
 ```
 
-Run these scripts from the repository root (also run in CI):
+## Verification and review
 
-```sh
-npm run lint                 # oxlint, including type-aware rules; warnings fail
-npm run typecheck            # tsc --noEmit
-npm run format               # oxfmt; preserves import and package-field order
-npm run format:check         # oxfmt --check
-npm run secrets              # inspect tracked files without printing secret values
-npm run security             # rnsec; findings need review
-npm run react-compiler-check # react-compiler healthcheck
-npm test                     # jest
-```
+The pre-commit hook checks lint, formatting, and credentials in a snapshot of the Git index. It performs a fresh locked install there. It cannot use unstaged fixes or your local `node_modules`. The pre-push hook runs the full implemented suite for each commit being published.
 
-Husky runs lint, formatting, and a staged-credential check before each commit.
-Use the pinned Node version; the vendored TypeScript lint plugin requires native
-type stripping. The 13 selected anti-slop rules are registered as errors. Their
-source commit and license are in `tools/vendor/anti-slop/UPSTREAM.md`.
+`verify:commit` runs the selected commit's own checking code in a fresh checkout. It records the commit, tree, commands, results, and source integrity in ignored `.quality-results/`. Only committed example configuration enters that checkout. Checks cannot silently change source while running. Logs and results remain available after the temporary checkout is removed.
 
-The exact legacy-file override in the root `.oxlintrc.json` preserves the existing demo
-during the first tooling slice. It does not exempt future files in those folders.
-Remove a file from that override when its feature logic is replaced. A raw-input
-decoder can suppress `anti-slop/no-unknown-parameters` on its parameter declaration
-with a named rule and a reason after `--`. The lint fixtures verify this exception
-and rejection of undocumented suppressions. The Effect plugin stays unregistered.
+Local hooks are feedback controls and remain bypassable by the machine owner. Acceptance also requires protected GitHub checks and owner review. CI checks both the PR head and proposed merge result, then checks the exact resulting commit after a push. Every implemented check must finish successfully. Dependency and scanner failures remain failures.
 
-CI runs each check separately. The existing app-shell test mocks native navigation;
-it does not establish device rendering, keyboard behavior, or streaming fidelity.
-The React Compiler healthcheck is a report, not proof that every component compiled.
+The GitHub target-health workflow reads trusted code and API metadata. It checks the current target's latest post-push result. Missing, pending, failed, cancelled, or incomplete verification holds unrelated merges. An owner-authorized repair exception binds one PR, head SHA, and target SHA; candidate checks and reviews still apply. Event delivery is asynchronous. Remote rules, bot credentials, and this behavior require hosted verification before we can claim enforcement. See [GitHub setup](docs/github-controls.md).
 
-The first rnsec baseline has six findings in the inherited demo: unvalidated links
-and JSON, raw connection-error logging, an exported Android launcher, and no Android
-network security configuration. The security CI job remains a blocking check.
-Review or fix these findings during the implementation slices; do not suppress the
-whole baseline. Native builds still need verification after Xcode license acceptance.
+The user approved a GitHub App bot with limited permissions. The owner approves PRs through their normal account. Keeping the owner's credentials outside the agent environment is part of that boundary; changing the Git author name does not create it.
 
-All four native patches apply during a clean `npm ci`. The Nitro Symbols patch now
-records the upstream file's missing final newline correctly, preserving its Swift
-extension and closing brace. Package installation fails if any patch fails.
+The 13 selected anti-slop rules remain errors. Their source and license are in `tools/vendor/anti-slop/UPSTREAM.md`. Exact legacy-file overrides preserve inherited demo files until their feature logic is replaced. A raw-input decoder may suppress `anti-slop/no-unknown-parameters` on the parameter declaration with a named rule and reason after `--`. Existing fixtures verify that exception and reject undocumented suppressions. The Effect plugin remains unregistered.
 
-### Project structure
+Every high/critical dependency advisory blocks acceptance, regardless of exposure. Moderate/low findings have dated dispositions in `tools/verification/dependency-dispositions.json`; new or expired findings need review. No update or override is automatic.
 
-The npm workspace has two packages: `packages/app` and `packages/server`.
-Install dependencies and run quality checks at the root. The native projects stay
-inside the app package. Metro watches the workspace; Android and iOS resolve the
-root `node_modules`. The CocoaPods lockfile preserves versions with updated paths.
-Run `pod install` before the first native build after moving the checkout.
+The scanner excludes Android-specific files and scans the remaining app. Four shared-source findings remain unresolved. It does not inspect arbitrary Swift/Objective-C networking code. All four native patches must apply during `npm ci`; patch failure stops installation.
+
+## Test review
+
+The reusable `test-prune` skill lives in `.agents/skills/test-prune/SKILL.md`. This is the maintained source. Copy reviewed changes explicitly to the global Codex skill and compare hashes; do not link the two directories or update them during package installation.
+
+The test review selected an empty shell smoke check for removal and two event-order/replay assertions for strengthening in a separate commit. SQL, local-socket, archive, protocol, and parser checks retain their distinct behavioral protection. Full app E2E and native transport verification remain later milestones.
+
+## Workspace
+
+`packages/app` contains the native app, archive, and client protocol. `packages/server` contains provider adapters, durable job logic, and authenticated routes. `shared` contains validated wire contracts. Install dependencies and run checks at the root. Native projects remain inside the app package; Metro and CocoaPods resolve workspace dependencies.
 
 ### Connection foundation checkpoint
 
@@ -119,40 +88,6 @@ Focused client tests use injected drivers. They verify protocol routing, paralle
 reply isolation, multipart handoff, interrupted delivery, explicit cancellation,
 large snapshots, and invalid data. They do not prove native networking or end-to-end
 app recovery. Hosted CI requires a push; local checks are reported separately.
-
-```
-packages/app/
-  src/
-    config.ts                 # API keys (gitignored; copy from config.example.ts)
-    theme.ts                  # dark theme + shared markdown design tokens
-    markdownStyle.ts          # maps the theme onto the markdown renderer
-    notImplemented.ts         # "demo only" alert for stubbed controls
-    state/
-      chatStore.ts            # zustand store: chat state, streaming, tool-call loop
-    openai/
-      protocol.ts             # builds Responses API requests, parses server events
-      connectionManager.ts    # module-level WebSocket lifecycle + reconnect with backoff
-    rag/
-      searchKnowledgeBase.ts  # Pinecone knowledge-base search (the model's tool)
-    hooks/
-      useAttachments.ts       # image picking
-    screens/
-      RootDrawer.tsx          # pager: recents <-> chat
-      ChatScreen.tsx          # the conversation, list, and composer wiring
-      RecentsScreen.tsx       # chat history (mocked for the UI pass)
-    components/
-      ChatMessages.tsx        # subscription boundary: only re-renders on message changes
-      Composer.tsx            # the input pill (grow/shrink, attachment thumbnails)
-      AttachmentMenu.tsx      # the "+" dropdown for picking attachments
-      MessageBubble.tsx       # user bubble / assistant markdown + reasoning trace
-      ReasoningSheet.tsx      # bottom sheet showing the thinking trace
-      ShimmerText.tsx         # Skia shimmer "Thinking" label
-      Header.tsx              # top bar
-      Glass.tsx               # Liquid Glass wrapper with a plain fallback
-      Icon.tsx                # SF Symbol with a Material Design Icon fallback
-      EmptyState.tsx          # centered logo before the first message
-      ScrollToBottomButton.tsx
-```
 
 ### Open-source libraries
 

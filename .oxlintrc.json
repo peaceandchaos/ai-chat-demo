@@ -36,6 +36,7 @@
     "node": true
   },
   "ignorePatterns": [
+    ".quality-results/**",
     "**/node_modules/**",
     "packages/app/android/**",
     "packages/app/ios/**",

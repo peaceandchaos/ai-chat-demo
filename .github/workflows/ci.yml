@@ -5,42 +5,55 @@ permissions:
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  quality:
-    name: ${{ matrix.check }}
-    runs-on: ubuntu-latest
+  verify:
+    name: verify (${{ matrix.revision }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
-        check:
-          [lint, format, typecheck, test, credentials, security, react-compiler]
+        revision: ${{ fromJSON(github.event_name == 'pull_request' && '["head","merge"]' || '["commit"]') }}
     env:
-      HUSKY: 0
+      HUSKY: '0'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ matrix.revision == 'head' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .node-version
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - run: npm ci
-      # The demo still imports this ignored file until the server slice replaces it.
-      # Example values permit static checks and do not authorize live API access.
-      - run: cp packages/app/src/config.example.ts packages/app/src/config.ts
-      - if: matrix.check == 'lint'
-        run: npm run lint
-      - if: matrix.check == 'format'
-        run: npm run format:check
-      - if: matrix.check == 'typecheck'
-        run: npm run typecheck
-      - if: matrix.check == 'test'
-        run: npm test
-      - if: matrix.check == 'credentials'
-        run: npm run secrets
-      - if: matrix.check == 'security'
-        run: npm run security
-      - if: matrix.check == 'react-compiler'
-        run: npm run react-compiler-check
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Verify committed source
+        run: npm run verify:current
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: verification-${{ matrix.revision }}-${{ github.run_attempt }}
+          path: .quality-results/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  quality-gate:
+    name: quality-gate
+    if: always()
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every verification job
+        env:
+          RESULT: ${{ needs.verify.result }}
+        run: test "$RESULT" = success

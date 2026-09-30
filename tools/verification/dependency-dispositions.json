@@ -1,0 +1,130 @@
+{
+  "https://github.com/advisories/GHSA-6gmq-8vp8-gcm6": {
+    "package": "@xmldom/xmldom",
+    "range": ">=0.7.0 <=0.8.14",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "Build-time plist parsing needs a compatible patch. Serializer API use was not found. No untrusted XML chat route was found; see docs/dependencies.md."
+  },
+  "https://github.com/advisories/GHSA-6h8r-xr42-gp59": {
+    "package": "@xmldom/xmldom",
+    "range": ">=0.7.0 <=0.8.14",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "Build-time plist parsing needs a compatible patch. Serializer API use was not found. No untrusted XML chat route was found; see docs/dependencies.md."
+  },
+  "https://github.com/advisories/GHSA-w5vr-8v7q-w6rv": {
+    "package": "baseline-browser-mapping",
+    "range": ">=2.0.0 <2.11.0",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "Invalid browser-target API parameters were not found in Babel callers. Track the compatible build-tool update."
+  },
+  "https://github.com/advisories/GHSA-v422-hmwv-36x6": {
+    "package": "body-parser",
+    "range": "<1.20.6",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "CLI callers use the default JSON body limit. The invalid-limit precondition was not found."
+  },
+  "https://github.com/advisories/GHSA-gh4j-gqv2-49f6": {
+    "package": "fast-xml-parser",
+    "range": "<5.7.0",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "CLI uses XMLParser. The affected XMLBuilder API was not found. Review the coordinated CLI upgrade before changing the parser major version."
+  },
+  "https://github.com/advisories/GHSA-6w3j-5fw6-r9vr": {
+    "package": "joi",
+    "range": ">=17.2.0 <17.13.6",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "CLI uses static configuration schemas. The affected custom-message language key and template rename paths were not found."
+  },
+  "https://github.com/advisories/GHSA-gg4h-3hg2-grpc": {
+    "package": "joi",
+    "range": ">=16.0.0 <17.13.5",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "CLI uses static configuration schemas. The affected custom-message language key and template rename paths were not found."
+  },
+  "https://github.com/advisories/GHSA-h67p-54hq-rp68": {
+    "package": "js-yaml",
+    "range": "<3.15.0",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "Build configuration parsing is exposed to repository inputs. Plan a compatible patch; untrusted builds must have no credentials."
+  },
+  "https://github.com/advisories/GHSA-x5fp-wj9c-mxmx": {
+    "package": "qs",
+    "range": ">=6.14.2 <=6.15.3",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "Inspected JSON and Express callers did not enable the affected comma option or stringify hostile objects. Track the parent constraint."
+  },
+  "https://github.com/advisories/GHSA-4mjr-xmp4-gh2g": {
+    "package": "qs",
+    "range": ">=2.2.5 <6.16.0",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "Inspected JSON and Express callers did not enable the affected comma option or stringify hostile objects. Track the parent constraint."
+  },
+  "https://github.com/advisories/GHSA-8xcm-r25x-g524": {
+    "package": "undici",
+    "range": ">=7.0.0 <7.29.0",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "Workflow uses RetryAgent; the complete response-framing attack path is unproven. Other listed cache, cookie, blob-like body and WebSocket APIs were not found. High findings in this family still block."
+  },
+  "https://github.com/advisories/GHSA-m8rv-5g2x-5cg5": {
+    "package": "undici",
+    "range": ">=7.0.0 <7.29.0",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "Workflow uses RetryAgent; the complete response-framing attack path is unproven. Other listed cache, cookie, blob-like body and WebSocket APIs were not found. High findings in this family still block."
+  },
+  "https://github.com/advisories/GHSA-jr45-8vmc-qm54": {
+    "package": "undici",
+    "range": ">=7.0.0 <7.29.0",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "Workflow uses RetryAgent; the complete response-framing attack path is unproven. Other listed cache, cookie, blob-like body and WebSocket APIs were not found. High findings in this family still block."
+  },
+  "https://github.com/advisories/GHSA-v3r7-h72x-cjcm": {
+    "package": "undici",
+    "range": ">=7.0.0 <7.29.0",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "Workflow uses RetryAgent; the complete response-framing attack path is unproven. Other listed cache, cookie, blob-like body and WebSocket APIs were not found. High findings in this family still block."
+  },
+  "https://github.com/advisories/GHSA-3wwx-pv8p-q78v": {
+    "package": "undici",
+    "range": ">=7.28.0 <7.29.1",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "Workflow uses RetryAgent; the complete response-framing attack path is unproven. Other listed cache, cookie, blob-like body and WebSocket APIs were not found. High findings in this family still block."
+  },
+  "https://github.com/advisories/GHSA-w5hq-g745-h8pq": {
+    "package": "uuid",
+    "range": "<11.1.1",
+    "reviewedAt": "2026-09-29",
+    "reviewBy": "2026-10-29",
+    "decision": "track",
+    "reason": "xcode calls v4 without a buffer. The affected v3/v5/v6 buffer path was not found. Reassess if the caller changes."
+  }
+}
