@@ -19,6 +19,7 @@
     "test:verified": "node tools/test-verified.cjs",
     "audit:check": "node tools/audit-check.cjs",
     "build:server": "npm run build --workspace packages/server",
+    "build:ios-js": "node tools/build-ios-js.cjs",
     "verify:staged": "node tools/verify.cjs staged",
     "verify:commit": "node tools/verify.cjs commit",
     "verify:current": "node tools/verify.cjs current",
@@ -48,6 +49,9 @@
     "node": "22.23.3"
   },
   "overrides": {
+    "metro": {
+      "image-size": "2.0.3"
+    },
     "@workflow/core": {
       "nanoid": "5.1.16"
     },
