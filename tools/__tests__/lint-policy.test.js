@@ -1,9 +1,17 @@
 const { spawnSync } = require('node:child_process');
-const { mkdirSync, writeFileSync, rmSync } = require('node:fs');
+const {
+  existsSync,
+  mkdirSync,
+  writeFileSync,
+  rmSync,
+  rmdirSync,
+} = require('node:fs');
 const { join, resolve } = require('node:path');
 
 const app = resolve(__dirname, '../..');
 const directory = join(app, 'tools/fixtures/lint-policy');
+const fixtures = join(app, 'tools/fixtures');
+const fixturesExisted = existsSync(fixtures);
 const executable = join(app, 'node_modules/oxlint/bin/oxlint');
 const configFile = join(app, '.lint-policy-test.json');
 
@@ -29,6 +37,8 @@ beforeAll(() => {
 afterAll(() => {
   rmSync(directory, { recursive: true, force: true });
   rmSync(configFile, { force: true });
+  // Remove only an empty parent created by this test; preserve existing fixtures.
+  if (!fixturesExisted) rmdirSync(fixtures);
 });
 
 function lint(source) {
