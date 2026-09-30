@@ -98,6 +98,9 @@ function createFixture(check, message) {
   return fixture;
 }
 
+const needsLocalFix = code =>
+  `process.exit(require('node:fs').existsSync('node_modules/local-fix') ? 0 : ${code});\n`;
+
 function verifyFixture(fixture, args) {
   return spawnSync(
     process.execPath,
@@ -111,19 +114,22 @@ function verifyFixture(fixture, args) {
 }
 
 test('committed and staged checks reject a broken tree despite an unstaged fix and local dependencies', () => {
-  const fixture = createFixture('process.exit(1);\n', 'Broken fixture');
+  const fixture = createFixture(needsLocalFix(1), 'Broken fixture');
   try {
     const commit = git(fixture, ['rev-parse', 'HEAD']);
+    mkdirSync(join(fixture, 'node_modules'));
+    writeFileSync(
+      join(fixture, 'node_modules/local-fix'),
+      'Must not enter the snapshot.',
+    );
+    expect(
+      spawnSync(process.execPath, ['check.cjs'], { cwd: fixture }).status,
+    ).toBe(0);
     writeFileSync(join(fixture, 'check.cjs'), 'process.exit(0);\n');
     // An unstaged change to the gate itself must not judge this commit.
     writeFileSync(
       join(fixture, 'tools/verification/checks.cjs'),
       'module.exports = {};\n',
-    );
-    mkdirSync(join(fixture, 'node_modules'));
-    writeFileSync(
-      join(fixture, 'node_modules/local-fix'),
-      'Must not enter the snapshot.',
     );
     const result = verifyFixture(fixture, ['commit', commit]);
     expect(result.status).toBe(1);
@@ -171,7 +177,7 @@ test('committed and staged checks reject a broken tree despite an unstaged fix a
       'process.exit(0);\n',
     );
 
-    writeFileSync(join(fixture, 'check.cjs'), 'process.exit(2);\n');
+    writeFileSync(join(fixture, 'check.cjs'), needsLocalFix(2));
     git(fixture, ['add', 'check.cjs']);
     const badTree = git(fixture, ['write-tree']);
     writeFileSync(join(fixture, 'check.cjs'), 'process.exit(0);\n');
