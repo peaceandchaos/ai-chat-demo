@@ -5,7 +5,6 @@ const {
   writeFileSync,
   mkdirSync,
   copyFileSync,
-  cpSync,
   openSync,
   closeSync,
 } = require('node:fs');
@@ -22,11 +21,10 @@ const checks = require('./verification/checks.cjs');
 const root = git(process.cwd(), ['rev-parse', '--show-toplevel']);
 const mode = process.argv[2];
 const ref = process.argv[3] ?? 'HEAD';
-const output = resolve(
-  root,
-  '.quality-results',
-  `${Date.now()}-${process.pid}`,
-);
+// A checkout run writes only where its caller asks, never inside the candidate.
+const output = mode?.endsWith('-checkout')
+  ? resolve(process.argv[3])
+  : resolve(root, '.quality-results', `${Date.now()}-${process.pid}`);
 mkdirSync(output, { recursive: true });
 const userConfig = join(output, 'user.npmrc');
 const globalConfig = join(output, 'global.npmrc');
@@ -88,6 +86,10 @@ function verify(directory, provenance, install) {
   ).trim();
   if (process.versions.node !== expectedNode)
     throw new Error(`Use Node ${expectedNode}.`);
+  if (git(directory, ['ls-files', '--', '.quality-results']))
+    throw new Error(
+      'Tracked .quality-results files could forge verification records.',
+    );
   fixtureConfig(directory);
   const before = fingerprint(directory);
   const results = [];
@@ -129,19 +131,21 @@ function verify(directory, provenance, install) {
 }
 
 function verifyRef(commit, snapshotMode = 'commit') {
-  withSnapshot(root, snapshotMode, commit, directory => {
+  withSnapshot(root, snapshotMode, commit, (directory, provenance) => {
     // Execute the snapshot's checks, not an unstaged copy of the checking code.
     const result = spawnSync(
       process.execPath,
-      [join(directory, 'tools/verify.cjs'), `${snapshotMode}-checkout`],
+      [
+        join(directory, 'tools/verify.cjs'),
+        `${snapshotMode}-checkout`,
+        join(output, `${snapshotMode}-${provenance.commit}`),
+      ],
       {
         cwd: directory,
         env: cleanEnvironment(),
         stdio: 'inherit',
       },
     );
-    const reports = join(directory, '.quality-results');
-    if (existsSync(reports)) cpSync(reports, output, { recursive: true });
     if (result.status !== 0) process.exitCode = 1;
   });
 }
