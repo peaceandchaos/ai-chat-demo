@@ -363,11 +363,11 @@ export class ServerTransport implements ChatTransport {
           ? message.event.attemptId
           : message.attemptId;
     if (!id) {
+      // An error naming no attempt refused some other frame, so it is not a
+      // verdict on these replies. Readers treat it as a lost connection.
       if (message.kind === 'error')
         for (const feed of this.feeds.values())
-          feed.finish(
-            new TransportError(message.status ?? 503, message.message),
-          );
+          feed.finish(new TransportError(503, 'Connection failed.'));
       return;
     }
     const feed = this.feeds.get(id);
