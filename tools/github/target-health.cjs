@@ -1,13 +1,19 @@
 // This controller reads GitHub metadata only. It never executes candidate code.
 const controllerPath = '.github/workflows/target-health.yml';
 const ownerLogin = 'peaceandchaos';
+const ciContract = {
+  workflow: 'ci.yml',
+  verifyJob: 'verify (commit)',
+  gateJob: 'quality-gate',
+  verifySteps: ['Verify committed source', 'Upload results'],
+};
 
 function requiredJobsPassed(jobs) {
-  const verification = jobs.find(job => job.name === 'verify (commit)');
-  const gate = jobs.find(job => job.name === 'quality-gate');
+  const verification = jobs.find(job => job.name === ciContract.verifyJob);
+  const gate = jobs.find(job => job.name === ciContract.gateJob);
   if (verification?.conclusion !== 'success' || gate?.conclusion !== 'success')
     return false;
-  return ['Verify committed source', 'Upload results'].every(name =>
+  return ciContract.verifySteps.every(name =>
     verification.steps.some(
       step => step.name === name && step.conclusion === 'success',
     ),
@@ -22,7 +28,7 @@ async function targetState(github, repo, branch) {
   const sha = target.data.object.sha;
   const response = await github.rest.actions.listWorkflowRuns({
     ...repo,
-    workflow_id: 'ci.yml',
+    workflow_id: ciContract.workflow,
     branch,
     event: 'push',
     head_sha: sha,
@@ -33,28 +39,29 @@ async function targetState(github, repo, branch) {
     !run ||
     run.event !== 'push' ||
     run.head_sha !== sha ||
-    run.head_branch !== branch
+    run.head_branch !== branch ||
+    run.status !== 'completed'
   )
     return { sha, passed: false };
-  if (run.status === 'completed' && run.conclusion === 'failure') {
-    const validIdentity =
-      Number.isSafeInteger(run.id) &&
-      run.id > 0 &&
-      Number.isSafeInteger(run.run_attempt) &&
-      run.run_attempt > 0;
-    return {
-      sha,
-      passed: false,
-      repairRun: validIdentity ? `${run.id}:${run.run_attempt}` : null,
-    };
+  if (run.conclusion === 'success') {
+    const jobs = await github.paginate(
+      github.rest.actions.listJobsForWorkflowRun,
+      { ...repo, run_id: run.id, filter: 'latest', per_page: 100 },
+    );
+    if (requiredJobsPassed(jobs)) return { sha, passed: true };
   }
-  if (run.status !== 'completed' || run.conclusion !== 'success')
-    return { sha, passed: false };
-  const jobs = await github.paginate(
-    github.rest.actions.listJobsForWorkflowRun,
-    { ...repo, run_id: run.id, filter: 'latest', per_page: 100 },
-  );
-  return { sha, passed: requiredJobsPassed(jobs) };
+  // A cancelled run proves nothing about the target; rerun it instead of repairing.
+  if (run.conclusion === 'cancelled') return { sha, passed: false };
+  const validIdentity =
+    Number.isSafeInteger(run.id) &&
+    run.id > 0 &&
+    Number.isSafeInteger(run.run_attempt) &&
+    run.run_attempt > 0;
+  return {
+    sha,
+    passed: false,
+    repairRun: validIdentity ? `${run.id}:${run.run_attempt}` : null,
+  };
 }
 
 async function approveRepair(github, context) {
@@ -72,6 +79,15 @@ async function approveRepair(github, context) {
     !/^[a-f0-9]{40}$/u.test(inputs.base)
   )
     throw new Error('Provide the exact PR, head SHA, and target SHA.');
+  const dispatch = (
+    await github.rest.actions.getWorkflowRun({
+      ...context.repo,
+      run_id: context.runId,
+    })
+  ).data;
+  // A rerun would bind whatever target attempt exists now, which the owner never inspected.
+  if (dispatch.run_attempt !== 1)
+    throw new Error('Repair approval requires a fresh owner dispatch.');
   const pr = (
     await github.rest.pulls.get({
       ...context.repo,
@@ -84,7 +100,9 @@ async function approveRepair(github, context) {
   if (target.sha !== inputs.base)
     throw new Error('Repair identities changed; nothing was approved.');
   if (!target.repairRun)
-    throw new Error('Target has no exact completed failed push run to repair.');
+    throw new Error(
+      'Target has no exact completed push run that failed verification.',
+    );
   await github.rest.checks.create({
     ...context.repo,
     name: 'owner-repair-approval',
@@ -96,7 +114,7 @@ async function approveRepair(github, context) {
     output: {
       title: 'Owner authorized target-health repair exception',
       summary:
-        'This binds one PR, candidate SHA, target SHA, and failed run attempt. All candidate checks and reviews remain required.',
+        'This binds one PR, candidate SHA, target SHA, and failed target run attempt. All candidate checks and reviews remain required.',
     },
   });
 }
@@ -130,6 +148,7 @@ async function repairAllowed(github, context, pr, target) {
     ).data;
     if (
       run.event === 'workflow_dispatch' &&
+      run.run_attempt === 1 &&
       run.path.split('@')[0] === controllerPath &&
       run.actor.login === ownerLogin &&
       run.triggering_actor.login === ownerLogin &&
@@ -241,3 +260,4 @@ async function inspect(github, context, core) {
 
 module.exports = inspect;
 module.exports.requiredJobsPassed = requiredJobsPassed;
+module.exports.ciContract = ciContract;
