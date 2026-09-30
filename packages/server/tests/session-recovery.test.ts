@@ -378,3 +378,47 @@ test('a corrupt saved reply is reported and preserved while other chats continue
   expect(disk.values.get(`archive/message/${broken.id}`)).toBe(corrupt);
   expect(server.dispatched).toEqual([healthy.id]);
 });
+
+test('a reply stream that closes cleanly before the reply finishes is watched again until the result arrives', async () => {
+  const phone = openPhone(server);
+  const manual = createChat(phone, 'kimi');
+  const overHttp = phone.session.send(manual.id, 'HTTP', []);
+  server.providers.script(overHttp.id).text('a');
+  await until(
+    'the HTTP reply is streaming',
+    () => phone.session.message(overHttp.id).text === 'a',
+  );
+  phone.network.endStreams();
+  server.providers.script(overHttp.id).text('b').end();
+  await settled(phone, overHttp.id);
+  expect(phone.archive.message(overHttp.id)).toMatchObject({
+    status: 'completed',
+    text: 'ab',
+  });
+  expect(phone.network.requests).toEqual([
+    'POST /v1/chat',
+    `GET /v1/jobs/${overHttp.id}`,
+    `GET /v1/jobs/${overHttp.id}/events`,
+    `POST /v1/jobs/${overHttp.id}/ack`,
+  ]);
+
+  const auto = phone.archive.createChat();
+  phone.archive.setPicker(auto.id, 'auto');
+  const overSocket = phone.session.send(auto.id, 'Socket', []);
+  server.providers.script(overSocket.id).text('x');
+  await until(
+    'the socket reply is streaming',
+    () => phone.session.message(overSocket.id).text === 'x',
+  );
+  server.sockets[0].deliver({ kind: 'detached', attemptId: overSocket.id });
+  await until('the phone watches the reply again', () =>
+    phone.network.requests.includes(`GET /v1/jobs/${overSocket.id}/events`),
+  );
+  server.providers.script(overSocket.id).text('y').end();
+  await settled(phone, overSocket.id);
+  expect(phone.archive.message(overSocket.id)).toMatchObject({
+    status: 'completed',
+    text: 'xy',
+  });
+  expect(server.dispatched).toEqual([overHttp.id, overSocket.id]);
+});
