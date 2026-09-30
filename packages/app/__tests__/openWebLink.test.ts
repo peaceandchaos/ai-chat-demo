@@ -1,7 +1,21 @@
 import { Linking } from 'react-native';
 import { openWebLink } from '../src/openWebLink';
 
-beforeEach(() => jest.clearAllMocks());
+const originalURL = Object.getOwnPropertyDescriptor(global, 'URL');
+beforeAll(() => {
+  const nativeURL = jest.requireActual('react-native/Libraries/Blob/URL').URL;
+  Object.defineProperty(global, 'URL', {
+    value: nativeURL,
+    configurable: true,
+  });
+});
+afterAll(() => {
+  if (originalURL) Object.defineProperty(global, 'URL', originalURL);
+});
+beforeEach(() => {
+  jest.clearAllMocks();
+  jest.spyOn(Linking, 'canOpenURL').mockResolvedValue(true);
+});
 afterEach(() => jest.restoreAllMocks());
 
 test('only valid HTTP and HTTPS links reach the OS', async () => {
@@ -10,7 +24,7 @@ test('only valid HTTP and HTTPS links reach the OS', async () => {
   await expect(openWebLink('HTTPS://EXAMPLE.COM/b')).resolves.toBe(true);
   expect(open.mock.calls).toEqual([
     ['http://example.com/a'],
-    ['https://example.com/b'],
+    ['https://EXAMPLE.COM/b'],
   ]);
 });
 
@@ -30,6 +44,14 @@ test('non-web schemes and malformed URLs never reach the OS', async () => {
   ]) {
     await expect(openWebLink(raw)).resolves.toBe(false);
   }
+  expect(open).not.toHaveBeenCalled();
+  expect(Linking.canOpenURL).not.toHaveBeenCalled();
+});
+
+test('a refused OS capability check does not open the link', async () => {
+  jest.spyOn(Linking, 'canOpenURL').mockResolvedValue(false);
+  const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+  await expect(openWebLink('https://example.com')).resolves.toBe(false);
   expect(open).not.toHaveBeenCalled();
 });
 
