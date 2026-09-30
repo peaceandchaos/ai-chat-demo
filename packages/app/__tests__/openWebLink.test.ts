@@ -1,16 +1,16 @@
 import { Linking } from 'react-native';
 import { openWebLink } from '../src/openWebLink';
 
-const originalURL = Object.getOwnPropertyDescriptor(global, 'URL');
+const originalURL = Object.getOwnPropertyDescriptor(globalThis, 'URL');
 beforeAll(() => {
   const nativeURL = jest.requireActual('react-native/Libraries/Blob/URL').URL;
-  Object.defineProperty(global, 'URL', {
+  Object.defineProperty(globalThis, 'URL', {
     value: nativeURL,
     configurable: true,
   });
 });
 afterAll(() => {
-  if (originalURL) Object.defineProperty(global, 'URL', originalURL);
+  if (originalURL) Object.defineProperty(globalThis, 'URL', originalURL);
 });
 beforeEach(() => {
   jest.clearAllMocks();
