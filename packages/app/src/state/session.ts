@@ -50,8 +50,6 @@ type Running = {
   kind: 'running';
   controller: AbortController;
   failures: number;
-  // The last submission of this attempt was refused.
-  refused: boolean;
   operation: Operation;
   interruption: Interruption | null;
 };
@@ -61,7 +59,6 @@ type Runner =
       kind: 'waiting';
       timer: ReturnType<typeof setTimeout>;
       failures: number;
-      refused: boolean;
       error: string;
     }
   | { kind: 'halted'; error: string };
@@ -252,17 +249,14 @@ export class ChatSession {
     }
     if (!this.foreground) return;
     let failures = 0;
-    let refused = false;
     if (existing?.kind === 'waiting') {
       clearTimeout(existing.timer);
       failures = existing.failures;
-      refused = existing.refused;
     }
     const runner: Running = {
       kind: 'running',
       controller: new AbortController(),
       failures,
-      refused,
       operation: 'submit',
       interruption: null,
     };
@@ -364,14 +358,12 @@ export class ChatSession {
         return;
       case 'progress':
         runner.failures = 0;
-        runner.refused = false;
         this.update(id, applied.message);
         this.scheduleCheckpoint();
         this.render();
         return;
       case 'durable':
         runner.failures = 0;
-        runner.refused = false;
         this.update(id, applied.message);
         try {
           this.flush();
@@ -414,14 +406,10 @@ export class ChatSession {
       runner.operation,
       error instanceof TransportError ? error.status : null,
       error.message,
-      runner.refused,
     );
     switch (plan.kind) {
       case 'retry':
         this.wait(id, runner.failures + 1, plan.error);
-        return;
-      case 'recheck':
-        this.wait(id, runner.failures + 1, plan.error, true);
         return;
       case 'reject':
         this.settleLocally(id, 'failed', plan.error);
@@ -458,12 +446,7 @@ export class ChatSession {
     });
   }
 
-  private wait(
-    id: string,
-    failures: number,
-    error: string,
-    refused = false,
-  ): void {
+  private wait(id: string, failures: number, error: string): void {
     const delay = Math.min(
       this.retryBaseMs * 2 ** (failures - 1),
       this.retryMaxMs,
@@ -471,13 +454,7 @@ export class ChatSession {
     const timer = setTimeout(() => {
       if (this.runners.get(id) === waiting) this.launch(id);
     }, delay);
-    const waiting: Runner = {
-      kind: 'waiting',
-      timer,
-      failures,
-      refused,
-      error,
-    };
+    const waiting: Runner = { kind: 'waiting', timer, failures, error };
     this.runners.set(id, waiting);
   }
 
