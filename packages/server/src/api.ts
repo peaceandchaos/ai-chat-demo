@@ -21,6 +21,23 @@ export type ApiServices = {
   rank: (input: SearchRequest, signal: AbortSignal) => Promise<string[]>;
 };
 
+// Reads the attempt a frame names, even when the frame fails strict
+// validation, so its refusal reaches that attempt's reader only.
+const namedAttemptSchema = z.object({
+  attemptId: idSchema.optional(),
+  submission: z.object({ attemptId: idSchema }).optional(),
+});
+
+function namedAttempt(raw: string): string | null {
+  try {
+    const named = namedAttemptSchema.safeParse(JSON.parse(raw));
+    if (!named.success) return null;
+    return named.data.submission?.attemptId ?? named.data.attemptId ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const acknowledgeSchema = z.strictObject({
   sequence: z.number().int().nonnegative().safe(),
 });
@@ -134,6 +151,7 @@ export class SocketConnection {
       const raw = read();
       if (Buffer.byteLength(raw, 'utf8') > 4_000_000)
         throw new RequestError(413, 'Split large input into context parts.');
+      attemptId = namedAttempt(raw);
       const command = decodeJson(socketCommandSchema, raw);
       attemptId =
         command.kind === 'submit'

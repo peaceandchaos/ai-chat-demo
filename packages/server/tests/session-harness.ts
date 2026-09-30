@@ -176,6 +176,8 @@ export class Network {
   // Answers a request before it reaches the server, as a proxy or an older
   // server version would.
   respond: ((method: string, path: string) => number | null) | null = null;
+  // Rewrites what the phone sends, as an older or newer client would.
+  rewrite: ((body: string) => string) | null = null;
 
   // The server handles the next matching request, but its response is lost.
   loseResponse(match: (url: string, method: string) => boolean): void {
@@ -342,6 +344,8 @@ function fetchDriver(server: Server, network: Network): ClientDrivers['fetch'] {
       return refusal;
     }
     const { stream: _stream, ...requestInit } = init;
+    if (typeof requestInit.body === 'string' && network.rewrite)
+      requestInit.body = network.rewrite(requestInit.body);
     const response = await handleRequest(
       new Request(url, requestInit),
       server.services,
@@ -382,7 +386,7 @@ export class InProcessSocket implements ClientSocket {
 
   constructor(
     server: Server,
-    network: Network,
+    private readonly network: Network,
     headers: Record<string, string>,
   ) {
     this.connection = new SocketConnection(
@@ -416,7 +420,8 @@ export class InProcessSocket implements ClientSocket {
   }
 
   send(data: string): void {
-    void this.connection.message(() => data);
+    const frame = this.network.rewrite?.(data) ?? data;
+    void this.connection.message(() => frame);
   }
 
   // A frame from some other command on this connection.
