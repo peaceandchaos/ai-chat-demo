@@ -83,6 +83,9 @@ test('one chat’s rejection and reconnect never pause or cancel another chat', 
     accepted: false,
     error: 'This conversation path already has a reply in progress.',
   });
+  expect(
+    phone.network.requests.filter(request => request === 'POST /v1/chat'),
+  ).toHaveLength(3);
   phone.network.cutStreams();
   expect(() => phone.session.send(b.id, 'Queued', [])).toThrow(
     'Wait for this reply or stop it before sending another message.',
