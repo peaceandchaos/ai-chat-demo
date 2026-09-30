@@ -6,6 +6,14 @@ The user's policy is strict: every high/critical advisory blocks acceptance, reg
 
 Follow-up inspection of the published image-size 2.0.3 archive found the default export consumed by Metro's Babel wrapper and its Uint8Array input API. A scoped override is a candidate, subject to real asset-path and bundling checks. The user approved specific repairs for the eight high-severity families after this review. Implementation and verification results will be recorded separately; this review does not claim they are resolved.
 
+## Approved repair progress
+
+The first repair group selects xmldom 0.8.15/0.9.12, brace-expansion 1.1.18/5.0.9, browserslist 4.28.7, js-yaml 3.15.2/4.3.2, and sharp 0.35.4. Parent-scoped overrides preserve the existing major/minor lines. The unchanged brace-expansion 2.1.7 path remains. Related browser data and sharp platform binaries changed with these packages; no framework upgrade was made.
+
+A clean locked installation applied all four native patches. Local compatibility checks passed for both plist parser/builders, brace expansion through minimatch 3 and 10, both YAML round trips, browser-target selection, and sharp PNG generation/metadata. The installed macOS sharp binary reports libheif 1.23.2. Initial fixture assumptions about package exports and prototype identity were corrected after inspecting the actual caller APIs. These checks do not prove native compilation or Linux binary compatibility.
+
+Workflow and Metro repairs and the final audit remain pending. This intermediate lockfile is not an accepted quality baseline.
+
 ## Coverage and limits
 
 A fresh lock-only npm audit reports **39 affected package entries: 20 high, 18 moderate, 1 low, 0 critical**. Those entries include propagated parent packages. They resolve to **14 advisory-bearing package families and 42 unique GHSA records**. The count is not 39 confirmed exploitable defects. Every listed advisory has a disposition below. Two upstream libheif advisories referenced by the sharp record were also read.
