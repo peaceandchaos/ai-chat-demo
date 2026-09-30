@@ -146,6 +146,34 @@ test('committed and staged checks reject a broken tree despite an unstaged fix a
     expect(readFileSync(join(fixture, 'check.cjs'), 'utf8')).toBe(
       'process.exit(0);\n',
     );
+
+    writeFileSync(join(fixture, 'check.cjs'), 'process.exit(2);\n');
+    git(fixture, ['add', 'check.cjs']);
+    const badTree = git(fixture, ['write-tree']);
+    writeFileSync(join(fixture, 'check.cjs'), 'process.exit(0);\n');
+    const stagedFailure = spawnSync(
+      process.execPath,
+      [resolve(__dirname, '../verify.cjs'), 'staged'],
+      { cwd: fixture, encoding: 'utf8', timeout: 20_000 },
+    );
+    expect(stagedFailure.status).toBe(1);
+    expect(stagedFailure.stdout).toContain('lint: FAIL');
+    expect(stagedFailure.stdout).toContain(
+      `staged: commit ${commit}, tree ${badTree}; FAIL`,
+    );
+
+    git(fixture, ['add', 'check.cjs']);
+    const goodTree = git(fixture, ['write-tree']);
+    writeFileSync(join(fixture, 'check.cjs'), 'process.exit(2);\n');
+    const stagedPass = spawnSync(
+      process.execPath,
+      [resolve(__dirname, '../verify.cjs'), 'staged'],
+      { cwd: fixture, encoding: 'utf8', timeout: 20_000 },
+    );
+    expect(stagedPass.status).toBe(0);
+    expect(stagedPass.stdout).toContain(
+      `staged: commit ${commit}, tree ${goodTree}; PASS`,
+    );
     expect(readdirSync(join(fixture, 'node_modules'))).toContain('local-fix');
   } finally {
     rmSync(fixture, { recursive: true, force: true });
