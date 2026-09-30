@@ -293,6 +293,43 @@ test('a lost socket rejects delivery without resending the submission', async ()
   expect(fixture.sockets[0].sent).toHaveLength(1);
 });
 
+test('a socket error naming no attempt fails open readers as a connection loss, while a named refusal keeps its status', async () => {
+  const fixture = setup();
+  const first = fixture.transport.submit(
+    input('auto'),
+    () => undefined,
+    new AbortController().signal,
+  );
+  const second = fixture.transport.submit(
+    input('gpt-6', otherAttempt),
+    () => undefined,
+    new AbortController().signal,
+  );
+  fixture.sockets[0].open();
+  await settle();
+  fixture.sockets[0].emit({
+    kind: 'error',
+    attemptId: otherAttempt,
+    status: 409,
+    message: 'This conversation path already has a reply in progress.',
+  });
+  await expect(second).rejects.toMatchObject({
+    status: 409,
+    message: 'This conversation path already has a reply in progress.',
+  });
+  fixture.sockets[0].emit({
+    kind: 'error',
+    attemptId: null,
+    status: 400,
+    message: 'Invalid request data or contract version.',
+  });
+  await expect(first).rejects.toMatchObject({
+    status: 503,
+    message: 'Connection failed.',
+  });
+  fixture.transport.disconnect();
+});
+
 test('recovery reads an existing attempt and never submits a new generation', async () => {
   const fixture = setup();
   const received: ServerMessage[] = [];
