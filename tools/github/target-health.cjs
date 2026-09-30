@@ -107,10 +107,10 @@ async function approveRepair(github, context) {
     ...context.repo,
     name: 'owner-repair-approval',
     head_sha: inputs.head,
-    external_id: `${pr.number}:${inputs.head}:${inputs.base}:${target.repairRun}`,
+    // GitHub rewrites details_url for Actions check runs, so the approving run id lives here.
+    external_id: `${pr.number}:${inputs.head}:${inputs.base}:${target.repairRun}:${context.runId}`,
     status: 'completed',
     conclusion: 'success',
-    details_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
     output: {
       title: 'Owner authorized target-health repair exception',
       summary:
@@ -128,17 +128,15 @@ async function repairAllowed(github, context, pr, target) {
     filter: 'all',
     per_page: 100,
   });
-  const prefix = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/`;
+  const binding = `${pr.number}:${pr.head.sha}:${target.sha}:${target.repairRun}:`;
   for (const approval of approvals) {
     if (
       approval.app?.slug !== 'github-actions' ||
       approval.conclusion !== 'success' ||
-      approval.external_id !==
-        `${pr.number}:${pr.head.sha}:${target.sha}:${target.repairRun}` ||
-      !approval.details_url?.startsWith(prefix)
+      !approval.external_id?.startsWith(binding)
     )
       continue;
-    const runId = approval.details_url.slice(prefix.length);
+    const runId = approval.external_id.slice(binding.length);
     if (!/^[1-9]\d*$/u.test(runId)) continue;
     const run = (
       await github.rest.actions.getWorkflowRun({

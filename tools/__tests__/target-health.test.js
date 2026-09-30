@@ -79,7 +79,13 @@ function fixture() {
     },
     checks: {
       create: async approval => {
-        state.approvals.push({ ...approval, app: { slug: 'github-actions' } });
+        // Hosted GitHub replaces details_url with the check-run page for Actions checks.
+        const id = 110107096373 + state.approvals.length;
+        state.approvals.push({
+          ...approval,
+          app: { slug: 'github-actions' },
+          details_url: `https://github.com/peaceandchaos/ai-chat-demo/runs/${id}`,
+        });
       },
       listForRef: async () => state.approvals,
     },
@@ -159,7 +165,7 @@ test('owner repair binds PR, head, and base; a changed target invalidates it', a
   await inspect(f.github, f.context, f.core);
   expect(f.state.approvals).toHaveLength(1);
   expect(f.state.approvals[0].external_id).toBe(
-    `1:${f.state.pr.head.sha}:${f.state.base}:42:1`,
+    `1:${f.state.pr.head.sha}:${f.state.base}:42:1:73`,
   );
   expect(f.state.statuses.at(-1).state).toBe('success');
   f.context.eventName = 'workflow_run';
@@ -250,7 +256,7 @@ test('an approved repair expires when the target run or attempt changes', async 
   await inspect(f.github, f.context, f.core);
   expect(f.state.statuses.at(-1).state).toBe('success');
   expect(f.state.approvals.at(-1).external_id).toBe(
-    `1:${f.state.pr.head.sha}:${f.state.base}:42:2`,
+    `1:${f.state.pr.head.sha}:${f.state.base}:42:2:73`,
   );
 
   f.context.eventName = 'workflow_run';
@@ -315,7 +321,7 @@ test('owner repair covers every completed target run that fails verification', a
     repairDispatch(f);
     await inspect(f.github, f.context, f.core);
     expect(f.state.approvals.map(value => value.external_id)).toEqual([
-      `1:${f.state.pr.head.sha}:${f.state.base}:42:1`,
+      `1:${f.state.pr.head.sha}:${f.state.base}:42:1:73`,
     ]);
     expect(f.state.statuses.at(-1).state).toBe('success');
   }
