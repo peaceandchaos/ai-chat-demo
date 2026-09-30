@@ -27,6 +27,10 @@ The user approved repository instructions, repository/global `test-prune`, check
 
 ### Progress and evidence
 
+- Local commit `dab4fe9` adds instructions, matching repository/global `test-prune`, staged/committed verification, dependency policy, iOS scanner scope, and candidate GitHub controls. Its staged snapshot passed a clean install, lint, formatting, and credential checks.
+- The retained suite and control regressions pass 108 checks locally after the test-prune changes. Deliberate missing-event and empty-replay faults fail the strengthened assertions. A broken committed fixture remains failing despite unstaged code and gate fixes. A real skipped Jest case is rejected by the acceptance runner.
+- The user approved the eight-family dependency repair proposal and selected a GitHub App bot. Neither selection establishes that the repairs or remote controls are complete.
+
 - The approved dependency review found 39 affected npm package entries, 14 advisory-bearing families, and 42 advisories. This dated scan is not a clean result. No remedy has been applied.
 - Source review found four shared-source rnsec findings and two Android-only findings. Excluding Android does not fix the shared findings.
 - The original 103 tests passed at the starting checkpoint. That is local evidence, not hosted or native acceptance.
