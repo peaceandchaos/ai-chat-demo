@@ -130,6 +130,20 @@ test('committed and staged checks reject a broken tree despite an unstaged fix a
     expect(result.stdout).toContain(`commit ${commit}`);
     expect(result.stdout).toContain('server-build: FAIL');
     expect(result.stderr).not.toContain('npm ERR');
+    const records = resultRecords(join(fixture, '.quality-results'));
+    expect(records).toHaveLength(1);
+    expect(records[0].results).toContainEqual(
+      expect.objectContaining({
+        name: 'lint',
+        command: ['npm', 'run', 'lint'],
+      }),
+    );
+    expect(
+      records[0].results.map(({ name, command }) => [name, command]),
+    ).toEqual([
+      ['install', ['npm', 'ci', '--no-audit', '--no-fund']],
+      ...Object.entries(checks).map(([name, args]) => [name, ['npm', ...args]]),
+    ]);
     withSnapshot(fixture, 'staged', 'HEAD', checkout => {
       expect(existsSync(join(checkout, 'node_modules'))).toBe(false);
       expect(
