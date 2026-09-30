@@ -422,3 +422,26 @@ test('a reply stream that closes cleanly before the reply finishes is watched ag
   });
   expect(server.dispatched).toEqual([overHttp.id, overSocket.id]);
 });
+
+test('a settled reply left in the pending index by a crash is removed on the next start', async () => {
+  const phone = openPhone(server);
+  const chat = createChat(phone, 'kimi');
+  const reply = phone.session.send(chat.id, 'Question', []);
+  server.providers.script(reply.id).text('Answer').end();
+  await settled(phone, reply.id);
+  const disk = phone.storage.snapshot();
+  phone.session.setLifecycle('background');
+  const index = disk.getString('archive/index');
+  if (!index) throw new Error('The fixture archive has no index');
+  const metadata = JSON.parse(index);
+  metadata.jobIds.push(reply.id);
+  disk.values.set('archive/index', JSON.stringify(metadata));
+  const restarted = openPhone(server, disk);
+  await settled(restarted, reply.id);
+  expect(restarted.archive.message(reply.id)).toMatchObject({
+    status: 'completed',
+    text: 'Answer',
+    acknowledged: true,
+  });
+  expect(restarted.network.requests).toEqual([]);
+});

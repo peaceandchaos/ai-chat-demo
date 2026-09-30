@@ -188,8 +188,9 @@ export class ChatSession {
     for (const id of this.archive.metadata().jobIds) {
       const runner = this.runners.get(id);
       if (runner?.kind === 'running' || runner?.kind === 'waiting') continue;
+      let message: SavedMessage | null;
       try {
-        this.load(id);
+        message = this.load(id);
       } catch {
         this.runners.set(id, {
           kind: 'halted',
@@ -198,7 +199,9 @@ export class ChatSession {
         });
         continue;
       }
-      this.launch(id);
+      if (message) this.launch(id);
+      // Settled, but a crash left it in the pending index.
+      else this.dropSettledJob(id);
     }
     this.refusedDeletions.clear();
     this.launchDeletions();
@@ -556,6 +559,14 @@ export class ChatSession {
     }
     this.dirty.clear();
     this.storageProblem = null;
+  }
+
+  private dropSettledJob(id: string): void {
+    try {
+      this.archive.acknowledge(id);
+    } catch {
+      this.storageProblem = storageError;
+    }
   }
 
   private checkpoint(): void {
