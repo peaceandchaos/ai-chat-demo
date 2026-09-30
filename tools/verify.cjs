@@ -58,6 +58,7 @@ function run(directory, name, args) {
     );
   return {
     name,
+    command: ['npm', ...args],
     passed,
     exitCode: result.status,
     signal: result.signal,
