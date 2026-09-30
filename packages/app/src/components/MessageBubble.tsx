@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, FadeIn, SlideInDown } from 'react-native-reanimated';
 import { NitroImage } from 'react-native-nitro-image';
 import type { SFSymbol } from 'sf-symbols-typescript';
@@ -9,6 +9,7 @@ import { ShimmerText } from './ShimmerText';
 import { theme } from '../theme';
 import { EnrichedMarkdownText } from 'react-native-enriched-markdown';
 import { darkMarkdownStyle } from '../markdownStyle';
+import { openWebLink } from '../openWebLink';
 
 // SF Symbols for the (currently no-op) action row beneath a finished reply.
 const ACTIONS: SFSymbol[] = [
@@ -130,7 +131,9 @@ export const MessageBubble = memo(function ({
           markdownStyle={darkMarkdownStyle}
           flavor="github"
           streamingAnimation={message.status === 'streaming'}
-          onLinkPress={({ url }) => Linking.openURL(url)}
+          onLinkPress={({ url }) => {
+            void openWebLink(url);
+          }}
         />
       )}
       {message.status === 'error' ? (
