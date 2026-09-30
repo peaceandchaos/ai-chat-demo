@@ -45,7 +45,7 @@ jobs:
           retention-days: 14
 
   quality-gate:
-    name: quality-gate
+    name: ${{ github.event_name == 'pull_request' && 'quality-gate' || 'post-push-gate' }}
     if: always()
     needs: verify
     runs-on: ubuntu-24.04
