@@ -446,3 +446,47 @@ test('a server error for another command does not fail an unsent reply that shar
   });
   expect(server.dispatched).toEqual([reply.id]);
 });
+
+test('chat deletion finishes on 404 or 410, retries 5xx, and stops retrying a refusal until the app reopens', async () => {
+  const phone = openPhone(server);
+  const [gone, missing, refused, busy] = [0, 1, 2, 3].map(
+    () => createChat(phone, 'kimi').id,
+  );
+  const statuses = new Map([
+    [gone, 410],
+    [missing, 404],
+    [refused, 400],
+    [busy, 503],
+  ]);
+  phone.network.respond = (method, path) =>
+    method === 'DELETE'
+      ? (statuses.get(path.split('/').at(-1) ?? '') ?? null)
+      : null;
+  const deletes = (id: string) =>
+    phone.network.requests.filter(
+      request => request === `DELETE /v1/chats/${id}`,
+    ).length;
+  phone.network.online = false;
+  for (const id of [gone, missing, refused, busy]) phone.session.deleteChat(id);
+  phone.network.online = true;
+  await until('the busy deletion is retried', () => deletes(busy) >= 3);
+  expect(phone.session.pendingDeletions()).toEqual([refused, busy]);
+  statuses.delete(busy);
+  await until(
+    'the busy deletion reached the server',
+    () => phone.session.pendingDeletions().length === 1,
+  );
+  await new Promise(resolve => setTimeout(resolve, 200));
+  expect(phone.session.pendingDeletions()).toEqual([refused]);
+  expect(deletes(refused)).toBe(1);
+  expect(phone.session.notice()).toBe(
+    'The server refused to delete a chat. It stays deleted on this phone, and the app tries again when reopened.',
+  );
+  expect(phone.archive.hasChat(refused)).toBe(false);
+  phone.session.setLifecycle('background');
+  phone.session.setLifecycle('active');
+  await until(
+    'the refused deletion is tried again',
+    () => deletes(refused) === 2,
+  );
+});

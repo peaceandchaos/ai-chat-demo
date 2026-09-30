@@ -10,6 +10,7 @@ import {
   applySnapshot,
   nextOperation,
   phaseOf,
+  planDeletionFailure,
   planFailure,
   UnsupportedRecord,
   type Applied,
@@ -71,6 +72,8 @@ class LocalDataError extends Error {}
 
 const storageError =
   'Saved chats could not be updated. Stored data was preserved.';
+const deletionRefused =
+  'The server refused to delete a chat. It stays deleted on this phone, and the app tries again when reopened.';
 const deletionPending =
   'Chat deletion is pending on the server. It will retry when connected.';
 
@@ -92,6 +95,8 @@ export class ChatSession {
   private deletion: DeletionRunner | null = null;
   private storageProblem: string | null = null;
   private deletionProblem: string | null = null;
+  // Chats whose server deletion was refused; retried on the next resume.
+  private readonly refusedDeletions = new Set<string>();
 
   constructor(options: SessionOptions) {
     this.archive = options.archive;
@@ -195,6 +200,7 @@ export class ChatSession {
       }
       this.launch(id);
     }
+    this.refusedDeletions.clear();
     this.launchDeletions();
     this.notify();
   }
@@ -481,7 +487,8 @@ export class ChatSession {
       () => {
         if (this.deletion !== run) return;
         this.deletion = null;
-        this.deletionProblem = null;
+        this.deletionProblem =
+          this.refusedDeletions.size > 0 ? deletionRefused : null;
         this.notify();
       },
       () => {
@@ -501,9 +508,22 @@ export class ChatSession {
 
   private async deletePending(signal: AbortSignal): Promise<void> {
     for (;;) {
-      const [id] = this.archive.metadata().deletions;
+      const id = this.archive
+        .metadata()
+        .deletions.find(chatId => !this.refusedDeletions.has(chatId));
       if (!id) return;
-      await this.transport.deleteChat(id, signal);
+      try {
+        await this.transport.deleteChat(id, signal);
+      } catch (error) {
+        const plan = planDeletionFailure(
+          error instanceof TransportError ? error.status : null,
+        );
+        if (plan === 'retry' || signal.aborted) throw error;
+        if (plan === 'refused') {
+          this.refusedDeletions.add(id);
+          continue;
+        }
+      }
       if (signal.aborted) return;
       this.local(() => this.archive.finishDeletion(id));
     }
