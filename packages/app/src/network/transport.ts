@@ -14,6 +14,14 @@ export class TransportError extends Error {
   }
 }
 
+// This phone already has a reader for the attempt. It says nothing about the
+// server's view of the attempt, so it is not a TransportError.
+export class ReaderConflict extends Error {
+  constructor() {
+    super('This reply already has an attached reader.');
+  }
+}
+
 export type Receive = (message: ServerMessage) => void;
 
 export interface ChatTransport {

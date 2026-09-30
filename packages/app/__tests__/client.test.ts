@@ -1,3 +1,4 @@
+import { TransportError } from '../src/network/transport';
 import {
   decodeJson,
   serverMessageSchema,
@@ -328,6 +329,27 @@ test('a socket error naming no attempt fails open readers as a connection loss, 
     message: 'Connection failed.',
   });
   fixture.transport.disconnect();
+});
+
+test('a second reader for the same attempt is refused locally, not as a server refusal', async () => {
+  const fixture = setup();
+  const first = fixture.transport.submit(
+    input('auto'),
+    () => undefined,
+    new AbortController().signal,
+  );
+  fixture.sockets[0].open();
+  await settle();
+  const second = await fixture.transport
+    .submit(input('auto'), () => undefined, new AbortController().signal)
+    .then(
+      () => null,
+      (error: Error) => error,
+    );
+  expect(second?.message).toBe('This reply already has an attached reader.');
+  expect(second).not.toBeInstanceOf(TransportError);
+  fixture.transport.disconnect();
+  await first;
 });
 
 test('recovery reads an existing attempt and never submits a new generation', async () => {
