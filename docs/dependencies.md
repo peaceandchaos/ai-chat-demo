@@ -12,7 +12,9 @@ The first repair group selects xmldom 0.8.15/0.9.12, brace-expansion 1.1.18/5.0.
 
 A clean locked installation applied all four native patches. Local compatibility checks passed for both plist parser/builders, brace expansion through minimatch 3 and 10, both YAML round trips, browser-target selection, and sharp PNG generation/metadata. The installed macOS sharp binary reports libheif 1.23.2. Initial fixture assumptions about package exports and prototype identity were corrected after inspecting the actual caller APIs. These checks do not prove native compilation or Linux binary compatibility.
 
-Workflow and Metro repairs and the final audit remain pending. This intermediate lockfile is not an accepted quality baseline.
+Workflow's scoped overrides now resolve nanoid 5.1.16 and both affected Undici copies to 7.29.1. The separate Undici 7.30.0 copy is unchanged. A fresh install passed. Local fixtures exercised Workflow's fixed-size customRandom API and streamed responses through world-local's Agent and world-vercel's actual events dispatcher. No provider credentials or hosted service were used.
+
+Metro repairs and the final audit remain pending. This intermediate lockfile is not an accepted quality baseline.
 
 ## Coverage and limits
 
