@@ -126,7 +126,17 @@ test('committed and staged checks reject a broken tree despite an unstaged fix a
       expect(
         spawnSync(process.execPath, ['check.cjs'], { cwd: checkout }).status,
       ).toBe(1);
+      // The real repository already has this source directory before the build.
+      mkdirSync(join(checkout, 'packages/server'), { recursive: true });
       const before = fingerprint(checkout);
+      mkdirSync(join(checkout, 'packages/server/.swc/plugins'), {
+        recursive: true,
+      });
+      writeFileSync(
+        join(checkout, 'packages/server/.swc/plugins/fixture.wasmer-v7'),
+        'generated plugin cache',
+      );
+      expect(fingerprint(checkout)).toBe(before);
       writeFileSync(
         join(checkout, 'unexpected.ts'),
         'export const changed = true;',

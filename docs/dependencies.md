@@ -14,7 +14,9 @@ A clean locked installation applied all four native patches. Local compatibility
 
 Workflow's scoped overrides now resolve nanoid 5.1.16 and both affected Undici copies to 7.29.1. The separate Undici 7.30.0 copy is unchanged. A fresh install passed. Local fixtures exercised Workflow's fixed-size customRandom API and streamed responses through world-local's Agent and world-vercel's actual events dispatcher. No provider credentials or hosted service were used.
 
-Metro repairs and the final audit remain pending. This intermediate lockfile is not an accepted quality baseline.
+Metro's candidate image-size 2.0.3 override passes `getAssetSize` with the repository PNG and rejects empty/invalid PNG input. The release JavaScript bundle fails at `getAssetData`, which still passes a filename. The proposed adapter reads image bytes with `fs.promises.readFile` before that second call. It awaits approval; the override remains uncommitted. The failed bundle is retained as regression evidence.
+
+The fresh audit adds [GHSA-6h2x-m376-mqjq](https://github.com/advisories/GHSA-6h2x-m376-mqjq), a high-severity Joi ISO-date validation issue absent from the first snapshot. The fixed 17.13.7 fits both CLI parents' `^17.2.1` ranges. That additional update awaits approval. This intermediate lockfile is not an accepted quality baseline.
 
 ## Coverage and limits
 

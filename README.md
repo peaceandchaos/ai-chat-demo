@@ -50,7 +50,7 @@ The 13 selected anti-slop rules remain errors. Their source and license are in `
 
 Every high/critical dependency advisory blocks acceptance, regardless of exposure. Moderate/low findings have dated dispositions in `tools/verification/dependency-dispositions.json`; new or expired findings need review. No update or override is automatic.
 
-The scanner excludes Android-specific files and scans the remaining app. Four shared-source findings remain unresolved. It does not inspect arbitrary Swift/Objective-C networking code. All four native patches must apply during `npm ci`; patch failure stops installation.
+The scanner excludes Android-specific files and scans the remaining app. Stream and tool arguments now receive schema validation, and raw network errors are no longer logged. The unsafe reply-link handler remains pending user approval for the HTTP/HTTPS restriction. The scanner does not inspect arbitrary Swift/Objective-C networking code. All four native patches must apply during `npm ci`; patch failure stops installation.
 
 ## Test review
 
@@ -73,7 +73,8 @@ a submission automatically. Its consumer must persist acceptance, results, and
 cursors before acknowledging them to the server.
 
 This layer is not connected to the app yet. The user owns the UI work. The existing
-screens, mocked Recents list, demo store, and native connection behavior are unchanged.
+screens and mocked Recents list retain their UI. The demo store now validates tool inputs,
+and the old connection no longer logs raw errors. Its native connection behavior is unchanged.
 The saved-chat session controller and native transport binding remain separate work.
 
 Before native integration, fix or replace the streaming adapter in the installed
