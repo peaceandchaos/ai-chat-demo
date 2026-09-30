@@ -86,6 +86,8 @@ const generated = new Set([
   'packages/server/.output',
   'packages/server/.vercel',
   'packages/server/.workflow-data',
+  // Workflow's server build creates this compiled SWC plugin cache.
+  'packages/server/.swc',
 ]);
 
 function hashSource(directory, relative, hash) {
