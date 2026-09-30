@@ -5,6 +5,7 @@ import {
   buildFunctionCallOutput,
   buildResponseCreate,
   parseServerEvent,
+  parseSearchQuery,
 } from '../openai/protocol';
 import { searchMargeloKb } from '../rag/searchKnowledgeBase';
 
@@ -164,14 +165,12 @@ export const useChatStore = create<ChatState>(set => {
       output = 'Tool call limit reached; answer from what you already have.';
     } else {
       try {
-        const parsedArgs = JSON.parse(toolCall.args || '{}') as {
-          query?: string;
-        };
-        const context = await searchMargeloKb(parsedArgs.query ?? '', 5);
+        const query = parseSearchQuery(toolCall.args);
+        const context = await searchMargeloKb(query, 5);
         output =
           context || 'No matching Margelo knowledge base entries were found.';
-      } catch (error) {
-        output = `Knowledge base search failed: ${String(error)}`;
+      } catch {
+        output = 'Knowledge base search failed.';
       }
     }
     const sent = connectionManager.send(
@@ -220,11 +219,7 @@ export const useChatStore = create<ChatState>(set => {
         break;
       }
       case 'error':
-        console.warn(
-          '[openai] error event:',
-          parsed.code ?? '',
-          parsed.message,
-        );
+        console.warn('[openai] response failed');
         // A failed turn evicts previous_response_id server-side, so drop it or every following send wedges.
         previousResponseId = undefined;
         // The 60-minute connection cap arrives as an error event (not a socket
@@ -239,9 +234,6 @@ export const useChatStore = create<ChatState>(set => {
         break;
       case 'ignored':
         // Ignore benign non-JSON frames
-        if (parsed.type !== '<unparseable>') {
-          console.log('[openai] event:', parsed.type);
-        }
         break;
     }
   };
