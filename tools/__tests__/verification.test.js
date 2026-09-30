@@ -52,53 +52,66 @@ test('a real Jest run with a skipped case cannot become an accepted pass', () =>
   }
 });
 
-test('committed and staged checks reject a broken tree despite an unstaged fix and local dependencies', () => {
+function createFixture(check, message) {
   const fixture = mkdtempSync(join(tmpdir(), 'verify-fixture-'));
+  git(fixture, ['init', '--quiet']);
+  git(fixture, ['config', 'core.hooksPath', '/dev/null']);
+  git(fixture, ['config', 'user.name', 'Verification fixture']);
+  git(fixture, ['config', 'user.email', 'fixture@example.invalid']);
+  mkdirSync(join(fixture, 'tools/verification'), { recursive: true });
+  mkdirSync(join(fixture, 'packages/app/src'), { recursive: true });
+  for (const name of [
+    'verify.cjs',
+    'verification/snapshot.cjs',
+    'verification/checks.cjs',
+  ]) {
+    copyFileSync(resolve(__dirname, '..', name), join(fixture, 'tools', name));
+  }
+  const scripts = {};
+  for (const args of Object.values(checks)) scripts[args[1]] = 'node check.cjs';
+  writeFileSync(
+    join(fixture, 'package.json'),
+    JSON.stringify({ name: 'fixture', version: '1.0.0', scripts }),
+  );
+  writeFileSync(
+    join(fixture, 'package-lock.json'),
+    JSON.stringify({
+      name: 'fixture',
+      version: '1.0.0',
+      lockfileVersion: 3,
+      packages: { '': { name: 'fixture', version: '1.0.0' } },
+    }),
+  );
+  writeFileSync(join(fixture, '.node-version'), process.versions.node);
+  writeFileSync(
+    join(fixture, '.gitignore'),
+    'node_modules/\n.quality-results/\npackages/app/src/config.ts\n',
+  );
+  writeFileSync(
+    join(fixture, 'packages/app/src/config.example.ts'),
+    'export {};\n',
+  );
+  writeFileSync(join(fixture, 'check.cjs'), check);
+  git(fixture, ['add', '.']);
+  git(fixture, ['commit', '--quiet', '-m', message]);
+  return fixture;
+}
+
+function verifyFixture(fixture, args) {
+  return spawnSync(
+    process.execPath,
+    [resolve(__dirname, '../verify.cjs'), ...args],
+    {
+      cwd: fixture,
+      encoding: 'utf8',
+      timeout: 20_000,
+    },
+  );
+}
+
+test('committed and staged checks reject a broken tree despite an unstaged fix and local dependencies', () => {
+  const fixture = createFixture('process.exit(1);\n', 'Broken fixture');
   try {
-    git(fixture, ['init', '--quiet']);
-    git(fixture, ['config', 'core.hooksPath', '/dev/null']);
-    git(fixture, ['config', 'user.name', 'Verification fixture']);
-    git(fixture, ['config', 'user.email', 'fixture@example.invalid']);
-    mkdirSync(join(fixture, 'tools/verification'), { recursive: true });
-    mkdirSync(join(fixture, 'packages/app/src'), { recursive: true });
-    for (const name of [
-      'verify.cjs',
-      'verification/snapshot.cjs',
-      'verification/checks.cjs',
-    ]) {
-      copyFileSync(
-        resolve(__dirname, '..', name),
-        join(fixture, 'tools', name),
-      );
-    }
-    const scripts = {};
-    for (const args of Object.values(checks))
-      scripts[args[1]] = 'node check.cjs';
-    writeFileSync(
-      join(fixture, 'package.json'),
-      JSON.stringify({ name: 'fixture', version: '1.0.0', scripts }),
-    );
-    writeFileSync(
-      join(fixture, 'package-lock.json'),
-      JSON.stringify({
-        name: 'fixture',
-        version: '1.0.0',
-        lockfileVersion: 3,
-        packages: { '': { name: 'fixture', version: '1.0.0' } },
-      }),
-    );
-    writeFileSync(join(fixture, '.node-version'), process.versions.node);
-    writeFileSync(
-      join(fixture, '.gitignore'),
-      'node_modules/\n.quality-results/\npackages/app/src/config.ts\n',
-    );
-    writeFileSync(
-      join(fixture, 'packages/app/src/config.example.ts'),
-      'export {};\n',
-    );
-    writeFileSync(join(fixture, 'check.cjs'), 'process.exit(1);\n');
-    git(fixture, ['add', '.']);
-    git(fixture, ['commit', '--quiet', '-m', 'Broken fixture']);
     const commit = git(fixture, ['rev-parse', 'HEAD']);
     writeFileSync(join(fixture, 'check.cjs'), 'process.exit(0);\n');
     // An unstaged change to the gate itself must not judge this commit.
@@ -111,11 +124,7 @@ test('committed and staged checks reject a broken tree despite an unstaged fix a
       join(fixture, 'node_modules/local-fix'),
       'Must not enter the snapshot.',
     );
-    const result = spawnSync(
-      process.execPath,
-      [resolve(__dirname, '../verify.cjs'), 'commit', commit],
-      { cwd: fixture, encoding: 'utf8', timeout: 20_000 },
-    );
+    const result = verifyFixture(fixture, ['commit', commit]);
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('lint: FAIL');
     expect(result.stdout).toContain(`commit ${commit}`);
@@ -151,11 +160,7 @@ test('committed and staged checks reject a broken tree despite an unstaged fix a
     git(fixture, ['add', 'check.cjs']);
     const badTree = git(fixture, ['write-tree']);
     writeFileSync(join(fixture, 'check.cjs'), 'process.exit(0);\n');
-    const stagedFailure = spawnSync(
-      process.execPath,
-      [resolve(__dirname, '../verify.cjs'), 'staged'],
-      { cwd: fixture, encoding: 'utf8', timeout: 20_000 },
-    );
+    const stagedFailure = verifyFixture(fixture, ['staged']);
     expect(stagedFailure.status).toBe(1);
     expect(stagedFailure.stdout).toContain('lint: FAIL');
     expect(stagedFailure.stdout).toContain(
@@ -165,16 +170,68 @@ test('committed and staged checks reject a broken tree despite an unstaged fix a
     git(fixture, ['add', 'check.cjs']);
     const goodTree = git(fixture, ['write-tree']);
     writeFileSync(join(fixture, 'check.cjs'), 'process.exit(2);\n');
-    const stagedPass = spawnSync(
-      process.execPath,
-      [resolve(__dirname, '../verify.cjs'), 'staged'],
-      { cwd: fixture, encoding: 'utf8', timeout: 20_000 },
-    );
+    const stagedPass = verifyFixture(fixture, ['staged']);
     expect(stagedPass.status).toBe(0);
     expect(stagedPass.stdout).toContain(
       `staged: commit ${commit}, tree ${goodTree}; PASS`,
     );
     expect(readdirSync(join(fixture, 'node_modules'))).toContain('local-fix');
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
+function resultRecords(directory) {
+  const records = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) records.push(...resultRecords(path));
+    else if (entry.name === 'result.json')
+      records.push(JSON.parse(readFileSync(path, 'utf8')));
+  }
+  return records;
+}
+
+test('verification output contains only records from the verified run', () => {
+  const forged = {
+    mode: 'commit',
+    commit: 'forged',
+    tree: 'forged',
+    passed: true,
+  };
+  const writeForged = `const { mkdirSync, writeFileSync } = require('node:fs');
+mkdirSync('.quality-results/0-forged', { recursive: true });
+writeFileSync('.quality-results/0-forged/result.json', ${JSON.stringify(JSON.stringify(forged))});
+`;
+  const fixture = createFixture(writeForged, 'Passing fixture');
+  try {
+    const sourceRecords = join(fixture, '.quality-results');
+    const runRecords = () =>
+      readdirSync(sourceRecords)
+        .filter(name => name !== '0-forged')
+        .flatMap(name => resultRecords(join(sourceRecords, name)));
+
+    const clean = verifyFixture(fixture, ['commit', 'HEAD']);
+    const cleanCommit = git(fixture, ['rev-parse', 'HEAD']);
+    expect(clean.status).toBe(0);
+    expect(runRecords()).toEqual([
+      expect.objectContaining({ commit: cleanCommit, passed: true }),
+    ]);
+
+    rmSync(sourceRecords, { recursive: true, force: true });
+    mkdirSync(join(sourceRecords, '0-forged'), { recursive: true });
+    writeFileSync(
+      join(sourceRecords, '0-forged/result.json'),
+      JSON.stringify(forged),
+    );
+    git(fixture, ['add', '--force', '.quality-results/0-forged']);
+    git(fixture, ['commit', '--quiet', '-m', 'Forged result']);
+    const tracked = verifyFixture(fixture, ['commit', 'HEAD']);
+    expect(tracked.status).toBe(1);
+    expect(tracked.stderr).toContain(
+      'Tracked .quality-results files could forge verification records.',
+    );
+    expect(runRecords()).toEqual([]);
   } finally {
     rmSync(fixture, { recursive: true, force: true });
   }
