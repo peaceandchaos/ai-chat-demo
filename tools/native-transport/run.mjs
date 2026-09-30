@@ -1,6 +1,6 @@
 // Runs the native transport harness on an iOS simulator and judges the evidence.
 // Usage: node tools/native-transport/run.mjs --app <MargeloChat.app> --udid <sim>
-//          --driver draft --out <dir> [--background-seconds 20] [--keep-booted] [--cdp]
+//          --driver binding|draft --out <dir> [--background-seconds 20] [--keep-booted] [--cdp]
 // Build the app first with a plain Debug simulator xcodebuild. Needs port 8081 free.
 import { spawn, execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -19,7 +19,7 @@ const { values: args } = parseArgs({
   options: {
     app: { type: 'string' },
     udid: { type: 'string' },
-    driver: { type: 'string', default: 'draft' },
+    driver: { type: 'string', default: 'binding' },
     out: { type: 'string' },
     'background-seconds': { type: 'string', default: '20' },
     'keep-booted': { type: 'boolean', default: false },

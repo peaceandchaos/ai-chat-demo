@@ -15,18 +15,17 @@ import type {
 } from '../../../shared/contracts';
 import faults from '../../../tools/native-transport/faults.json';
 import { ServerTransport, type ClientDrivers } from '../src/network/client';
+import { nativeDrivers } from '../src/network/nativeDrivers';
 import { TransportError } from '../src/network/transport';
 
 const api = `http://localhost:${faults.ports.api}`;
 const faultServer = `http://localhost:${faults.ports.fault}`;
 
-// The pre-existing candidate binding (native-transport-draft.ts). Its NitroWebSocket
-// socket does not satisfy ClientSocket, and no scenario opens a socket.
+// The pre-existing candidate binding (native-transport-draft.ts) for comparison.
+// Its NitroWebSocket socket does not satisfy ClientSocket, and only fetch is compared.
 const draftDrivers: ClientDrivers = {
+  ...nativeDrivers,
   fetch: (url, init) => nitroFetch(url, init),
-  socket: () => {
-    throw new Error('The draft socket does not satisfy ClientSocket.');
-  },
   decoder: () => new TextDecoder('utf-8', { fatal: true }),
 };
 
@@ -179,7 +178,7 @@ async function run(
   device: string,
   show: (text: string) => void,
 ) {
-  const drivers = draftDrivers;
+  const drivers = driver === 'draft' ? draftDrivers : nativeDrivers;
   const server = new ServerTransport(api, device, drivers, true);
   const fault = new ServerTransport(faultServer, device, drivers, true);
   const scenario = async (name: string, body: () => Promise<object>) => {
