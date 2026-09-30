@@ -20,6 +20,7 @@ let server: Server;
 beforeEach(async () => {
   server = await startServer();
 });
+afterEach(() => shutdown(server));
 
 function serverInput(attemptId: string): Submission {
   const generation = server.providers.generations.find(
@@ -105,7 +106,6 @@ test('one chat’s rejection and reconnect never pause or cancel another chat', 
       delivered: true,
     });
   expect(server.dispatched).toEqual([bReply.id, cReply.id]);
-  await shutdown(server, phone);
 });
 
 test('Auto saves the chosen model over the socket; a failed choice stays visible and Retry needs an explicit model', async () => {
@@ -167,7 +167,6 @@ test('Auto saves the chosen model over the socket; a failed choice stays visible
     actualModel: 'gpt-6',
     text: 'Responses',
   });
-  await shutdown(server, phone);
 });
 
 test('Retry adds a version with the original model and pre-answer context; continuations and checkpoints stay on their own paths', async () => {
@@ -237,7 +236,6 @@ test('Retry adds a version with the original model and pre-answer context; conti
     first.id,
     version.id,
   ]);
-  await shutdown(server, phone);
 });
 
 test('Stop online cancels the server attempt and keeps the stopped text', async () => {
@@ -251,7 +249,6 @@ test('Stop online cancels the server attempt and keeps the stopped text', async 
   );
   phone.session.stop(reply.id);
   await settled(phone, reply.id);
-  await server.settle();
   expect(phone.archive.message(reply.id)).toMatchObject({
     status: 'stopped',
     text: 'Partial ',
@@ -262,8 +259,8 @@ test('Stop online cancels the server attempt and keeps the stopped text', async 
     cancelRequested: true,
     delivered: true,
   });
+  await server.settle();
   expect(server.providers.generations).toHaveLength(1);
-  await shutdown(server, phone);
 });
 
 test('Stop while offline stays pending across a restart and is sent on reconnect', async () => {
@@ -310,7 +307,6 @@ test('Stop while offline stays pending across a restart and is sent on reconnect
     cancelRequested: true,
   });
   expect(restarted.network.requests[0]).toBe(`POST /v1/jobs/${reply.id}/stop`);
-  await shutdown(server, phone, restarted);
 });
 
 test('Stop before acceptance leaves a server tombstone, so the unsent turn can never start later', async () => {
@@ -343,7 +339,6 @@ test('Stop before acceptance leaves a server tombstone, so the unsent turn can n
   );
   expect(late.status).toBe(410);
   expect(server.dispatched).toEqual([]);
-  await shutdown(server, phone);
 });
 
 test('deleting a chat cancels its server work, and nothing more is sent or saved for it', async () => {
@@ -379,7 +374,6 @@ test('deleting a chat cancels its server work, and nothing more is sent or saved
   ).toEqual([]);
   expect(phone.archive.recents().map(item => item.id)).not.toContain(chat.id);
   expect(phone.archive.hasChat(kept.id)).toBe(true);
-  await shutdown(server, phone);
 });
 
 test('a chat deleted offline stays deleted across a restart and its server work is cancelled on reconnect', async () => {
@@ -421,5 +415,4 @@ test('a chat deleted offline stays deleted across a restart and its server work 
   expect(restarted.archive.hasChat(chat.id)).toBe(false);
   expect(restarted.network.requests).toEqual([`DELETE /v1/chats/${chat.id}`]);
   expect(restarted.session.notice()).toBeNull();
-  await shutdown(server, phone, restarted);
 });
