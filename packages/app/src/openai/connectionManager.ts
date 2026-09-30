@@ -72,15 +72,15 @@ function connect() {
     attempts = 0;
   };
   nextSocket.onclose = event => {
-    console.warn('[ws] closed', event?.code, event?.reason);
+    console.warn('[ws] closed', event?.code);
     if (socket === nextSocket) {
       socket = null;
     }
     handlers?.onDisconnect();
     scheduleReconnect();
   };
-  nextSocket.onerror = error => {
-    console.warn('[ws] error', error);
+  nextSocket.onerror = () => {
+    console.warn('[ws] connection failed');
     handlers?.onDisconnect();
     scheduleReconnect();
   };

@@ -3,6 +3,7 @@
 //   https://developers.openai.com/api/docs/guides/websocket-mode
 //   https://developers.openai.com/api/docs/guides/streaming-responses
 import { OPENAI_MODEL } from '../config';
+import { z } from 'zod';
 
 const SEARCH_TOOL = {
   type: 'function',
@@ -76,7 +77,35 @@ export function buildFunctionCallOutput(
 
 //
 
-type ServerEvent = { type: string; [key: string]: unknown };
+const errorSchema = z.object({
+  code: z.string().optional(),
+  message: z.string().optional(),
+});
+const serverEventSchema = z.object({
+  type: z.string().min(1),
+  delta: z.string().optional(),
+  item: z
+    .object({
+      type: z.string(),
+      call_id: z.string().optional(),
+      name: z.string().optional(),
+      arguments: z.string().optional(),
+    })
+    .optional(),
+  response: z
+    .object({
+      id: z.string().optional(),
+      error: errorSchema.nullable().optional(),
+    })
+    .optional(),
+  error: errorSchema.optional(),
+  message: z.string().optional(),
+});
+const searchArgumentsSchema = z.object({ query: z.string().min(1) });
+
+export function parseSearchQuery(raw: string): string {
+  return searchArgumentsSchema.parse(JSON.parse(raw)).query;
+}
 
 // A short human label shown while the assistant has no text yet, derived from
 // the response lifecycle events.
@@ -90,9 +119,9 @@ export type ParsedServerEvent =
   | { kind: 'ignored'; type: string };
 
 export function parseServerEvent(raw: string): ParsedServerEvent {
-  let event: ServerEvent;
+  let event: z.infer<typeof serverEventSchema>;
   try {
-    event = JSON.parse(raw);
+    event = serverEventSchema.parse(JSON.parse(raw));
   } catch {
     return { kind: 'ignored', type: '<unparseable>' };
   }
@@ -105,7 +134,7 @@ export function parseServerEvent(raw: string): ParsedServerEvent {
 
     // An output item started: reasoning vs. the actual reply.
     case 'response.output_item.added': {
-      const itemType = (event as { item?: { type?: string } }).item?.type;
+      const itemType = event.item?.type;
       if (itemType === 'reasoning') {
         return { kind: 'status', label: 'Thinking' };
       }
@@ -126,30 +155,20 @@ export function parseServerEvent(raw: string): ParsedServerEvent {
     case 'response.reasoning_summary_text.delta':
       return {
         kind: 'reasoning',
-        text: (event as { delta?: string }).delta ?? '',
+        text: event.delta ?? '',
       };
 
     case 'response.output_text.delta':
-      return { kind: 'delta', text: (event as { delta?: string }).delta ?? '' };
+      return { kind: 'delta', text: event.delta ?? '' };
 
     case 'response.completed':
       return {
         kind: 'completed',
-        responseId:
-          (event as { response?: { id?: string } }).response?.id ?? '',
+        responseId: event.response?.id ?? '',
       };
 
     case 'response.output_item.done': {
-      const item = (
-        event as {
-          item?: {
-            type?: string;
-            call_id?: string;
-            name?: string;
-            arguments?: string;
-          };
-        }
-      ).item;
+      const item = event.item;
       if (item?.type === 'function_call') {
         return {
           kind: 'tool_call',
@@ -163,18 +182,13 @@ export function parseServerEvent(raw: string): ParsedServerEvent {
 
     case 'response.failed':
     case 'error': {
-      const e = event as {
-        error?: { message?: string; code?: string };
-        response?: { error?: { message?: string; code?: string } };
-        message?: string;
-      };
       return {
         kind: 'error',
-        code: e.error?.code ?? e.response?.error?.code,
+        code: event.error?.code ?? event.response?.error?.code,
         message:
-          e.error?.message ??
-          e.response?.error?.message ??
-          e.message ??
+          event.error?.message ??
+          event.response?.error?.message ??
+          event.message ??
           'Unknown error',
       };
     }
