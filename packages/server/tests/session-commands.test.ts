@@ -490,3 +490,23 @@ test('chat deletion finishes on 404 or 410, retries 5xx, and stops retrying a re
     () => deletes(refused) === 2,
   );
 });
+
+test('a submission the server cannot accept fails once on the socket, as it does over HTTP', async () => {
+  const phone = openPhone(server);
+  phone.network.rewrite = body => body.replace('"version":1', '"version":2');
+  const overSocket = phone.session.send(phone.archive.createChat().id, 'A', []);
+  const overHttp = phone.session.send(createChat(phone, 'kimi').id, 'B', []);
+  await settled(phone, overSocket.id);
+  await settled(phone, overHttp.id);
+  expect(phone.archive.message(overSocket.id)).toMatchObject({
+    status: 'failed',
+    accepted: false,
+    error: 'The server could not accept this request.',
+  });
+  expect(phone.archive.message(overHttp.id)).toMatchObject({
+    status: 'failed',
+    accepted: false,
+    error: 'Invalid request data or contract version.',
+  });
+  expect(server.dispatched).toEqual([]);
+});
