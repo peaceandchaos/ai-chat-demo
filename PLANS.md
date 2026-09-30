@@ -27,18 +27,14 @@ The user approved repository instructions, repository/global `test-prune`, check
 
 ### Progress and evidence
 
-- Local commit `dab4fe9` adds instructions, matching repository/global `test-prune`, staged/committed verification, dependency policy, iOS scanner scope, and candidate GitHub controls. Its staged snapshot passed a clean install, lint, formatting, and credential checks.
-- The retained suite and control regressions pass 108 checks locally after the test-prune changes. Deliberate missing-event and empty-replay faults fail the strengthened assertions. A broken committed fixture remains failing despite unstaged code and gate fixes. A real skipped Jest case is rejected by the acceptance runner.
-- The user approved the eight-family dependency repair proposal and selected a GitHub App bot. Neither selection establishes that the repairs or remote controls are complete.
-
-- Commits `0ab8ec4` and `25fdd33` apply the approved parser/image-tool and Workflow dependency repairs. Clean installs and affected local API checks passed. The pending Metro override needs an adapter: its release bundle fails at the filename-input call site. The fresh audit also added high-severity Joi advisory GHSA-6h2x-m376-mqjq. The exact Metro patch and Joi 17.13.7 proposal await approval; all high findings still block.
-- Commit `873527c` fixes three shared-source scanner findings through real schema validation and removal of raw error logs. Malformed-stream regression evidence fails before the fix and passes afterward. The unsafe reply-link handler awaits approval for the HTTP/HTTPS restriction. Android-only findings remain outside scope.
-- The full isolated runs passed 111 tests, lint, formatting, types, credentials, server build, and the compiler report. Security and dependency checks correctly failed. Source-integrity diagnostics identified Workflow's generated `packages/server/.swc` plugin cache and an empty `tools/fixtures` directory left by the lint tests. The allowlist now names the compiler cache, and lint cleanup removes only its newly created empty parent. Unexpected source files still fail. The final committed check must be rerun after these corrections.
-- The original 103 tests passed at the starting checkpoint. That is local evidence, not hosted or native acceptance.
-- The available GitHub login is the owner/admin account. A distinct limited actor and removal of owner credentials from the agent environment remain prerequisites for remote writes.
-- Xcode license acceptance and native build verification remain with the owner. No native verification is claimed.
-
-Update this section with meaningful results, decisions, and unresolved failures as work proceeds. Keep task history concise.
+- Repository instructions, matching repository/global test-prune, staged/committed verification, and candidate GitHub controls are implemented locally.
+- The empty smoke test was removed; missing model events, empty replay, malformed stream data, and unsafe reply links have meaningful regression checks. Link checks use React Native's actual JavaScript URL implementation with the OS boundary mocked.
+- Approved parser/image-tool, Workflow, Metro, and Joi repairs are installed. The fresh audit reports zero high/critical and 15 moderate package entries with dated dispositions. The shared/iOS scanner reports zero findings.
+- Both Metro asset paths and the release iOS JavaScript bundle pass. The already-locked Babel export-namespace transform is now directly declared and enabled. The bundle joins the full committed suite; it is not native compilation.
+- Source-integrity diagnostics corrected the generated SWC cache allowance and lint-fixture cleanup. Unexpected source changes remain blocked. Run the full suite on the final commit before publication.
+- GitHub App provisioning, owner credential isolation, remote enforcement tests, and owner review remain pending. No push, PR, merge, deployment, or paid provider call has occurred.
+- Xcode license acceptance and native build verification remain with the owner. Native networking is the next separate task.
+  Update this section with meaningful results, decisions, and unresolved failures as work proceeds. Keep task history concise.
 
 ## Next: native iOS transport
 

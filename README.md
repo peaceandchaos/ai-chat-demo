@@ -30,6 +30,7 @@ npm run secrets
 npm run security             # iOS/shared scan; findings currently block
 npm run audit:check          # all high/critical findings block
 npm run build:server
+npm run build:ios-js          # release JS bundle; not native compilation
 npm run react-compiler-check # report; not proof of native compilation
 npm run verify:commit -- HEAD
 ```
@@ -50,7 +51,7 @@ The 13 selected anti-slop rules remain errors. Their source and license are in `
 
 Every high/critical dependency advisory blocks acceptance, regardless of exposure. Moderate/low findings have dated dispositions in `tools/verification/dependency-dispositions.json`; new or expired findings need review. No update or override is automatic.
 
-The scanner excludes Android-specific files and scans the remaining app. Stream and tool arguments now receive schema validation, and raw network errors are no longer logged. The unsafe reply-link handler remains pending user approval for the HTTP/HTTPS restriction. The scanner does not inspect arbitrary Swift/Objective-C networking code. All four native patches must apply during `npm ci`; patch failure stops installation.
+The scanner excludes Android-specific files and scans the remaining app. Stream and tool arguments receive schema validation; raw network errors are not logged. Reply links require HTTP/HTTPS, structural validation, and OS support. Checks exercise React Native's actual JavaScript URL implementation. The scanner reports zero findings but does not prove native networking safety. All four native patches and the Metro patch must apply during `npm ci`.
 
 ## Test review
 
