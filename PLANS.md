@@ -29,7 +29,7 @@ The user approved repository instructions, repository/global `test-prune`, check
 
 - Repository instructions, matching repository/global test-prune, staged/committed verification, and candidate GitHub controls are implemented locally.
 - The empty smoke test was removed; missing model events, empty replay, malformed stream data, and unsafe reply links have meaningful regression checks. Link checks use React Native's actual JavaScript URL implementation with the OS boundary mocked.
-- Approved parser/image-tool, Workflow, Metro, and Joi repairs are installed. The fresh audit reports zero high/critical and 15 moderate package entries with dated dispositions. The shared/iOS scanner reports zero findings.
+- Approved parser/image-tool, Workflow, Metro, and Joi repairs are installed. The fresh audit reports zero high/critical and 15 moderate package entries with dated dispositions. The scanner reports no shared-code findings and six medium dependency entries, covered by the separate advisory policy.
 - Both Metro asset paths and the release iOS JavaScript bundle pass. The already-locked Babel export-namespace transform is now directly declared and enabled. The bundle joins the full committed suite; it is not native compilation.
 - Source-integrity diagnostics corrected the generated SWC cache allowance and lint-fixture cleanup. Unexpected source changes remain blocked. Run the full suite on the final commit before publication.
 - GitHub App provisioning, owner credential isolation, remote enforcement tests, and owner review remain pending. No push, PR, merge, deployment, or paid provider call has occurred.
