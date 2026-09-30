@@ -331,9 +331,15 @@ export class ChatArchive {
       isActive(previous)
     )
       throw new Error('Stop or finish this reply before retrying.');
-    const known =
+    // Retry keeps the original attempt's model. An explicit model only fills
+    // the gap when Auto failed before any model was saved; it never swaps one.
+    const saved =
       previous.actualModel ??
-      (previous.picker === 'auto' ? explicitModel : previous.picker);
+      previous.retryModel ??
+      (previous.picker === 'auto' ? null : previous.picker);
+    if (saved && explicitModel && explicitModel !== saved)
+      throw new Error(`This reply already has a model. Retry uses ${saved}.`);
+    const known = saved ?? explicitModel;
     if (!known) throw new Error('Choose a model for this retry.');
     const chat = this.chat(previous.chatId);
     const reply = this.newMessage(

@@ -216,3 +216,26 @@ test('a checkpoint after a fork cannot enter a sibling retry or continuation', (
   const continuation = archive.createTurn(chat.id, 'New branch', []);
   expect(archive.submission(continuation.id).checkpoints).toEqual([]);
 });
+
+test('Retry reuses a model saved only as a retry model and refuses to swap a known model', () => {
+  const archive = new ChatArchive(new MemoryStorage(), randomUUID);
+  const chat = archive.createChat();
+  const first = archive.createTurn(chat.id, 'Question', []);
+  const failed = (message: SavedMessage) => {
+    archive.saveMessages([
+      { ...message, status: 'failed', accepted: true, error: 'Failed early.' },
+    ]);
+    archive.acknowledge(message.id);
+  };
+  failed(first);
+  expect(() => archive.retry(first.id)).toThrow(
+    'Choose a model for this retry.',
+  );
+  const second = archive.retry(first.id, 'deepseek');
+  failed(second);
+  expect(archive.retry(second.id).retryModel).toBe('deepseek');
+  expect(() => archive.retry(second.id, 'kimi')).toThrow(
+    'This reply already has a model. Retry uses deepseek.',
+  );
+  expect(archive.retry(second.id, 'deepseek').retryModel).toBe('deepseek');
+});
