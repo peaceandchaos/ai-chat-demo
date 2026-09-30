@@ -31,11 +31,24 @@ async function targetState(github, repo, branch) {
   const run = response.data.workflow_runs[0];
   if (
     !run ||
+    run.event !== 'push' ||
     run.head_sha !== sha ||
-    run.head_branch !== branch ||
-    run.status !== 'completed' ||
-    run.conclusion !== 'success'
+    run.head_branch !== branch
   )
+    return { sha, passed: false };
+  if (run.status === 'completed' && run.conclusion === 'failure') {
+    const validIdentity =
+      Number.isSafeInteger(run.id) &&
+      run.id > 0 &&
+      Number.isSafeInteger(run.run_attempt) &&
+      run.run_attempt > 0;
+    return {
+      sha,
+      passed: false,
+      repairRun: validIdentity ? `${run.id}:${run.run_attempt}` : null,
+    };
+  }
+  if (run.status !== 'completed' || run.conclusion !== 'success')
     return { sha, passed: false };
   const jobs = await github.paginate(
     github.rest.actions.listJobsForWorkflowRun,
@@ -65,33 +78,31 @@ async function approveRepair(github, context) {
       pull_number: Number(inputs.pr),
     })
   ).data;
-  const target = await github.rest.git.getRef({
-    ...context.repo,
-    ref: `heads/${pr.base.ref}`,
-  });
-  if (
-    pr.state !== 'open' ||
-    pr.head.sha !== inputs.head ||
-    target.data.object.sha !== inputs.base
-  )
+  if (pr.state !== 'open' || pr.head.sha !== inputs.head)
     throw new Error('Repair identities changed; nothing was approved.');
+  const target = await targetState(github, context.repo, pr.base.ref);
+  if (target.sha !== inputs.base)
+    throw new Error('Repair identities changed; nothing was approved.');
+  if (!target.repairRun)
+    throw new Error('Target has no exact completed failed push run to repair.');
   await github.rest.checks.create({
     ...context.repo,
     name: 'owner-repair-approval',
     head_sha: inputs.head,
-    external_id: `${pr.number}:${inputs.head}:${inputs.base}`,
+    external_id: `${pr.number}:${inputs.head}:${inputs.base}:${target.repairRun}`,
     status: 'completed',
     conclusion: 'success',
     details_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
     output: {
       title: 'Owner authorized target-health repair exception',
       summary:
-        'This binds one PR, candidate SHA, and target SHA. All candidate checks and reviews remain required.',
+        'This binds one PR, candidate SHA, target SHA, and failed run attempt. All candidate checks and reviews remain required.',
     },
   });
 }
 
-async function repairAllowed(github, context, pr, baseSha) {
+async function repairAllowed(github, context, pr, target) {
+  if (!target.repairRun) return false;
   const approvals = await github.paginate(github.rest.checks.listForRef, {
     ...context.repo,
     ref: pr.head.sha,
@@ -104,7 +115,8 @@ async function repairAllowed(github, context, pr, baseSha) {
     if (
       approval.app?.slug !== 'github-actions' ||
       approval.conclusion !== 'success' ||
-      approval.external_id !== `${pr.number}:${pr.head.sha}:${baseSha}` ||
+      approval.external_id !==
+        `${pr.number}:${pr.head.sha}:${target.sha}:${target.repairRun}` ||
       !approval.details_url?.startsWith(prefix)
     )
       continue;
@@ -148,10 +160,7 @@ async function groupHealthy(github, context, pulls) {
         await targetState(github, context.repo, pr.base.ref),
       );
     const target = targets.get(pr.base.ref);
-    if (
-      !target.passed &&
-      !(await repairAllowed(github, context, pr, target.sha))
-    )
+    if (!target.passed && !(await repairAllowed(github, context, pr, target)))
       return false;
   }
   // Results are SHA-scoped. Check every PR sharing a head, then recheck identities.
@@ -169,6 +178,12 @@ async function groupHealthy(github, context, pulls) {
       current.base.ref !== pr.base.ref ||
       target.data.object.sha !== targets.get(pr.base.ref).sha
     )
+      return false;
+  }
+  for (const [branch, target] of targets) {
+    if (!target.repairRun) continue;
+    const current = await targetState(github, context.repo, branch);
+    if (current.sha !== target.sha || current.repairRun !== target.repairRun)
       return false;
   }
   return true;
