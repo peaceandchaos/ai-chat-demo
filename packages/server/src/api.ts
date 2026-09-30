@@ -9,7 +9,7 @@ import {
   type SocketCommand,
 } from '../../../shared/contracts';
 import { deviceOwner } from './auth';
-import { jobStream } from './delivery';
+import { deliverJob, jobStream } from './delivery';
 import { RequestError } from './errors';
 import { InputParts } from './input-parts';
 import type { Dispatcher, JobRepository } from './jobs';
@@ -101,6 +101,102 @@ export async function executeCommand(
       const job = await jobs.reconcile(owner, command.attemptId, 330_000);
       return { kind: 'accepted', snapshot: job.snapshot };
     }
+  }
+}
+
+export type SocketPeer = {
+  isOpen(): boolean;
+  send(text: string): void;
+  close(code: number, reason: string): void;
+};
+
+// One phone WebSocket. Each accepted attempt gets its own delivery reader;
+// closing the socket detaches those readers without cancelling their jobs.
+export class SocketConnection {
+  private readonly readers = new Map<string, AbortController>();
+
+  constructor(
+    private readonly headers: Headers,
+    private readonly services: () => ApiServices,
+    private readonly peer: SocketPeer,
+  ) {}
+
+  private send(message: ServerMessage): Promise<void> {
+    this.peer.send(JSON.stringify(message));
+    return Promise.resolve();
+  }
+
+  async message(read: () => string): Promise<void> {
+    let attemptId: string | null = null;
+    try {
+      const runtime = this.services();
+      const owner = deviceOwner(this.headers, runtime.allowlist);
+      const raw = read();
+      if (Buffer.byteLength(raw, 'utf8') > 4_000_000)
+        throw new RequestError(413, 'Split large input into context parts.');
+      const command = decodeJson(socketCommandSchema, raw);
+      attemptId =
+        command.kind === 'submit'
+          ? command.submission.attemptId
+          : command.attemptId;
+      const result = await executeCommand(owner, command, runtime);
+      if (!this.peer.isOpen()) return;
+      if (result.kind !== 'accepted') {
+        await this.send(result);
+        return;
+      }
+      this.readers.get(attemptId)?.abort();
+      const controller = new AbortController();
+      this.readers.set(attemptId, controller);
+      const replyId = attemptId;
+      void deliverJob(
+        await runtime.jobs(),
+        owner,
+        replyId,
+        controller.signal,
+        message => this.send(message),
+      )
+        .then(() => {
+          if (!controller.signal.aborted)
+            return this.send({ kind: 'detached', attemptId: replyId });
+        })
+        .catch(() =>
+          this.send({
+            kind: 'error',
+            attemptId: replyId,
+            message:
+              'Delivery was interrupted. Reconnect to recover this reply.',
+          }),
+        )
+        .finally(() => {
+          if (this.readers.get(replyId) === controller)
+            this.readers.delete(replyId);
+        });
+    } catch (error) {
+      if (error instanceof Response && error.status === 401) {
+        this.peer.close(1008, 'Unauthorized');
+        return;
+      }
+      await this.send({
+        kind: 'error',
+        attemptId,
+        status:
+          error instanceof RequestError
+            ? error.status
+            : error instanceof z.ZodError || error instanceof SyntaxError
+              ? 400
+              : 503,
+        message:
+          error instanceof RequestError
+            ? error.message
+            : 'The server could not accept this request.',
+      });
+    }
+  }
+
+  close(): void {
+    for (const reader of this.readers.values()) reader.abort();
+    this.readers.clear();
   }
 }
 
