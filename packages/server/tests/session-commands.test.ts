@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { ContextCheckpoint, Submission } from '../../../shared/contracts';
+import type { Receive } from '../../app/src/network/transport';
 import { handleRequest } from '../src/api';
 import {
   createChat,
@@ -348,21 +349,55 @@ test('deleting a chat cancels its server work, and nothing more is sent or saved
   const phone = openPhone(server);
   const kept = createChat(phone, 'kimi');
   const chat = createChat(phone, 'kimi');
+  const readers: Receive[] = [];
+  const submit = phone.transport.submit.bind(phone.transport);
+  phone.transport.submit = (input, receive, signal) => {
+    readers.push(receive);
+    return submit(input, receive, signal);
+  };
   const reply = phone.session.send(chat.id, 'Delete me', []);
   server.providers.script(reply.id).text('Visible ');
   await until(
     'the reply is streaming',
     () => phone.session.message(reply.id).text === 'Visible ',
   );
+  const last = await serverSnapshot(server, reply.id);
   const before = phone.network.requests.length;
   phone.session.deleteChat(chat.id);
+  for (const receive of readers) {
+    receive({
+      kind: 'event',
+      event: {
+        version: 1,
+        attemptId: reply.id,
+        sequence: last.sequence + 1,
+        kind: 'provider',
+        wire: 'gateway',
+        raw: JSON.stringify({
+          object: 'chat.completion.chunk',
+          choices: [{ index: 0, delta: { content: 'late' } }],
+        }),
+      },
+    });
+    receive({
+      kind: 'accepted',
+      snapshot: {
+        ...last,
+        sequence: last.sequence + 2,
+        status: 'completed',
+        text: 'Visible late',
+      },
+    });
+  }
+  expect(() => phone.session.message(reply.id)).toThrow(
+    'A saved message is missing. Stored data was preserved.',
+  );
   await until(
     'the server confirmed deletion',
     () => phone.session.pendingDeletions().length === 0,
   );
   await server.settle();
-  server.providers.script(reply.id).text('late').end();
-  await new Promise(resolve => setTimeout(resolve, 300));
+  expect(readers).toHaveLength(1);
   expect(phone.network.requests.slice(before)).toEqual([
     `DELETE /v1/chats/${chat.id}`,
   ]);
@@ -509,4 +544,24 @@ test('a submission the server cannot accept fails once on the socket, as it does
     error: 'Invalid request data or contract version.',
   });
   expect(server.dispatched).toEqual([]);
+});
+
+test('a receipt the server no longer recognizes settles the saved reply without retrying', async () => {
+  const phone = openPhone(server);
+  const chat = createChat(phone, 'kimi');
+  phone.network.respond = (method, path) =>
+    method === 'POST' && path.endsWith('/ack') ? 404 : null;
+  const reply = phone.session.send(chat.id, 'Question', []);
+  server.providers.script(reply.id).text('Kept').end();
+  await settled(phone, reply.id);
+  expect(phone.archive.message(reply.id)).toMatchObject({
+    status: 'completed',
+    text: 'Kept',
+    acknowledged: true,
+  });
+  expect(
+    phone.network.requests.filter(
+      request => request === `POST /v1/jobs/${reply.id}/ack`,
+    ),
+  ).toHaveLength(1);
 });
