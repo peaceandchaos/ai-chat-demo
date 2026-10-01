@@ -20,8 +20,6 @@ import { TransportError } from '../src/network/transport';
 const api = `http://localhost:${faults.ports.api}`;
 const faultServer = `http://localhost:${faults.ports.fault}`;
 
-// For comparison: nitro-fetch's public fetch(), which the earlier draft binding
-// used. Only fetch differs; sockets and the decoder are the binding's own.
 const draftDrivers: ClientDrivers = {
   ...nativeDrivers,
   fetch: (url, init) => nitroFetch(url, init),
@@ -501,8 +499,6 @@ async function run(
       return { ...outcome, kinds, text: texts.at(-1) ?? null };
     });
 
-  // Instrumented builds count DevTools reports. This uncredentialed builder
-  // request must add exactly one, so zero for credentialed ones is meaningful.
   await scenario('uncredentialed-devtools-control', async () => {
     const response = await nativeDrivers.fetch(
       `${api}/harness/uncredentialed`,

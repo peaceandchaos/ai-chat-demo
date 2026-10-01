@@ -36,7 +36,6 @@ type FakeSocket = {
   onError?: (error: string) => void;
 };
 
-// Node's view of the listeners an AbortSignal holds; the app has no Node types.
 const { getEventListeners } = jest.requireActual<{
   getEventListeners: (target: EventTarget, type: string) => unknown[];
 }>('node:events');

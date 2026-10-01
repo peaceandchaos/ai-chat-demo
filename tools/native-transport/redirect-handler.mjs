@@ -1,7 +1,3 @@
-// Checks on macOS that a redirect handler held after cancel() keeps the
-// URLSession delegate alive, and that completing it with nil releases it.
-// The nitro-fetch patch refuses such a redirect at once for this reason.
-// Usage: node tools/native-transport/redirect-handler.mjs (needs Xcode's swiftc).
 import { execFile, execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import http from 'node:http';
