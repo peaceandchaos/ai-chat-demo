@@ -7,7 +7,6 @@ import {
   fetch as nitroFetch,
   NetworkInspector,
 } from 'react-native-nitro-fetch';
-import { TextDecoder } from 'react-native-nitro-text-decoder';
 import type {
   AttemptSnapshot,
   ServerMessage,
@@ -21,12 +20,11 @@ import { TransportError } from '../src/network/transport';
 const api = `http://localhost:${faults.ports.api}`;
 const faultServer = `http://localhost:${faults.ports.fault}`;
 
-// The pre-existing candidate binding (native-transport-draft.ts) for comparison.
-// Its NitroWebSocket socket does not satisfy ClientSocket, and only fetch is compared.
+// For comparison: nitro-fetch's public fetch(), which the earlier draft binding
+// used. Only fetch differs; sockets and the decoder are the binding's own.
 const draftDrivers: ClientDrivers = {
   ...nativeDrivers,
   fetch: (url, init) => nitroFetch(url, init),
-  decoder: () => new TextDecoder('utf-8', { fatal: true }),
 };
 
 type ErrorReport = { name: string; message?: string; status?: number };
