@@ -171,8 +171,8 @@ async function status(github, repo, sha, state, description) {
   });
 }
 
-async function groupHealthy(github, context, pulls) {
-  const targets = new Map();
+// `targets` caches each target's state for one inspection; identities are rechecked before publishing.
+async function groupHealthy(github, context, pulls, targets) {
   for (const pr of pulls) {
     if (pr.base.ref.startsWith('submission/')) return false;
     if (!targets.has(pr.base.ref))
@@ -201,7 +201,8 @@ async function groupHealthy(github, context, pulls) {
     )
       return false;
   }
-  for (const [branch, target] of targets) {
+  for (const branch of new Set(pulls.map(pr => pr.base.ref))) {
+    const target = targets.get(branch);
     if (!target.repairRun) continue;
     const current = await targetState(github, context.repo, branch);
     if (current.sha !== target.sha || current.repairRun !== target.repairRun)
@@ -234,9 +235,10 @@ async function inspect(github, context, core) {
       'pending',
       'Checking the current integration target.',
     );
+  const targets = new Map();
   for (const [sha, group] of groups) {
     try {
-      const healthy = await groupHealthy(github, context, group);
+      const healthy = await groupHealthy(github, context, group, targets);
       await status(
         github,
         context.repo,
