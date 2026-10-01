@@ -121,15 +121,23 @@ export class ChatArchive {
     return this.storage.getString(key);
   }
 
+  private put(change: Write): void {
+    if (change.value === null) this.storage.remove(change.key);
+    else this.storage.set(change.key, change.value);
+  }
+
   private apply(writes: Write[]): void {
-    for (const change of writes) {
-      if (change.value === null) this.storage.remove(change.key);
-      else this.storage.set(change.key, change.value);
-    }
+    for (const change of writes) this.put(change);
     this.storage.remove(journalKey);
   }
 
   private commit(writes: Write[]): void {
+    // A single key is replaced as atomically as the journal itself, so only
+    // changes that span keys pay for a journal write and removal.
+    if (writes.length === 1) {
+      this.put(writes[0]);
+      return;
+    }
     // Replaying the same journal is idempotent if the process exits mid-write.
     this.storage.set(journalKey, JSON.stringify(writes));
     this.journalPending = true;
@@ -304,13 +312,13 @@ export class ChatArchive {
       throw new Error('Write a message or choose an image.');
     const parent = chat.leafId ? this.message(chat.leafId) : null;
     const pathId = parent?.pathId ?? chat.basePathId;
-    this.assertIdle(chatId, pathId);
+    const meta = this.metadata();
+    this.assertIdle(meta, chatId, pathId);
     const user = this.newMessage(chat, 'user', chat.leafId, pathId);
     user.text = text;
     user.images = images;
     messageSchema.parse(user);
     const reply = this.newMessage(chat, 'assistant', user.id, pathId);
-    const meta = this.metadata();
     const title = chat.leafId
       ? chat.title
       : [...(text || 'Image conversation').replace(/\s+/gu, ' ')]
@@ -330,8 +338,12 @@ export class ChatArchive {
     return reply;
   }
 
-  private assertIdle(chatId: string, pathId: string): void {
-    for (const id of this.metadata().jobIds) {
+  private assertIdle(
+    meta: ArchiveMetadata,
+    chatId: string,
+    pathId: string,
+  ): void {
+    for (const id of meta.jobIds) {
       const job = this.message(id);
       if (job.chatId === chatId && job.pathId === pathId && isActive(job))
         throw new Error(
