@@ -18,7 +18,7 @@ export async function deliverJob(
   if (isTerminal(job.snapshot.status)) return;
   const started = Date.now();
   while (!signal.aborted && Date.now() - started < 250_000) {
-    const { events, reconcile } = await jobs.poll(
+    const { events, endedOrStale } = await jobs.poll(
       owner,
       attemptId,
       sequence,
@@ -32,7 +32,7 @@ export async function deliverJob(
         return;
     }
     if (events.length > 0) continue;
-    if (reconcile) {
+    if (endedOrStale) {
       const current = await jobs.reconcile(owner, attemptId, staleAfterMs);
       if (isTerminal(current.snapshot.status)) {
         await emit({ kind: 'accepted', snapshot: current.snapshot });

@@ -46,10 +46,13 @@ export function textItem(
 // A byte upper estimate protects multilingual text when provider tokenizers are
 // unavailable. It intentionally compacts earlier than the CLI's chars/4 estimate.
 // Inline image bytes are conservative too; oversize images fail visibly.
+function itemSize(item: ResponseInputItem): number {
+  return Buffer.byteLength(JSON.stringify(item), 'utf8') + 16;
+}
+
 export function contextSize(items: ResponseInputItem[]): number {
   let size = 0;
-  for (const item of items)
-    size += Buffer.byteLength(JSON.stringify(item), 'utf8') + 16;
+  for (const item of items) size += itemSize(item);
   return size;
 }
 
@@ -90,9 +93,9 @@ function retainedStart(
   const target = (config.window - config.maxOutput) * 0.16;
   let size = 0;
   let start = items.length;
-  while (start > 0 && size + contextSize([items[start - 1]]) <= target) {
+  while (start > 0 && size + itemSize(items[start - 1]) <= target) {
     start -= 1;
-    size += contextSize([items[start]]);
+    size += itemSize(items[start]);
   }
   return start;
 }
@@ -188,7 +191,7 @@ export async function prepareContext(
   for (const entry of input.history.slice(start)) {
     for (const piece of messagePieces(entry, pieceBudget)) {
       signal.throwIfAborted();
-      const pieceSize = contextSize([piece]);
+      const pieceSize = itemSize(piece);
       if (pieceSize >= threshold)
         throw new ProviderFailure(
           'An attachment is too large for inline context. Use a smaller image.',

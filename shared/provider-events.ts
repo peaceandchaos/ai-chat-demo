@@ -109,9 +109,12 @@ function recordData(record: string): string | null {
 
 // SSE records can split at any byte, newline, or JSON token. TextDecoder handles
 // UTF-8 boundaries; this parser retains incomplete records between calls.
+// A boundary that straddles two chunks starts at most this far before the new text.
+const boundaryOverlap = '\r\n\r\n'.length - 1;
+
 export class SseDecoder {
   private buffer = '';
-  private scanned = 0;
+  private boundaryFreeLength = 0;
 
   constructor(private readonly maxRecordCharacters = 1_048_576) {}
 
@@ -119,7 +122,7 @@ export class SseDecoder {
     this.buffer += chunk;
     const records: string[] = [];
     const boundary = /\r?\n\r?\n/gu;
-    boundary.lastIndex = Math.max(0, this.scanned - 3);
+    boundary.lastIndex = Math.max(0, this.boundaryFreeLength - boundaryOverlap);
     let start = 0;
     for (
       let match = boundary.exec(this.buffer);
@@ -133,7 +136,7 @@ export class SseDecoder {
       start = boundary.lastIndex;
     }
     this.buffer = this.buffer.slice(start);
-    this.scanned = this.buffer.length;
+    this.boundaryFreeLength = this.buffer.length;
     if (this.buffer.length > this.maxRecordCharacters)
       throw new Error('A stream record is too large.');
     return records;
@@ -143,6 +146,6 @@ export class SseDecoder {
     if (this.buffer.trim())
       throw new Error('The stream ended inside a record.');
     this.buffer = '';
-    this.scanned = 0;
+    this.boundaryFreeLength = 0;
   }
 }
