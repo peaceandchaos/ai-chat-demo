@@ -33,6 +33,11 @@ type FakeSocket = {
   onError?: (error: string) => void;
 };
 
+// Node's view of the listeners an AbortSignal holds; the app has no Node types.
+const { getEventListeners } = jest.requireActual<{
+  getEventListeners: (target: EventTarget, type: string) => unknown[];
+}>('node:events');
+
 const mockExchanges: Exchange[] = [];
 const mockSockets: FakeSocket[] = [];
 
@@ -236,6 +241,31 @@ test('text() reconstructs UTF-8 split across native chunks', async () => {
   expect(result.status).toBe(429);
   expect(result.ok).toBe(false);
   await expect(result.text()).resolves.toBe('{"error":"Grüße 🦋"}');
+});
+
+test('text() rejects invalid UTF-8 and a truncated final character', async () => {
+  for (const body of [
+    [0x7b, 0xff, 0x7d],
+    [0x7b, 0xf0, 0x9f, 0xa6],
+  ]) {
+    const { response, exchange } = start();
+    fire(exchange, 'started')(ok);
+    fire(exchange, 'read')(ok, new Uint8Array(body).buffer, body.length);
+    fire(exchange, 'succeeded')(ok);
+    await expect((await response).text()).rejects.toMatchObject({
+      name: 'TypeError',
+    });
+  }
+});
+
+test('a finished request leaves no listener on the caller signal', async () => {
+  const controller = new AbortController();
+  const { response, exchange } = start(controller.signal);
+  expect(getEventListeners(controller.signal, 'abort')).toHaveLength(1);
+  fire(exchange, 'started')(ok);
+  fire(exchange, 'succeeded')(ok);
+  await (await response).text();
+  expect(getEventListeners(controller.signal, 'abort')).toHaveLength(0);
 });
 
 test('requests that could follow redirects are rejected before reaching native', async () => {
