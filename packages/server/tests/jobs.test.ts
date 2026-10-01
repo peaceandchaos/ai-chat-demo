@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { PGlite } from '@electric-sql/pglite';
 import { makeCheckpoint } from '../src/compaction/context';
 import type { Database } from '../src/database';
-import { JobRepository } from '../src/jobs';
+import { JobRepository, staleAfterMs } from '../src/jobs';
 import { schemaSql } from '../src/schema';
 import { submission } from './fixtures';
 
@@ -106,7 +106,7 @@ test('another device cannot read, stream, cancel, or acknowledge a job', async (
     status: 404,
   });
   await expect(
-    jobs.events(otherOwner, input.attemptId, 0),
+    jobs.poll(otherOwner, input.attemptId, 0, staleAfterMs),
   ).rejects.toMatchObject({ status: 404 });
   await expect(jobs.cancel(otherOwner, input.attemptId)).rejects.toMatchObject({
     status: 404,
@@ -138,7 +138,12 @@ test('completion remains retrievable after a reader closes and until durable rec
   expect(final.text).toBe('The original answer.');
   expect(final.actualModel).toBe('gpt-6');
   expect(final.checkpoint).toEqual(checkpoint);
-  const replay = await reopened.events(owner, input.attemptId, cursor);
+  const { events: replay } = await reopened.poll(
+    owner,
+    input.attemptId,
+    cursor,
+    staleAfterMs,
+  );
   expect(replay).toEqual(
     expect.arrayContaining([
       expect.objectContaining({
@@ -165,7 +170,9 @@ test('completion remains retrievable after a reader closes and until durable rec
   await expect(reopened.input(owner, input.attemptId)).rejects.toMatchObject({
     status: 404,
   });
-  expect(await reopened.events(owner, input.attemptId, 0)).toEqual([]);
+  expect(
+    (await reopened.poll(owner, input.attemptId, 0, staleAfterMs)).events,
+  ).toEqual([]);
   await reopened.submit(owner, input, dispatch);
   expect(dispatchCount).toBe(1);
 });
@@ -206,7 +213,9 @@ test('deletion leaves a tombstone and stops late jobs from recreating the chat',
     text: '',
     checkpoint: null,
   });
-  expect(await jobs.events(owner, input.attemptId, 0)).toEqual([]);
+  expect(
+    (await jobs.poll(owner, input.attemptId, 0, staleAfterMs)).events,
+  ).toEqual([]);
   await expect(jobs.input(owner, input.attemptId)).rejects.toMatchObject({
     status: 404,
   });

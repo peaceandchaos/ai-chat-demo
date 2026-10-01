@@ -7,9 +7,10 @@ import {
 } from '../../../shared/contracts';
 import { SseDecoder } from '../../../shared/provider-events';
 import { handleRequest, type ApiServices } from '../src/api';
+import { deliverJob } from '../src/delivery';
 import { deviceOwner } from '../src/auth';
 import { InputParts } from '../src/input-parts';
-import { JobRepository } from '../src/jobs';
+import { JobRepository, staleAfterMs } from '../src/jobs';
 import { testDatabase } from './database';
 import { submission } from './fixtures';
 
@@ -248,6 +249,58 @@ test('Delete rejects later context parts and prevents them from recreating a cha
     expect(deleted.status).toBe(204);
     await expect(parts.stage(owner, first)).rejects.toThrow('deleted');
     expect(f.dispatch).not.toHaveBeenCalled();
+  } finally {
+    await f.postgres.close();
+  }
+});
+
+test('an attached reader ends with the final snapshot when the job ends without an event', async () => {
+  const f = await fixture();
+  try {
+    let now = 1_000;
+    const jobs = new JobRepository(f.jobs.database, () => now);
+    const messages = async (
+      attemptId: string,
+      end: () => Promise<void>,
+    ): Promise<ServerMessage[]> => {
+      const received: ServerMessage[] = [];
+      let ended = false;
+      await deliverJob(
+        jobs,
+        owner,
+        attemptId,
+        new AbortController().signal,
+        async message => {
+          received.push(message);
+          if (!ended) {
+            ended = true;
+            await end();
+          }
+        },
+        1,
+      );
+      return received;
+    };
+    const deleted = submission();
+    await jobs.submit(owner, deleted, f.dispatch);
+    const afterDelete = await messages(deleted.attemptId, () =>
+      jobs.deleteChat(owner, deleted.chatId),
+    );
+    expect(afterDelete.map(message => message.kind)).toEqual([
+      'accepted',
+      'accepted',
+    ]);
+    expect(afterDelete[1]).toMatchObject({
+      snapshot: { status: 'deleted' },
+    });
+    const abandoned = submission();
+    await jobs.submit(owner, abandoned, f.dispatch);
+    const afterStale = await messages(abandoned.attemptId, async () => {
+      now += staleAfterMs + 1;
+    });
+    expect(afterStale.at(-1)).toMatchObject({
+      snapshot: { status: 'interrupted' },
+    });
   } finally {
     await f.postgres.close();
   }

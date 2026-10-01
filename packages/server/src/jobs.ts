@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import {
   attemptSnapshotSchema,
+  attemptStatusSchema,
   checkpointSchema,
   contractVersion,
   decodeJson,
@@ -28,6 +29,13 @@ const storedJobSchema = z.strictObject({
   providerStarted: z.boolean(),
 });
 export type StoredJob = z.infer<typeof storedJobSchema>;
+const pollSchema = z.strictObject({
+  status: attemptStatusSchema,
+  heartbeat: z.number(),
+  events: z.array(jobEventSchema),
+});
+// A job with no heartbeat for this long has lost its worker.
+export const staleAfterMs = 330_000;
 export type JobUpdate = {
   events?: EventPayload[];
   text?: string;
@@ -369,18 +377,33 @@ export class JobRepository {
     });
   }
 
-  async events(
+  // One round trip per delivery poll. reconcile is true when the job has
+  // ended or gone stale, so the reader should reconcile and send the result.
+  async poll(
     owner: string,
     attemptId: string,
     after: number,
-  ): Promise<JobEvent[]> {
-    await this.get(owner, attemptId);
+    staleAfterMs: number,
+  ): Promise<{ events: JobEvent[]; reconcile: boolean }> {
     const result = await this.database.query(
-      `SELECT event::text AS data FROM chat_job_events
-       WHERE owner = $1 AND attempt_id = $2 AND sequence > $3 ORDER BY sequence LIMIT 500`,
+      `SELECT jsonb_build_object(
+         'status', state->'snapshot'->'status',
+         'heartbeat', state->'heartbeat',
+         'events', COALESCE((SELECT jsonb_agg(event ORDER BY sequence) FROM (
+           SELECT event, sequence FROM chat_job_events
+           WHERE owner = $1 AND attempt_id = $2 AND sequence > $3
+           ORDER BY sequence LIMIT 500) page), '[]'))::text AS data
+       FROM chat_jobs WHERE owner = $1 AND attempt_id = $2`,
       [owner, attemptId, after],
     );
-    return result.rows.map(row => decodeJson(jobEventSchema, row.data));
+    const row = result.rows[0];
+    if (!row) throw new RequestError(404, 'Reply not found.');
+    const page = decodeJson(pollSchema, row.data);
+    return {
+      events: page.events,
+      reconcile:
+        isTerminal(page.status) || this.now() - page.heartbeat > staleAfterMs,
+    };
   }
 
   async cancel(owner: string, attemptId: string): Promise<AttemptSnapshot> {

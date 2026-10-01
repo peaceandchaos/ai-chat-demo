@@ -1,6 +1,6 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { isTerminal, type ServerMessage } from '../../../shared/contracts';
-import type { JobRepository } from './jobs';
+import { staleAfterMs, type JobRepository } from './jobs';
 
 // The SQL cursor survives Workflow's stream-retention window. Each reader owns
 // only its polling signal; detaching it never cancels an accepted job.
@@ -12,13 +12,18 @@ export async function deliverJob(
   emit: (message: ServerMessage) => Promise<void>,
   intervalMs = 150,
 ): Promise<void> {
-  const job = await jobs.reconcile(owner, attemptId, 330_000);
+  const job = await jobs.reconcile(owner, attemptId, staleAfterMs);
   await emit({ kind: 'accepted', snapshot: job.snapshot });
   let sequence = job.snapshot.sequence;
   if (isTerminal(job.snapshot.status)) return;
   const started = Date.now();
   while (!signal.aborted && Date.now() - started < 250_000) {
-    const events = await jobs.events(owner, attemptId, sequence);
+    const { events, reconcile } = await jobs.poll(
+      owner,
+      attemptId,
+      sequence,
+      staleAfterMs,
+    );
     for (const event of events) {
       if (signal.aborted) return;
       await emit({ kind: 'event', event });
@@ -26,14 +31,15 @@ export async function deliverJob(
       if (event.kind === 'snapshot' && isTerminal(event.snapshot.status))
         return;
     }
-    if (events.length === 0) {
-      const current = await jobs.reconcile(owner, attemptId, 330_000);
+    if (events.length > 0) continue;
+    if (reconcile) {
+      const current = await jobs.reconcile(owner, attemptId, staleAfterMs);
       if (isTerminal(current.snapshot.status)) {
         await emit({ kind: 'accepted', snapshot: current.snapshot });
         return;
       }
-      await delay(intervalMs, undefined, { signal }).catch(() => undefined);
     }
+    await delay(intervalMs, undefined, { signal }).catch(() => undefined);
   }
 }
 

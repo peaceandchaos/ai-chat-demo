@@ -12,7 +12,7 @@ import { deviceOwner } from './auth';
 import { deliverJob, jobStream } from './delivery';
 import { RequestError } from './errors';
 import { InputParts } from './input-parts';
-import type { Dispatcher, JobRepository } from './jobs';
+import { staleAfterMs, type Dispatcher, type JobRepository } from './jobs';
 
 export type ApiServices = {
   allowlist: string;
@@ -121,7 +121,7 @@ export async function executeCommand(
       return { kind: 'accepted', snapshot: job.snapshot };
     }
     case 'attach': {
-      const job = await jobs.reconcile(owner, command.attemptId, 330_000);
+      const job = await jobs.reconcile(owner, command.attemptId, staleAfterMs);
       return { kind: 'accepted', snapshot: job.snapshot };
     }
   }
@@ -235,7 +235,7 @@ async function handleJobRoute(
   const jobs = await services.jobs();
   if (request.method === 'GET' && !action)
     return Response.json(
-      (await jobs.reconcile(owner, attemptId, 330_000)).snapshot,
+      (await jobs.reconcile(owner, attemptId, staleAfterMs)).snapshot,
       { headers: { 'Cache-Control': 'no-store' } },
     );
   if (request.method === 'GET' && action === 'events') {
