@@ -152,6 +152,27 @@ test('missing, pending, failed, skipped, and stale verification all hold the can
   }
 });
 
+test('a target that moves during inspection holds candidates published after the move', async () => {
+  const f = fixture();
+  const second = { ...f.state.pr, number: 2, head: { sha: 'e'.repeat(40) } };
+  f.github.rest.pulls.list = async () => [f.state.pr, second];
+  f.github.rest.pulls.get = async ({ pull_number }) => ({
+    data: pull_number === 2 ? second : f.state.pr,
+  });
+  const publish = f.github.rest.repos.createCommitStatus;
+  f.github.rest.repos.createCommitStatus = async value => {
+    await publish(value);
+    if (value.state === 'success') f.state.base = 'd'.repeat(40);
+  };
+  await inspect(f.github, f.context, f.core);
+  expect(f.state.statuses.map(value => [value.sha, value.state])).toEqual([
+    [f.state.pr.head.sha, 'pending'],
+    [second.head.sha, 'pending'],
+    [f.state.pr.head.sha, 'success'],
+    [second.head.sha, 'failure'],
+  ]);
+});
+
 test('owner repair binds PR, head, and base; a changed target invalidates it', async () => {
   const f = fixture();
   f.state.run.conclusion = 'failure';
