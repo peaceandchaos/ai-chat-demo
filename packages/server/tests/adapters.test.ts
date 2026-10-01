@@ -1,6 +1,7 @@
 import { WebSocketServer } from 'ws';
 import type { ResponseInputItem } from '../../../shared/contracts';
 import { textItem } from '../src/compaction/context';
+import { ProviderFailure } from '../src/errors';
 import { GatewayClient, gatewayMessages } from '../src/gateway';
 import { JevClient } from '../src/jev';
 import type { ProviderChunk } from '../src/provider';
@@ -80,6 +81,34 @@ test.each([
     expect(requests).toHaveLength(1);
   },
 );
+
+test('a Gateway connection lost mid-stream is an uncertain interruption', async () => {
+  const record = new TextEncoder().encode(`data: ${chunk('Partial')}\r\n\r\n`);
+  let pulls = 0;
+  const client = new GatewayClient({
+    apiKey: 'example-key',
+    fetcher: () =>
+      Promise.resolve(
+        new Response(
+          new ReadableStream({
+            pull(controller) {
+              pulls += 1;
+              if (pulls === 1) controller.enqueue(record);
+              else controller.error(new TypeError('terminated'));
+            },
+          }),
+        ),
+      ),
+  });
+  const received: string[] = [];
+  const result = client.generate('kimi', input, signal, before, event => {
+    received.push(event.text ?? '');
+    return Promise.resolve();
+  });
+  await expect(result).rejects.toBeInstanceOf(ProviderFailure);
+  await expect(result).rejects.toMatchObject({ uncertain: true });
+  expect(received).toEqual(['Partial']);
+});
 
 test('OpenAI opaque context is never translated into a Gateway request', () => {
   expect(() =>

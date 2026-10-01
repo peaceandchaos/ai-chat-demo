@@ -110,7 +110,12 @@ export class GatewayClient {
     try {
       while (!done) {
         signal.throwIfAborted();
-        const chunk = await reader.read();
+        const chunk = await reader.read().catch(() => {
+          throw new ProviderFailure(
+            'The provider connection was interrupted. Retry creates a new answer.',
+            true,
+          );
+        });
         if (chunk.done) break;
         for (const raw of records.push(
           decoder.decode(chunk.value, { stream: true }),
