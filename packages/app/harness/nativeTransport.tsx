@@ -503,6 +503,21 @@ async function run(
       return { ...outcome, kinds, text: texts.at(-1) ?? null };
     });
 
+  // Instrumented builds count DevTools reports. This uncredentialed builder
+  // request must add exactly one, so zero for credentialed ones is meaningful.
+  await scenario('uncredentialed-devtools-control', async () => {
+    const response = await nativeDrivers.fetch(
+      `${api}/harness/uncredentialed`,
+      {
+        method: 'GET',
+        redirect: 'error',
+        signal: timeout(),
+        headers: {},
+      },
+    );
+    return { status: response.status, text: await response.text() };
+  });
+
   const entries = JSON.stringify(NetworkInspector.getEntries());
   await report({
     scenario: 'inspector',

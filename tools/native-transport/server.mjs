@@ -141,6 +141,10 @@ async function harness(url, req, res) {
     );
     return true;
   }
+  if (url.pathname === '/harness/uncredentialed') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' }).end('control');
+    return true;
+  }
   if (url.pathname === '/harness/go') {
     res.writeHead(go ? 204 : 425).end();
     return true;
