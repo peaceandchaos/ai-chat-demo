@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import {
+  decode,
   decodeJson,
   idSchema,
   searchRequestSchema,
@@ -27,16 +28,6 @@ const namedAttemptSchema = z.object({
   attemptId: idSchema.optional(),
   submission: z.object({ attemptId: idSchema }).optional(),
 });
-
-function namedAttempt(raw: string): string | null {
-  try {
-    const named = namedAttemptSchema.safeParse(JSON.parse(raw));
-    if (!named.success) return null;
-    return named.data.submission?.attemptId ?? named.data.attemptId ?? null;
-  } catch {
-    return null;
-  }
-}
 
 const acknowledgeSchema = z.strictObject({
   sequence: z.number().int().nonnegative().safe(),
@@ -157,8 +148,12 @@ export class SocketConnection {
       const raw = read();
       if (Buffer.byteLength(raw, 'utf8') > 4_000_000)
         throw new RequestError(413, 'Split large input into context parts.');
-      attemptId = namedAttempt(raw);
-      const command = decodeJson(socketCommandSchema, raw);
+      const frame = JSON.parse(raw);
+      const named = namedAttemptSchema.safeParse(frame);
+      if (named.success)
+        attemptId =
+          named.data.submission?.attemptId ?? named.data.attemptId ?? null;
+      const command = decode(socketCommandSchema, frame);
       attemptId =
         command.kind === 'submit'
           ? command.submission.attemptId
