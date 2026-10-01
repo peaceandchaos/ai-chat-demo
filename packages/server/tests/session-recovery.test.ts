@@ -473,7 +473,6 @@ test('an index that becomes unreadable is reported, never thrown from a lifecycl
   );
   const attempts = phone.network.requests.length;
   const reads = indexReads;
-  // Retry timers keep reading the unreadable index without throwing.
   await until('the deletion retried twice', () => indexReads >= reads + 2);
   expect(phone.network.requests).toHaveLength(attempts);
   phone.storage.values.set('archive/index', index);

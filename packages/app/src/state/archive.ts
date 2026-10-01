@@ -92,7 +92,6 @@ export function isActive(message: SavedMessage): boolean {
 }
 
 export class ChatArchive {
-  // A commit that threw after saving its journal left records half-written.
   private journalPending = false;
 
   constructor(
@@ -114,8 +113,6 @@ export class ChatArchive {
     this.journalPending = false;
   }
 
-  // Every read first finishes a half-applied commit, so no later commit is
-  // computed from, or overwrites the journal of, a partial state.
   private read(key: string): string | undefined {
     if (this.journalPending) this.replayJournal();
     return this.storage.getString(key);
@@ -132,8 +129,6 @@ export class ChatArchive {
   }
 
   private commit(writes: Write[]): void {
-    // A single key is replaced as atomically as the journal itself, so only
-    // changes that span keys pay for a journal write and removal.
     if (writes.length === 1) {
       this.put(writes[0]);
       return;

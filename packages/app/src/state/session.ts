@@ -201,7 +201,6 @@ export class ChatSession {
           continue;
         }
         if (message) this.launch(id);
-        // Settled, but a crash left it in the pending index.
         else this.report(() => this.archive.acknowledge(id));
       }
     });
@@ -481,7 +480,6 @@ export class ChatSession {
       failures = this.deletion.failures;
     }
     this.deletion = null;
-    // An unreadable index still starts a run, which reports and retries it.
     if (this.report(() => this.archive.metadata().deletions.length) === 0)
       return;
     const run: DeletionRunner = {
@@ -566,8 +564,6 @@ export class ChatSession {
     this.storageProblem = null;
   }
 
-  // For work started by timers and lifecycle events, where a thrown storage
-  // error would end the app instead of reaching the user.
   private report<T>(operation: () => T): T | null {
     try {
       return operation();

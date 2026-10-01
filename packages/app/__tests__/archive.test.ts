@@ -154,7 +154,6 @@ test('a save that fails partway is completed before the next save, so a later wr
   const kept = archive.createChat();
   const deleted = archive.createChat();
   complete(archive, archive.createTurn(deleted.id, 'Delete me', []));
-  // The journal is saved and the records removed, but the index write fails.
   storage.failAfter = 1;
   expect(() => archive.deleteChat(deleted.id)).toThrow('Simulated termination');
   archive.rename(kept.id, 'Kept');
