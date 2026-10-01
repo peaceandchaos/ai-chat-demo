@@ -99,30 +99,44 @@ export function parseGatewayEvent(raw: string): ParsedProviderEvent {
   return { kind: 'ignored', type: choice.finish_reason ?? 'metadata' };
 }
 
+function recordData(record: string): string | null {
+  const data: string[] = [];
+  for (const line of record.split(/\r?\n/u)) {
+    if (line.startsWith('data:')) data.push(line.slice(5).replace(/^ /u, ''));
+  }
+  return data.length > 0 ? data.join('\n') : null;
+}
+
 // SSE records can split at any byte, newline, or JSON token. TextDecoder handles
 // UTF-8 boundaries; this parser retains incomplete records between calls.
 export class SseDecoder {
   private buffer = '';
+  // The buffer before this index holds no record boundary.
+  private scanned = 0;
 
   constructor(private readonly maxRecordCharacters = 1_048_576) {}
 
   push(chunk: string): string[] {
     this.buffer += chunk;
     const records: string[] = [];
-    let boundary = /\r?\n\r?\n/u.exec(this.buffer);
-    while (boundary) {
-      if (boundary.index > this.maxRecordCharacters)
+    const boundary = /\r?\n\r?\n/gu;
+    // A boundary is at most four characters, so one ending in this chunk
+    // starts no earlier than three characters before the unscanned text.
+    boundary.lastIndex = Math.max(0, this.scanned - 3);
+    let start = 0;
+    for (
+      let match = boundary.exec(this.buffer);
+      match;
+      match = boundary.exec(this.buffer)
+    ) {
+      if (match.index - start > this.maxRecordCharacters)
         throw new Error('A stream record is too large.');
-      const record = this.buffer.slice(0, boundary.index);
-      this.buffer = this.buffer.slice(boundary.index + boundary[0].length);
-      const data: string[] = [];
-      for (const line of record.split(/\r?\n/u)) {
-        if (line.startsWith('data:'))
-          data.push(line.slice(5).replace(/^ /u, ''));
-      }
-      if (data.length > 0) records.push(data.join('\n'));
-      boundary = /\r?\n\r?\n/u.exec(this.buffer);
+      const data = recordData(this.buffer.slice(start, match.index));
+      if (data !== null) records.push(data);
+      start = boundary.lastIndex;
     }
+    this.buffer = this.buffer.slice(start);
+    this.scanned = this.buffer.length;
     if (this.buffer.length > this.maxRecordCharacters)
       throw new Error('A stream record is too large.');
     return records;
@@ -132,5 +146,6 @@ export class SseDecoder {
     if (this.buffer.trim())
       throw new Error('The stream ended inside a record.');
     this.buffer = '';
+    this.scanned = 0;
   }
 }
