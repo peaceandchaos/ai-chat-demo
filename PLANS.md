@@ -51,11 +51,33 @@ PR #16 (`d212999`) added the saved-chat session controller and PR #17 (`8491730`
 - Documented limits: iOS reports an HTTP/1.1 chunked body cut at a record boundary as a normal end (the session re-watches), and CFNetwork buffers a fast large response ahead of JavaScript.
 - Still required on a physical iPhone: lock, OS suspension, termination, network changes, HTTPS/HTTP-2 cut behavior, and the DevTools frontend view.
 
+## Quality pass and dependency repair (1 October 2026)
+
+A four-slice review swarm (tooling, session and client, server and shared, native) proved each bug with a failing check before fixing it, then pruned tests and tidied code with measured results. Every slice also had a `no-comments` pass. PRs #19, #20, #22, and #23 carry the details.
+
+- Tooling: verifier fixtures no longer die under load; the caller's npm settings (such as `ignore-scripts`) no longer leak into verification snapshots; the controller makes 44 instead of 71 API calls per run with 10 open PRs.
+- Session and archive: a partly applied save no longer strands the archive, and an unreadable index no longer throws from timers or the lifecycle listener. Single-key saves skip the journal, halving bytes written per streamed token.
+- Server: a lost Gateway stream is `interrupted`, a non-UTF-8 body gets 400, the SSE record cap applies to complete records, and context sizing is linear (8.4 s to 80 ms for 3,001 messages). An idle delivery poll is one round trip instead of five.
+- Native: a redirect that arrives after `cancel()` no longer leaks its delegate, and the harness DevTools check has a positive control.
+- New `devalue` advisories (three high) arrived through Vercel Workflow on 1 October and failed `main`'s push run. PR #21 moved the scoped `@workflow/core` override to `devalue` 5.9.4 after Workflow serialization proved byte-identical. It merged through the owner-approved repair exception, the first real use of that path.
+
+Open for owner decisions: the unread Workflow token stream, token writes that rewrite the full reply text, a total size limit for staged input, a separate concurrency group so a queued repair approval cannot be cancelled (a workflow change needing a temporary Workflows grant), paced native reads, and the 15 moderate dependency dispositions due for review on 29 October 2026.
+
+## Physical-device checklist
+
+Connect and trust an iPhone, then build Debug to it with the harness server on the Mac (point `tools/native-transport/faults.json` at the Mac's LAN address):
+
+1. Lock the phone for 60 seconds mid-stream; check whether the server logs a client close and whether the reply recovers on unlock.
+2. Force-quit mid-stream; confirm the server closes the connection and the reply recovers on relaunch.
+3. Toggle airplane mode mid-stream; expect a native failure, then recovery of the same attempt.
+4. Run through HTTPS to a hosted server (after hosting approval) to see whether a cut stream surfaces as an error.
+5. Attach the React Native DevTools Network panel and confirm no `X-Device-Id` or body appears.
+
 ## Next decisions
 
 1. UI integration (`outputs/ui-integration-proposal.md` in the planning directory): PRs 1 to 3 wire the existing screens to the session layer, remove the demo provider path and embedded keys, and show real Recents, with no visible change. Later PRs need owner visual decisions D1 to D11.
 2. Hosted acceptance (`outputs/hosted-acceptance-proposal.md`): hosting, database, secrets, spend limits, and four minimal paid calls to confirm GPT over the Responses WebSocket (`outputs/gpt-transport-research.md`).
-3. Physical-device verification once an iPhone is connected.
+3. Physical-device verification once an iPhone is connected (checklist above).
 
 ## Later: application and hosted acceptance
 
