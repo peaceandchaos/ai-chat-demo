@@ -406,13 +406,6 @@ export class JobRepository {
     };
   }
 
-  async cancel(owner: string, attemptId: string): Promise<AttemptSnapshot> {
-    await this.get(owner, attemptId);
-    const result = await this.requestCancellation(owner, attemptId);
-    if (!result) throw new RequestError(404, 'Reply not found.');
-    return result;
-  }
-
   async requestCancellation(
     owner: string,
     attemptId: string,
