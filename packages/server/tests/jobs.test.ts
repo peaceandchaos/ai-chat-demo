@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { PGlite } from '@electric-sql/pglite';
+import { makeCheckpoint } from '../src/compaction/context';
 import type { Database } from '../src/database';
 import { JobRepository } from '../src/jobs';
 import { schemaSql } from '../src/schema';
@@ -119,9 +120,13 @@ test('completion remains retrievable after a reader closes and until durable rec
   const input = submission();
   await jobs.submit(owner, input, dispatch);
   await jobs.claim(owner, input.attemptId, 'run_1', 'claim');
+  const checkpoint = makeCheckpoint('gpt-6', input.userTurnId, [
+    { type: 'compaction', encrypted_content: 'opaque' },
+  ]);
   await jobs.update(owner, input.attemptId, 'claim', {
     actualModel: 'gpt-6',
     status: 'generating',
+    checkpoint,
   });
   const cursor = (await jobs.get(owner, input.attemptId)).snapshot.sequence;
   await jobs.update(owner, input.attemptId, 'claim', {
@@ -132,6 +137,7 @@ test('completion remains retrievable after a reader closes and until durable rec
   const final = (await reopened.get(owner, input.attemptId)).snapshot;
   expect(final.text).toBe('The original answer.');
   expect(final.actualModel).toBe('gpt-6');
+  expect(final.checkpoint).toEqual(checkpoint);
   const replay = await reopened.events(owner, input.attemptId, cursor);
   expect(replay).toEqual(
     expect.arrayContaining([
@@ -141,6 +147,7 @@ test('completion remains retrievable after a reader closes and until durable rec
         snapshot: expect.objectContaining({
           status: 'completed',
           text: 'The original answer.',
+          checkpoint,
         }),
       }),
     ]),
@@ -150,9 +157,11 @@ test('completion remains retrievable after a reader closes and until durable rec
     jobs.acknowledge(owner, input.attemptId, cursor),
   ).rejects.toMatchObject({ status: 409 });
   await reopened.acknowledge(owner, input.attemptId, final.sequence);
-  expect((await reopened.get(owner, input.attemptId)).snapshot.delivered).toBe(
-    true,
-  );
+  expect((await reopened.get(owner, input.attemptId)).snapshot).toMatchObject({
+    delivered: true,
+    text: '',
+    checkpoint: null,
+  });
   await expect(reopened.input(owner, input.attemptId)).rejects.toMatchObject({
     status: 404,
   });
@@ -181,6 +190,10 @@ test('deletion leaves a tombstone and stops late jobs from recreating the chat',
   const input = submission();
   await jobs.submit(owner, input, dispatch);
   await jobs.claim(owner, input.attemptId, 'run_1', 'claim');
+  await jobs.update(owner, input.attemptId, 'claim', {
+    text: 'Private partial',
+    checkpoint: makeCheckpoint('kimi', input.userTurnId, []),
+  });
   await jobs.deleteChat(owner, input.chatId);
   await expect(
     jobs.submit(owner, { ...input, attemptId: randomUUID() }, dispatch),
@@ -188,9 +201,15 @@ test('deletion leaves a tombstone and stops late jobs from recreating the chat',
   await expect(
     jobs.update(owner, input.attemptId, 'claim', { text: 'late' }),
   ).rejects.toThrow('stopped');
-  expect((await jobs.get(owner, input.attemptId)).snapshot.status).toBe(
-    'deleted',
-  );
+  expect((await jobs.get(owner, input.attemptId)).snapshot).toMatchObject({
+    status: 'deleted',
+    text: '',
+    checkpoint: null,
+  });
+  expect(await jobs.events(owner, input.attemptId, 0)).toEqual([]);
+  await expect(jobs.input(owner, input.attemptId)).rejects.toMatchObject({
+    status: 404,
+  });
 });
 
 test('an abandoned worker is interrupted without dispatching another generation', async () => {
