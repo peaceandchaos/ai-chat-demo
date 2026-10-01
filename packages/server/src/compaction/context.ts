@@ -173,16 +173,19 @@ export async function prepareContext(
   const pieceBudget = Math.floor(threshold / 4);
   if (threshold <= 0)
     throw new ProviderFailure('The model context configuration is invalid.');
+  // contextSize is a per-item sum, so the running total stays exact.
+  let size = contextSize(items);
   const shrink = async () => {
-    const before = contextSize(items);
+    const before = size;
     items = await compact(items, model, config, signal, beforeCall, services);
     didCompact = true;
-    if (contextSize(items) >= before)
+    size = contextSize(items);
+    if (size >= before)
       throw new ProviderFailure(
         'Context compaction did not free enough space. The original history is saved.',
       );
   };
-  if (contextSize(items) >= threshold) await shrink();
+  if (size >= threshold) await shrink();
   for (const entry of input.history.slice(start)) {
     for (const piece of messagePieces(entry, pieceBudget)) {
       signal.throwIfAborted();
@@ -191,9 +194,9 @@ export async function prepareContext(
         throw new ProviderFailure(
           'An attachment is too large for inline context. Use a smaller image.',
         );
-      while (items.length > 0 && contextSize(items) + pieceSize >= threshold)
-        await shrink();
+      while (items.length > 0 && size + pieceSize >= threshold) await shrink();
       items.push(piece);
+      size += pieceSize;
     }
   }
   return {
