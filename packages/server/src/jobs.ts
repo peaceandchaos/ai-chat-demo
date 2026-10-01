@@ -87,7 +87,7 @@ async function readJob(
   return decodeJson(storedJobSchema, row.data);
 }
 
-async function lockState(
+async function lockStateWithoutCheckpoint(
   db: SqlConnection,
   owner: string,
   attemptId: string,
@@ -276,7 +276,7 @@ export class JobRepository {
     claimId: string,
   ): Promise<boolean> {
     return this.database.transaction(async db => {
-      const job = await lockState(db, owner, attemptId);
+      const job = await lockStateWithoutCheckpoint(db, owner, attemptId);
       if (
         job.claimId ||
         isTerminal(job.snapshot.status) ||
@@ -297,7 +297,7 @@ export class JobRepository {
     claimId: string,
   ): Promise<boolean> {
     return this.database.transaction(async db => {
-      const job = await lockState(db, owner, attemptId);
+      const job = await lockStateWithoutCheckpoint(db, owner, attemptId);
       if (
         job.claimId !== claimId ||
         job.snapshot.cancelRequested ||
@@ -316,7 +316,7 @@ export class JobRepository {
     claimId: string,
   ): Promise<void> {
     await this.database.transaction(async db => {
-      const job = await lockState(db, owner, attemptId);
+      const job = await lockStateWithoutCheckpoint(db, owner, attemptId);
       this.assertActive(job, claimId);
       job.providerStarted = true;
       job.heartbeat = this.now();
@@ -341,7 +341,7 @@ export class JobRepository {
     update: JobUpdate,
   ): Promise<JobEvent[]> {
     return this.database.transaction(async db => {
-      const job = await lockState(db, owner, attemptId);
+      const job = await lockStateWithoutCheckpoint(db, owner, attemptId);
       this.assertActive(job, claimId);
       if (update.text) job.snapshot.text += update.text;
       if (update.reasoning) job.snapshot.reasoning += update.reasoning;
@@ -376,7 +376,7 @@ export class JobRepository {
     attemptId: string,
     after: number,
     staleAfterMs: number,
-  ): Promise<{ events: JobEvent[]; reconcile: boolean }> {
+  ): Promise<{ events: JobEvent[]; endedOrStale: boolean }> {
     const result = await this.database.query(
       `SELECT jsonb_build_object(
          'status', state->'snapshot'->'status',
@@ -393,7 +393,7 @@ export class JobRepository {
     const page = decodeJson(pollSchema, row.data);
     return {
       events: page.events,
-      reconcile:
+      endedOrStale:
         isTerminal(page.status) || this.now() - page.heartbeat > staleAfterMs,
     };
   }
@@ -434,7 +434,7 @@ export class JobRepository {
     sequence: number,
   ): Promise<void> {
     await this.database.transaction(async db => {
-      const job = await lockState(db, owner, attemptId);
+      const job = await lockStateWithoutCheckpoint(db, owner, attemptId);
       if (
         !isTerminal(job.snapshot.status) ||
         sequence !== job.snapshot.sequence
