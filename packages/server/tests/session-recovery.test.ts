@@ -445,3 +445,41 @@ test('a settled reply left in the pending index by a crash is removed on the nex
   });
   expect(restarted.network.requests).toEqual([]);
 });
+
+test('an index that becomes unreadable is reported, never thrown from a lifecycle change or retry timer', async () => {
+  const phone = openPhone(server);
+  const chat = createChat(phone, 'kimi');
+  phone.network.online = false;
+  phone.session.deleteChat(chat.id);
+  await until(
+    'deletion is pending',
+    () =>
+      phone.session.notice() ===
+      'Chat deletion is pending on the server. It will retry when connected.',
+  );
+  const index = phone.storage.getString('archive/index');
+  if (!index) throw new Error('The fixture archive has no index');
+  phone.storage.values.set('archive/index', '{"version":2}');
+  let indexReads = 0;
+  const getString = phone.storage.getString.bind(phone.storage);
+  phone.storage.getString = key => {
+    if (key === 'archive/index') indexReads += 1;
+    return getString(key);
+  };
+  phone.session.setLifecycle('background');
+  phone.session.setLifecycle('active');
+  expect(phone.session.notice()).toBe(
+    'Saved chats could not be updated. Stored data was preserved.',
+  );
+  const attempts = phone.network.requests.length;
+  const reads = indexReads;
+  // Retry timers keep reading the unreadable index without throwing.
+  await until('the deletion retried twice', () => indexReads >= reads + 2);
+  expect(phone.network.requests).toHaveLength(attempts);
+  phone.storage.values.set('archive/index', index);
+  phone.network.online = true;
+  await until(
+    'the deletion reaches the server',
+    () => phone.session.pendingDeletions().length === 0,
+  );
+});
