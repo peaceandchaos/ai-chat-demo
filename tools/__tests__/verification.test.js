@@ -51,7 +51,7 @@ test('a real Jest run with a skipped case cannot become an accepted pass', () =>
   }
 });
 
-function createFixture(check, message) {
+function createFixture(check, message, extraScripts = {}) {
   const fixture = mkdtempSync(join(tmpdir(), 'verify-fixture-'));
   git(fixture, ['init', '--quiet']);
   git(fixture, ['config', 'core.hooksPath', '/dev/null']);
@@ -66,7 +66,7 @@ function createFixture(check, message) {
   ]) {
     copyFileSync(resolve(__dirname, '..', name), join(fixture, 'tools', name));
   }
-  const scripts = {};
+  const scripts = { ...extraScripts };
   for (const args of Object.values(checks)) scripts[args[1]] = 'node check.cjs';
   writeFileSync(
     join(fixture, 'package.json'),
@@ -100,13 +100,30 @@ const needsLocalFix = code =>
   `process.exit(require('node:fs').existsSync('node_modules/local-fix') ? 0 : ${code});\n`;
 
 // No per-child timeout: load-dependent limits killed healthy runs. test:verified bounds the suite.
-function verifyFixture(fixture, args) {
+function verifyFixture(fixture, args, env = process.env) {
   return spawnSync(
     process.execPath,
     [resolve(__dirname, '../verify.cjs'), ...args],
-    { cwd: fixture, encoding: 'utf8' },
+    { cwd: fixture, encoding: 'utf8', env },
   );
 }
+
+test('personal npm configuration cannot skip install scripts in the snapshot', () => {
+  const fixture = createFixture('process.exit(0);\n', 'Failing install', {
+    postinstall: 'node -e "process.exit(7)"',
+  });
+  try {
+    // `npm run` exports personal .npmrc values such as ignore-scripts=true this way.
+    const result = verifyFixture(fixture, ['commit', 'HEAD'], {
+      ...process.env,
+      npm_config_ignore_scripts: 'true',
+    });
+    expect(result.stdout).toContain('install: FAIL');
+    expect(result.status).toBe(1);
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
 
 test('committed and staged checks reject a broken tree despite an unstaged fix and local dependencies', () => {
   const fixture = createFixture(needsLocalFix(1), 'Broken fixture');

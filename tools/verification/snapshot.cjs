@@ -13,9 +13,11 @@ const { createHash } = require('node:crypto');
 function cleanEnvironment() {
   const env = { ...process.env, HUSKY: '0' };
   // Hooks supply index/worktree variables. Never let them point at the caller.
+  // `npm run` exports the caller's npm settings, such as ignore-scripts.
   for (const key of Object.keys(env)) {
     if (
       key.startsWith('GIT_') ||
+      /^npm_config_/iu.test(key) ||
       /TOKEN|SECRET|PASSWORD|API_KEY|CREDENTIAL|DATABASE_URL|DEVICE_IDS?/u.test(
         key,
       )
