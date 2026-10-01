@@ -1,26 +1,51 @@
-// Contract checks for the native driver's request state machine against a fake
-// Nitro builder. Native behavior is verified by tools/native-transport/run.mjs.
+// Contract checks for the native drivers against fake Nitro objects. Native
+// behavior is verified on a simulator by tools/native-transport/run.mjs.
 import type { ClientReader } from '../src/network/client';
 import { nativeDrivers } from '../src/network/nativeDrivers';
 
 type Info = { httpStatusCode: number };
 type Listeners = {
-  redirect?: (info: Info, location: string) => void;
-  started?: (info: Info) => void;
-  read?: (info: Info, buffer: ArrayBuffer, length: number) => void;
-  succeeded?: (info: Info) => void;
-  failed?: (info: Info | undefined, error: { message: string }) => void;
-  canceled?: (info: Info | undefined) => void;
+  redirect: (info: Info, location: string) => void;
+  started: (info: Info) => void;
+  read: (info: Info, buffer: ArrayBuffer, length: number) => void;
+  succeeded: (info: Info) => void;
+  failed: (info: Info | undefined, error: { message: string }) => void;
+  canceled: (info: Info | undefined) => void;
 };
-type Exchange = { listeners: Listeners; cancels: number; headers: string[][] };
+type Exchange = {
+  url: string;
+  listeners: Partial<Listeners>;
+  cancels: number;
+  headers: string[][];
+};
+type FakeSocket = {
+  connected: {
+    url: string;
+    protocols: string[];
+    headers: Record<string, string>;
+  } | null;
+  sent: string[];
+  closed: Array<[number, string]>;
+  readyState: string;
+  onOpen?: () => void;
+  onMessage?: (event: { data: ArrayBuffer; isBinary: boolean }) => void;
+  onClose?: (event: { code: number; reason: string }) => void;
+  onError?: (error: string) => void;
+};
 
 const mockExchanges: Exchange[] = [];
+const mockSockets: FakeSocket[] = [];
 
 jest.mock('react-native-nitro-modules', () => ({
   NitroModules: {
     createHybridObject: () => ({
-      newUrlRequestBuilder: () => {
-        const exchange: Exchange = { listeners: {}, cancels: 0, headers: [] };
+      newUrlRequestBuilder: (url: string) => {
+        const exchange: Exchange = {
+          url,
+          listeners: {},
+          cancels: 0,
+          headers: [],
+        };
         mockExchanges.push(exchange);
         const on = (key: keyof Listeners) => (listener: never) => {
           exchange.listeners[key] = listener;
@@ -51,12 +76,35 @@ jest.mock('react-native-nitro-modules', () => ({
 jest.mock('react-native-nitro-text-decoder', () => ({
   TextDecoder: globalThis.TextDecoder,
 }));
-jest.mock('react-native-nitro-websockets', () => ({}));
+jest.mock('react-native-nitro-websockets', () => ({
+  createWebSocket: () => {
+    const socket: FakeSocket = {
+      connected: null,
+      sent: [],
+      closed: [],
+      readyState: 'CONNECTING',
+    };
+    mockSockets.push(socket);
+    return Object.assign(socket, {
+      connect: (
+        url: string,
+        protocols: string[],
+        headers: Record<string, string>,
+      ) => {
+        socket.connected = { url, protocols, headers };
+      },
+      send: (data: string) => socket.sent.push(data),
+      close: (code: number, reason: string) =>
+        socket.closed.push([code, reason]),
+    });
+  },
+}));
 
 const ok = { httpStatusCode: 200 };
+const url = 'http://localhost:1/v1/jobs/x';
 
 function start(signal = new AbortController().signal) {
-  const response = nativeDrivers.fetch('http://localhost:1/v1/jobs/x', {
+  const response = nativeDrivers.fetch(url, {
     method: 'GET',
     redirect: 'error',
     signal,
@@ -65,6 +113,16 @@ function start(signal = new AbortController().signal) {
   const exchange = mockExchanges.at(-1);
   if (!exchange) throw new Error('No native request was built.');
   return { response, exchange };
+}
+
+// A missing native listener fails here instead of leaving a promise pending.
+function fire<Key extends keyof Listeners>(
+  exchange: Exchange,
+  key: Key,
+): Listeners[Key] {
+  const listener = exchange.listeners[key];
+  if (!listener) throw new Error(`The driver registered no ${key} listener.`);
+  return listener;
 }
 
 function bytes(text: string): ArrayBuffer {
@@ -81,6 +139,13 @@ async function reader(
 
 beforeEach(() => {
   mockExchanges.length = 0;
+  mockSockets.length = 0;
+});
+
+test('the credential goes only to the requested URL', () => {
+  const { exchange } = start();
+  expect(exchange.url).toBe(url);
+  expect(exchange.headers).toEqual([['X-Device-Id', 'fixture']]);
 });
 
 test('abort before headers cancels the native request once and ignores late callbacks', async () => {
@@ -88,29 +153,50 @@ test('abort before headers cancels the native request once and ignores late call
   const { response, exchange } = start(controller.signal);
   controller.abort();
   await expect(response).rejects.toMatchObject({ name: 'AbortError' });
-  exchange.listeners.canceled?.(undefined);
-  exchange.listeners.started?.(ok);
-  exchange.listeners.read?.(ok, bytes('late'), 4);
+  fire(exchange, 'canceled')(undefined);
+  fire(exchange, 'started')(ok);
+  fire(exchange, 'read')(ok, bytes('late'), 4);
   expect(exchange.cancels).toBe(1);
 });
 
 test('abort during the body rejects the pending read, cancels native, and drops late chunks', async () => {
   const controller = new AbortController();
   const { response, exchange } = start(controller.signal);
-  exchange.listeners.started?.(ok);
+  fire(exchange, 'started')(ok);
   const body = await reader(response);
   const pending = body.read();
   controller.abort();
   await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
-  exchange.listeners.read?.(ok, bytes('late'), 4);
-  exchange.listeners.succeeded?.(ok);
+  fire(exchange, 'read')(ok, bytes('late'), 4);
+  fire(exchange, 'succeeded')(ok);
   await expect(body.read()).rejects.toMatchObject({ name: 'AbortError' });
   expect(exchange.cancels).toBe(1);
 });
 
+test('abort discards chunks that were queued but not yet read', async () => {
+  const controller = new AbortController();
+  const { response, exchange } = start(controller.signal);
+  fire(exchange, 'started')(ok);
+  fire(exchange, 'read')(ok, bytes('data: queued\n\n'), 14);
+  const body = await reader(response);
+  controller.abort();
+  await expect(body.read()).rejects.toMatchObject({ name: 'AbortError' });
+});
+
+test('a second concurrent read is refused without disturbing the first', async () => {
+  const { response, exchange } = start();
+  fire(exchange, 'started')(ok);
+  const body = await reader(response);
+  const first = body.read();
+  await expect(body.read()).rejects.toThrow('A read is already pending.');
+  fire(exchange, 'read')(ok, bytes('one'), 3);
+  const chunk = await first;
+  expect(new TextDecoder().decode(chunk.value)).toBe('one');
+});
+
 test('reader cancel ends a pending read as done and cancels native once', async () => {
   const { response, exchange } = start();
-  exchange.listeners.started?.(ok);
+  fire(exchange, 'started')(ok);
   const body = await reader(response);
   const pending = body.read();
   await body.cancel();
@@ -121,18 +207,16 @@ test('reader cancel ends a pending read as done and cancels native once', async 
 
 test('a redirect is refused and the native request is cancelled', async () => {
   const { response, exchange } = start();
-  exchange.listeners.redirect?.({ httpStatusCode: 307 }, 'http://elsewhere/');
+  fire(exchange, 'redirect')({ httpStatusCode: 307 }, 'http://elsewhere/');
   await expect(response).rejects.toThrow('redirected');
   expect(exchange.cancels).toBe(1);
 });
 
 test('queued chunks drain before a native failure surfaces', async () => {
   const { response, exchange } = start();
-  exchange.listeners.started?.(ok);
-  exchange.listeners.read?.(ok, bytes('data: 1\n\n'), 9);
-  exchange.listeners.failed?.(ok, {
-    message: 'The network connection was lost.',
-  });
+  fire(exchange, 'started')(ok);
+  fire(exchange, 'read')(ok, bytes('data: 1\n\n'), 9);
+  fire(exchange, 'failed')(ok, { message: 'The network connection was lost.' });
   const body = await reader(response);
   const first = await body.read();
   expect(new TextDecoder().decode(first.value)).toBe('data: 1\n\n');
@@ -141,13 +225,13 @@ test('queued chunks drain before a native failure surfaces', async () => {
 
 test('text() reconstructs UTF-8 split across native chunks', async () => {
   const { response, exchange } = start();
-  exchange.listeners.started?.({ httpStatusCode: 429 });
+  fire(exchange, 'started')({ httpStatusCode: 429 });
   const encoded = new TextEncoder().encode('{"error":"Grüße 🦋"}');
   for (let offset = 0; offset < encoded.length; offset += 3) {
     const chunk = encoded.slice(offset, offset + 3);
-    exchange.listeners.read?.(ok, chunk.buffer, chunk.length);
+    fire(exchange, 'read')(ok, chunk.buffer, chunk.length);
   }
-  exchange.listeners.succeeded?.(ok);
+  fire(exchange, 'succeeded')(ok);
   const result = await response;
   expect(result.status).toBe(429);
   expect(result.ok).toBe(false);
@@ -159,4 +243,56 @@ test('requests that could follow redirects are rejected before reaching native',
     nativeDrivers.fetch('http://localhost:1/', { redirect: 'follow' }),
   ).rejects.toThrow('redirect:"error"');
   expect(mockExchanges).toHaveLength(0);
+});
+
+function socket() {
+  const client = nativeDrivers.socket('ws://localhost:1/v1/responses', {
+    'X-Device-Id': 'fixture',
+  });
+  const native = mockSockets.at(-1);
+  if (!native) throw new Error('No native socket was created.');
+  return { client, native };
+}
+
+test('the socket connects to the requested URL with the credential header', () => {
+  const { native } = socket();
+  expect(native.connected).toEqual({
+    url: 'ws://localhost:1/v1/responses',
+    protocols: [],
+    headers: { 'X-Device-Id': 'fixture' },
+  });
+});
+
+test('socket messages arrive as decoded text, and invalid UTF-8 becomes an error', () => {
+  const { client, native } = socket();
+  const messages: string[] = [];
+  const errors: string[] = [];
+  client.onmessage = event => messages.push(event.data);
+  client.onerror = error => errors.push(error);
+  native.onMessage?.({ data: bytes('{"kind":"détaché"}'), isBinary: false });
+  native.onMessage?.({ data: new Uint8Array([0xc3]).buffer, isBinary: false });
+  expect(messages).toEqual(['{"kind":"détaché"}']);
+  expect(errors).toEqual(['The server sent a message that is not UTF-8 text.']);
+});
+
+test('socket state, sends, closes, and handler removal pass through', () => {
+  const { client, native } = socket();
+  const closes: number[] = [];
+  client.onclose = event => closes.push(event.code);
+  native.readyState = 'OPEN';
+  expect(client.readyState).toBe('OPEN');
+  client.send('{"kind":"attach"}');
+  client.close();
+  client.close(1008, 'Unauthorized');
+  native.onClose?.({ code: 1006, reason: '' });
+  client.onclose = null;
+  client.onmessage = null;
+  expect(native.sent).toEqual(['{"kind":"attach"}']);
+  expect(native.closed).toEqual([
+    [1000, ''],
+    [1008, 'Unauthorized'],
+  ]);
+  expect(closes).toEqual([1006]);
+  expect(native.onClose).toBeUndefined();
+  expect(native.onMessage).toBeUndefined();
 });
