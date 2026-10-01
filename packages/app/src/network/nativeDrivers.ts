@@ -74,7 +74,7 @@ class Exchange implements ClientReader {
   ) {
     this.headers = { resolve, reject };
     builder.onRedirectReceived(() =>
-      this.fail(
+      this.close(
         new TypeError('The server redirected this request; it was refused.'),
       ),
     );
@@ -92,9 +92,10 @@ class Exchange implements ClientReader {
     this.request.start();
   }
 
-  private readonly abort = () => this.fail(abortError());
+  private readonly abort = () => this.close(abortError());
 
-  private fail(error: Error): void {
+  // Ends the exchange from JS: queued chunks are dropped and native stops.
+  private close(error: Error | null): void {
     if (this.ended) return;
     this.chunks.length = 0;
     this.end(error);
@@ -103,7 +104,7 @@ class Exchange implements ClientReader {
 
   private started(status: number): void {
     const headers = this.headers;
-    if (!headers || this.ended) return;
+    if (!headers) return;
     this.headers = null;
     headers.resolve({
       ok: status >= 200 && status < 300,
@@ -150,11 +151,7 @@ class Exchange implements ClientReader {
   }
 
   cancel(): Promise<void> {
-    if (!this.ended) {
-      this.chunks.length = 0;
-      this.end(null);
-      this.request.cancel();
-    }
+    this.close(null);
     return Promise.resolve();
   }
 
