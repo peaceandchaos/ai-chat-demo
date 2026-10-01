@@ -263,5 +263,4 @@ async function inspect(github, context, core) {
 }
 
 module.exports = inspect;
-module.exports.requiredJobsPassed = requiredJobsPassed;
 module.exports.ciContract = ciContract;
