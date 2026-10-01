@@ -16,7 +16,10 @@ type Exchange = {
   url: string;
   listeners: Partial<Listeners>;
   cancels: number;
+  method: string | null;
   headers: string[][];
+  body: string | null;
+  cached: boolean;
 };
 type FakeSocket = {
   connected: {
@@ -49,18 +52,27 @@ jest.mock('react-native-nitro-modules', () => ({
           url,
           listeners: {},
           cancels: 0,
+          method: null,
           headers: [],
+          body: null,
+          cached: true,
         };
         mockExchanges.push(exchange);
         const on = (key: keyof Listeners) => (listener: never) => {
           exchange.listeners[key] = listener;
         };
         return {
-          setHttpMethod: () => undefined,
+          setHttpMethod: (method: string) => {
+            exchange.method = method;
+          },
           addHeader: (name: string, value: string) =>
             exchange.headers.push([name, value]),
-          setUploadBody: () => undefined,
-          disableCache: () => undefined,
+          setUploadBody: (body: string) => {
+            exchange.body = body;
+          },
+          disableCache: () => {
+            exchange.cached = false;
+          },
           onRedirectReceived: on('redirect'),
           onResponseStarted: on('started'),
           onReadCompleted: on('read'),
@@ -147,10 +159,24 @@ beforeEach(() => {
   mockSockets.length = 0;
 });
 
-test('the credential goes only to the requested URL', () => {
-  const { exchange } = start();
-  expect(exchange.url).toBe(url);
-  expect(exchange.headers).toEqual([['X-Device-Id', 'fixture']]);
+test('a request reaches native as given, with caching off', () => {
+  void nativeDrivers.fetch(url, {
+    method: 'POST',
+    redirect: 'error',
+    headers: { 'X-Device-Id': 'fixture' },
+    body: '{"kind":"submit"}',
+  });
+  expect(mockExchanges).toEqual([
+    {
+      url,
+      listeners: expect.any(Object),
+      cancels: 0,
+      method: 'POST',
+      headers: [['X-Device-Id', 'fixture']],
+      body: '{"kind":"submit"}',
+      cached: false,
+    },
+  ]);
 });
 
 test('abort before headers cancels the native request once and ignores late callbacks', async () => {
@@ -268,11 +294,22 @@ test('a finished request leaves no listener on the caller signal', async () => {
   expect(getEventListeners(controller.signal, 'abort')).toHaveLength(0);
 });
 
-test('requests that could follow redirects are rejected before reaching native', async () => {
-  await expect(
-    nativeDrivers.fetch('http://localhost:1/', { redirect: 'follow' }),
-  ).rejects.toThrow('redirect:"error"');
+test('a request that could follow redirects or is already aborted never reaches native', async () => {
+  const settled = Promise.allSettled([
+    nativeDrivers.fetch(url, { redirect: 'follow' }),
+    nativeDrivers.fetch(url, {
+      redirect: 'error',
+      signal: AbortSignal.abort(),
+    }),
+  ]);
   expect(mockExchanges).toHaveLength(0);
+  expect(await settled).toMatchObject([
+    {
+      status: 'rejected',
+      reason: { message: expect.stringContaining('redirect:"error"') },
+    },
+    { status: 'rejected', reason: { name: 'AbortError' } },
+  ]);
 });
 
 function socket() {
