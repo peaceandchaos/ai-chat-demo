@@ -59,6 +59,7 @@
       "image-size": "2.0.3"
     },
     "@workflow/core": {
+      "devalue": "5.9.4",
       "nanoid": "5.1.16"
     },
     "@workflow/world-local": {
