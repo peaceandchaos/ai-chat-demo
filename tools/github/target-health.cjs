@@ -171,7 +171,6 @@ async function status(github, repo, sha, state, description) {
   });
 }
 
-// `targets` caches each target's state for one inspection; identities are rechecked before publishing.
 async function groupHealthy(github, context, pulls, targets) {
   for (const pr of pulls) {
     if (pr.base.ref.startsWith('submission/')) return false;

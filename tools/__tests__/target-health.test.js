@@ -38,7 +38,6 @@ function fixture() {
     runLookups: 0,
     onRunLookup: null,
     approvals: [],
-    // Target-health runs by id, as GitHub reports them during and after each run.
     controllerRuns: new Map(),
     nextRunId: 73,
     changedHead: false,
@@ -99,7 +98,6 @@ function fixture() {
   return { state, github, context, core };
 }
 
-// One new target-health run. GitHub reports no conclusion while it inspects.
 async function runController(f) {
   const { state, context, core } = f;
   const run = {
@@ -213,7 +211,6 @@ test('owner repair binds PR, head, and base; a changed target invalidates it', a
   expect(f.state.approvals[0].external_id).toBe(
     `1:${f.state.pr.head.sha}:${f.state.base}:42:1:73`,
   );
-  // The approving run publishes the repaired result while it is still in progress.
   expect(lastState(f)).toBe('success');
   f.context.eventName = 'workflow_run';
   f.state.base = 'd'.repeat(40);
@@ -351,7 +348,6 @@ test('a rerun of an approval dispatch cannot approve or count as approval', asyn
   await runController(f);
   expect(lastState(f)).toBe('success');
 
-  // A rerun keeps the run id and raises its attempt.
   const approval = f.state.controllerRuns.get(f.context.runId);
   Object.assign(approval, { run_attempt: 2, conclusion: null });
   await expect(inspect(f.github, f.context, f.core)).rejects.toThrow(
@@ -359,7 +355,6 @@ test('a rerun of an approval dispatch cannot approve or count as approval', asyn
   );
   expect(f.state.approvals).toHaveLength(1);
 
-  // Even a successful second attempt does not count.
   approval.conclusion = 'success';
   f.context.eventName = 'workflow_run';
   await runController(f);
@@ -393,7 +388,6 @@ test('repair approval must come from a successful dispatch with the same inputs'
   expect(lastState(f)).toBe('success');
   const approval = f.state.controllerRuns.get(f.context.runId);
 
-  // A later owner refresh still counts the completed approval.
   f.context.payload.inputs = {
     operation: 'refresh',
     pr: '',
@@ -409,7 +403,6 @@ test('repair approval must come from a successful dispatch with the same inputs'
   await runController(f);
   expect(lastState(f)).toBe('failure');
 
-  // A check that names a successful owner dispatch with other inputs does not count.
   approval.conclusion = 'success';
   const check = f.state.approvals[0];
   check.external_id = check.external_id.replace(/\d+$/u, String(refresh));
