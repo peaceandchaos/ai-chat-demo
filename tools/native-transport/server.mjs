@@ -4,13 +4,21 @@
 // It never logs the device credential, only whether a request carried it.
 import { appendFileSync, readFileSync } from 'node:fs';
 import http from 'node:http';
+import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import { handleRequest } from '../../packages/server/src/api.ts';
+import {
+  executeCommand,
+  handleRequest,
+} from '../../packages/server/src/api.ts';
 import { deviceOwner } from '../../packages/server/src/auth.ts';
 import { JobRepository } from '../../packages/server/src/jobs.ts';
 import { testDatabase } from '../../packages/server/tests/database.ts';
 
+// The server package's declared ws, not the older copy Metro hoists to the root.
+const { WebSocketServer } = createRequire(
+  new URL('../../packages/server/package.json', import.meta.url),
+)('ws');
 const faults = JSON.parse(
   readFileSync(new URL('./faults.json', import.meta.url), 'utf8'),
 );
@@ -304,6 +312,41 @@ async function target(req, res) {
   res.end(JSON.stringify(snapshot(req.url.split('/')[3], 'completed')));
 }
 
+const sockets = new WebSocketServer({ noServer: true });
+
+// Real acceptance for Auto/GPT submissions; the job then completes at once.
+function acceptSocket(req, socket, head) {
+  if (req.headers['x-device-id'] !== device) {
+    socket.destroy();
+    return;
+  }
+  sockets.handleUpgrade(req, socket, head, client => {
+    client.on('message', async data => {
+      const command = JSON.parse(data.toString());
+      const accepted = await executeCommand(owner, command, services);
+      client.send(JSON.stringify(accepted));
+      if (accepted.kind !== 'accepted') return;
+      const { attemptId, sequence } = accepted.snapshot;
+      await jobs.claim(owner, attemptId, 'fixture-run', 'fixture');
+      await jobs.update(owner, attemptId, 'fixture', {
+        text: 'RESPONSE-BODY-MARKER socket',
+        status: 'completed',
+        actualModel: 'gpt-6',
+      });
+      for (const event of await jobs.events(owner, attemptId, sequence))
+        client.send(JSON.stringify({ kind: 'event', event }));
+    });
+  });
+}
+
+const upgrades = {
+  api: acceptSocket,
+  fault: (req, socket) =>
+    socket.end(
+      `HTTP/1.1 307 Temporary Redirect\r\nLocation: ws://localhost:${faults.ports.target}${req.url}\r\nContent-Length: 0\r\n\r\n`,
+    ),
+  target: (_req, socket) => socket.destroy(),
+};
 const openSockets = { api: new Set(), fault: new Set(), target: new Set() };
 let nextRequest = 0;
 function serve(name, port, handler) {
@@ -353,6 +396,24 @@ function serve(name, port, handler) {
     const server = http.createServer(listener);
     // Only the client decides when an idle connection closes.
     server.keepAliveTimeout = 0;
+    server.on('upgrade', (req, socket, head) => {
+      nextRequest += 1;
+      const header = req.headers['x-device-id'];
+      record('access.log', {
+        server: name,
+        id: nextRequest,
+        method: 'UPGRADE',
+        path: req.url,
+        event: 'upgrade',
+        credential:
+          header === undefined
+            ? 'absent'
+            : header === device
+              ? 'fixture'
+              : 'other',
+      });
+      upgrades[name](req, socket, head);
+    });
     server.on('connection', socket => {
       openSockets[name].add(socket);
       socket.on('close', () => openSockets[name].delete(socket));

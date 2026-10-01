@@ -480,6 +480,29 @@ async function run(
     return { ...outcome, states, timeline, received };
   });
 
+  for (const [name, transport] of [
+    ['socket-submit', server],
+    ['socket-redirect', fault],
+  ] as const)
+    await scenario(name, async () => {
+      const kinds: string[] = [];
+      const texts: string[] = [];
+      const outcome = await settle(
+        transport.submit(
+          { ...submission(), picker: 'auto' },
+          message => {
+            kinds.push(message.kind);
+            const text = terminalText(message);
+            if (text) texts.push(text);
+          },
+          new AbortController().signal,
+        ),
+        20000,
+      );
+      transport.disconnect();
+      return { ...outcome, kinds, text: texts.at(-1) ?? null };
+    });
+
   const entries = JSON.stringify(NetworkInspector.getEntries());
   await report({
     scenario: 'inspector',

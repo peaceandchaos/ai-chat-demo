@@ -1,6 +1,6 @@
 // Runs the native transport harness on an iOS simulator and judges the evidence.
 // Usage: node tools/native-transport/run.mjs --app <MargeloChat.app> --udid <sim>
-//          --driver binding|draft --out <dir> [--background-seconds 20] [--keep-booted] [--cdp]
+//          --driver binding|draft --out <dir> [--background-seconds 20] [--keep-booted] [--cdp] [--instrumented]
 // Build the app first with a plain Debug simulator xcodebuild. Needs port 8081 free.
 import { spawn, execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -25,6 +25,9 @@ const { values: args } = parseArgs({
     'keep-booted': { type: 'boolean', default: false },
     // Attaching this raw CDP client crashed Hermes' debugger on 30 Sep 2026.
     cdp: { type: 'boolean', default: false },
+    // The app was built with SWIFT_ACTIVE_COMPILATION_CONDITIONS including
+    // NITROFETCH_HARNESS, so the nitro-fetch patch logs its counters.
+    instrumented: { type: 'boolean', default: false },
   },
 });
 if (!args.app || !args.udid || !args.out)
@@ -300,6 +303,23 @@ const read = file =>
   existsSync(join(out, file)) ? readFileSync(join(out, file), 'utf8') : '';
 const aborted = entry =>
   entry?.state === 'rejected' && entry.error.name === 'AbortError';
+const counters = args.instrumented
+  ? {
+      liveAdapters:
+        [
+          ...read('device.log').matchAll(
+            /NitroFetchHarness adapters live=(\d+)/gu,
+          ),
+        ]
+          .map(match => Number(match[1]))
+          .at(-1) ?? null,
+      devToolsReports: (
+        read('device.log').match(
+          /NitroFetchHarness devtools reported a request/gu,
+        ) ?? []
+      ).length,
+    }
+  : null;
 const connections = existsSync(join(out, 'connections.json'))
   ? JSON.parse(read('connections.json'))
   : null;
@@ -398,6 +418,27 @@ const checks = {
     reports['acceptance-loss-after-accepted']?.lost?.state === 'rejected',
   'finished native requests hold no connections':
     connections?.fault === 0 && connections?.target === 0,
+  'socket submission completes on the intended host':
+    reports['socket-submit']?.state === 'resolved' &&
+    reports['socket-submit']?.text === 'RESPONSE-BODY-MARKER socket' &&
+    access.some(
+      entry =>
+        entry.server === 'api' &&
+        entry.event === 'upgrade' &&
+        entry.credential === 'fixture',
+    ),
+  'redirected socket handshake fails':
+    reports['socket-redirect']?.state === 'rejected',
+  'socket redirect target receives no handshake': !access.some(
+    entry => entry.server === 'target' && entry.event === 'upgrade',
+  ),
+  ...(counters
+    ? {
+        'native request objects are released': counters.liveAdapters === 0,
+        'DevTools reporter skips credentialed requests':
+          counters.liveAdapters !== null && counters.devToolsReports === 0,
+      }
+    : {}),
   'JS network inspector holds no credential or bodies':
     reports.inspector?.containsCredential === false &&
     reports.inspector?.containsRequestBody === false &&
@@ -433,14 +474,7 @@ const summary = {
         }
       : null,
     openConnectionsAtEnd: connections,
-    instrumentedLiveAdapters:
-      [
-        ...read('device.log').matchAll(
-          /NitroFetchHarness adapters live=(\d+)/gu,
-        ),
-      ]
-        .map(match => Number(match[1]))
-        .at(-1) ?? null,
+    ...(counters ? { counters } : {}),
     openHarnessSockets: read('lsof.txt')
       .split('\n')
       .filter(line => /:879[123]/u.test(line)).length,
