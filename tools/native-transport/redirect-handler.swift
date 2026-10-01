@@ -1,11 +1,3 @@
-// URLSession behavior that the nitro-fetch redirect patch depends on.
-// Run through redirect-handler.mjs, which serves the 307 on localhost.
-//
-// The delegate receives a redirect after its task was cancelled, the order
-// in which JS cancel() can beat a redirect already on its way to the delegate.
-// "held" stores the completion handler and never calls it; "refused" calls it
-// with nil at once. Each line reports whether the task completed and whether
-// the delegate was released after the session was invalidated.
 import Foundation
 
 final class Delegate: NSObject, URLSessionDataDelegate {

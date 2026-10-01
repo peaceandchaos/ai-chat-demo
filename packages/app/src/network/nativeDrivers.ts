@@ -94,7 +94,6 @@ class Exchange implements ClientReader {
 
   private readonly abort = () => this.close(abortError());
 
-  // Ends the exchange from JS: queued chunks are dropped and native stops.
   private close(error: Error | null): void {
     if (this.ended) return;
     this.chunks.length = 0;

@@ -435,7 +435,6 @@ const checks = {
   ...(counters
     ? {
         'native request objects are released': counters.liveAdapters === 0,
-        // The one report is the harness's uncredentialed control request.
         'DevTools reporter skips credentialed requests':
           counters.liveAdapters !== null &&
           counters.devToolsReports === 1 &&
