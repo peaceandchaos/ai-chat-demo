@@ -89,6 +89,12 @@ export function validateServerAddress(
   return url.origin;
 }
 
+function attemptOf(message: ServerMessage): string | null {
+  if (message.kind === 'accepted') return message.snapshot.attemptId;
+  if (message.kind === 'event') return message.event.attemptId;
+  return message.attemptId;
+}
+
 function terminal(message: ServerMessage): boolean {
   return (
     (message.kind === 'accepted' && isTerminal(message.snapshot.status)) ||
@@ -274,13 +280,7 @@ export class ServerTransport implements ChatTransport {
           const message = decodeJson(serverMessageSchema, raw);
           if (message.kind === 'error')
             throw new TransportError(message.status ?? 503, message.message);
-          const id =
-            message.kind === 'accepted'
-              ? message.snapshot.attemptId
-              : message.kind === 'event'
-                ? message.event.attemptId
-                : message.attemptId;
-          if (id !== attemptId)
+          if (attemptOf(message) !== attemptId)
             throw new TransportError(502, 'Reply identity mismatch.');
           receive(message);
           if (terminal(message)) return;
@@ -361,12 +361,7 @@ export class ServerTransport implements ChatTransport {
   }
 
   private route(message: ServerMessage): void {
-    const id =
-      message.kind === 'accepted'
-        ? message.snapshot.attemptId
-        : message.kind === 'event'
-          ? message.event.attemptId
-          : message.attemptId;
+    const id = attemptOf(message);
     if (!id) {
       // An error naming no attempt refused some other frame, so it is not a
       // verdict on these replies. Readers treat it as a lost connection.
