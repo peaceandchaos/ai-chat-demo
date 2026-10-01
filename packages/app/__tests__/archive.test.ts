@@ -190,7 +190,15 @@ test('history beyond 500 messages remains stored while the visible window can be
     complete(archive, reply);
   }
   const leaf = archive.chat(chat.id).leafId;
-  expect(archive.ancestry(leaf, 100)).toHaveLength(100);
+  const latest = archive.ancestry(leaf, 100);
+  expect(latest.map(message => message.text).slice(0, 2)).toEqual([
+    'Question 205',
+    'A reply',
+  ]);
+  expect(latest.at(-1)?.id).toBe(leaf);
+  const older = archive.ancestry(latest[0].parentId, 100);
+  expect(older.at(-1)?.text).toBe('A reply');
+  expect(older[0].text).toBe('Question 155');
   expect(archive.ancestry(leaf)).toHaveLength(510);
   expect(archive.ancestry(leaf)[0].text).toBe('Question 0');
 });
