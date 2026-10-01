@@ -15,6 +15,8 @@ import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { parseArgs } from 'node:util';
 
+const uncredentialedControlReports = 1;
+
 const { values: args } = parseArgs({
   options: {
     app: { type: 'string' },
@@ -437,7 +439,7 @@ const checks = {
         'native request objects are released': counters.liveAdapters === 0,
         'DevTools reporter skips credentialed requests':
           counters.liveAdapters !== null &&
-          counters.devToolsReports === 1 &&
+          counters.devToolsReports === uncredentialedControlReports &&
           reports['uncredentialed-devtools-control']?.text === 'control' &&
           requests.some(
             entry =>

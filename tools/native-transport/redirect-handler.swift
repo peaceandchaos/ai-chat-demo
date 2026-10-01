@@ -1,12 +1,14 @@
 import Foundation
 
-final class Delegate: NSObject, URLSessionDataDelegate {
-  let hold: Bool
+enum RedirectHandling: String { case held, refused }
+
+final class CancelledDuringRedirectDelegate: NSObject, URLSessionDataDelegate {
+  let handling: RedirectHandling
   var held: ((URLRequest?) -> Void)?
   var code = 0
   let completed = DispatchSemaphore(value: 0)
 
-  init(hold: Bool) { self.hold = hold }
+  init(handling: RedirectHandling) { self.handling = handling }
 
   func urlSession(
     _ session: URLSession,
@@ -16,7 +18,7 @@ final class Delegate: NSObject, URLSessionDataDelegate {
     completionHandler: @escaping (URLRequest?) -> Void
   ) {
     task.cancel()
-    if hold { held = completionHandler } else { completionHandler(nil) }
+    if handling == .held { held = completionHandler } else { completionHandler(nil) }
   }
 
   func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
@@ -26,11 +28,11 @@ final class Delegate: NSObject, URLSessionDataDelegate {
   }
 }
 
-func run(hold: Bool, url: URL) -> String {
-  weak var probe: Delegate?
+func run(_ handling: RedirectHandling, url: URL) -> String {
+  weak var probe: CancelledDuringRedirectDelegate?
   var code: Int?
   autoreleasepool {
-    let delegate = Delegate(hold: hold)
+    let delegate = CancelledDuringRedirectDelegate(handling: handling)
     probe = delegate
     URLSession(configuration: .ephemeral, delegate: delegate, delegateQueue: nil)
       .dataTask(with: url).resume()
@@ -41,9 +43,9 @@ func run(hold: Bool, url: URL) -> String {
     autoreleasepool { _ = RunLoop.main.run(mode: .default, before: Date() + 0.05) }
   }
   let completed = code.map(String.init) ?? "null"
-  return "{\"mode\":\"\(hold ? "held" : "refused")\",\"completed\":\(completed),\"released\":\(probe == nil)}"
+  return "{\"mode\":\"\(handling.rawValue)\",\"completed\":\(completed),\"released\":\(probe == nil)}"
 }
 
 let url = URL(string: "http://127.0.0.1:\(CommandLine.arguments[1])/redirect")!
-print(run(hold: true, url: url))
-print(run(hold: false, url: url))
+print(run(.held, url: url))
+print(run(.refused, url: url))

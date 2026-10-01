@@ -20,7 +20,7 @@ import { TransportError } from '../src/network/transport';
 const api = `http://localhost:${faults.ports.api}`;
 const faultServer = `http://localhost:${faults.ports.fault}`;
 
-const draftDrivers: ClientDrivers = {
+const publicNitroFetchDrivers: ClientDrivers = {
   ...nativeDrivers,
   fetch: (url, init) => nitroFetch(url, init),
 };
@@ -174,7 +174,7 @@ async function run(
   device: string,
   show: (text: string) => void,
 ) {
-  const drivers = driver === 'draft' ? draftDrivers : nativeDrivers;
+  const drivers = driver === 'draft' ? publicNitroFetchDrivers : nativeDrivers;
   const server = new ServerTransport(api, device, drivers, true);
   const fault = new ServerTransport(faultServer, device, drivers, true);
   const scenario = async (name: string, body: () => Promise<object>) => {
