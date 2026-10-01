@@ -185,24 +185,26 @@ export class ChatSession {
 
   private resume(): void {
     this.foreground = true;
-    for (const id of this.archive.metadata().jobIds) {
-      const runner = this.runners.get(id);
-      if (runner?.kind === 'running' || runner?.kind === 'waiting') continue;
-      let message: SavedMessage | null;
-      try {
-        message = this.load(id);
-      } catch {
-        this.runners.set(id, {
-          kind: 'halted',
-          error:
-            'This saved reply could not be read. Stored data was preserved.',
-        });
-        continue;
+    this.report(() => {
+      for (const id of this.archive.metadata().jobIds) {
+        const runner = this.runners.get(id);
+        if (runner?.kind === 'running' || runner?.kind === 'waiting') continue;
+        let message: SavedMessage | null;
+        try {
+          message = this.load(id);
+        } catch {
+          this.runners.set(id, {
+            kind: 'halted',
+            error:
+              'This saved reply could not be read. Stored data was preserved.',
+          });
+          continue;
+        }
+        if (message) this.launch(id);
+        // Settled, but a crash left it in the pending index.
+        else this.report(() => this.archive.acknowledge(id));
       }
-      if (message) this.launch(id);
-      // Settled, but a crash left it in the pending index.
-      else this.dropSettledJob(id);
-    }
+    });
     this.refusedDeletions.clear();
     this.launchDeletions();
     this.notify();
@@ -479,7 +481,9 @@ export class ChatSession {
       failures = this.deletion.failures;
     }
     this.deletion = null;
-    if (this.archive.metadata().deletions.length === 0) return;
+    // An unreadable index still starts a run, which reports and retries it.
+    if (this.report(() => this.archive.metadata().deletions.length) === 0)
+      return;
     const run: DeletionRunner = {
       kind: 'running',
       controller: new AbortController(),
@@ -494,9 +498,10 @@ export class ChatSession {
           this.refusedDeletions.size > 0 ? deletionRefused : null;
         this.notify();
       },
-      () => {
+      (error: Error) => {
         if (this.deletion !== run) return;
-        this.deletionProblem = deletionPending;
+        if (error instanceof LocalDataError) this.storageProblem = storageError;
+        else this.deletionProblem = deletionPending;
         const timer = setTimeout(
           () => {
             if (this.deletion?.kind === 'waiting') this.launchDeletions();
@@ -511,9 +516,9 @@ export class ChatSession {
 
   private async deletePending(signal: AbortSignal): Promise<void> {
     for (;;) {
-      const id = this.archive
-        .metadata()
-        .deletions.find(chatId => !this.refusedDeletions.has(chatId));
+      const id = this.local(() => this.archive.metadata()).deletions.find(
+        chatId => !this.refusedDeletions.has(chatId),
+      );
       if (!id) return;
       try {
         await this.transport.deleteChat(id, signal);
@@ -561,20 +566,19 @@ export class ChatSession {
     this.storageProblem = null;
   }
 
-  private dropSettledJob(id: string): void {
+  // For work started by timers and lifecycle events, where a thrown storage
+  // error would end the app instead of reaching the user.
+  private report<T>(operation: () => T): T | null {
     try {
-      this.archive.acknowledge(id);
+      return operation();
     } catch {
       this.storageProblem = storageError;
+      return null;
     }
   }
 
   private checkpoint(): void {
-    try {
-      this.flush();
-    } catch {
-      this.storageProblem = storageError;
-    }
+    this.report(() => this.flush());
   }
 
   private scheduleCheckpoint(): void {
