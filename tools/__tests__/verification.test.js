@@ -21,8 +21,6 @@ const security = require('../security-check.cjs');
 const checks = require('../verification/checks.cjs');
 const { assertComplete } = require('../test-verified.cjs');
 
-jest.setTimeout(30_000);
-
 test('a real Jest run with a skipped case cannot become an accepted pass', () => {
   const fixture = mkdtempSync(join(tmpdir(), 'skip-fixture-'));
   try {
@@ -42,7 +40,7 @@ test('a real Jest run with a skipped case cannot become an accepted pass', () =>
         '--outputFile',
         report,
       ],
-      { cwd: fixture, encoding: 'utf8', timeout: 10_000 },
+      { cwd: fixture, encoding: 'utf8' },
     );
     expect(result.status).toBe(0);
     const data = JSON.parse(readFileSync(report, 'utf8'));
@@ -101,15 +99,12 @@ function createFixture(check, message) {
 const needsLocalFix = code =>
   `process.exit(require('node:fs').existsSync('node_modules/local-fix') ? 0 : ${code});\n`;
 
+// No per-child timeout: load-dependent limits killed healthy runs. test:verified bounds the suite.
 function verifyFixture(fixture, args) {
   return spawnSync(
     process.execPath,
     [resolve(__dirname, '../verify.cjs'), ...args],
-    {
-      cwd: fixture,
-      encoding: 'utf8',
-      timeout: 20_000,
-    },
+    { cwd: fixture, encoding: 'utf8' },
   );
 }
 
