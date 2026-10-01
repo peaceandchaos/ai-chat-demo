@@ -48,24 +48,30 @@ export async function readBody(request: Request): Promise<string> {
     throw new RequestError(415, 'Send JSON.');
   if (!request.body) throw new RequestError(400, 'Missing request body.');
   const reader = request.body.getReader();
-  const decoder = new TextDecoder('utf-8', { fatal: true });
-  let text = '';
+  const chunks: Uint8Array[] = [];
   let size = 0;
   try {
     for (;;) {
       const chunk = await reader.read();
-      if (chunk.done) return text + decoder.decode();
+      if (chunk.done) break;
       size += chunk.value.byteLength;
       if (size > maxRequestBytes)
         throw new RequestError(
           413,
           'Split large conversation input into context parts.',
         );
-      text += decoder.decode(chunk.value, { stream: true });
+      chunks.push(chunk.value);
     }
   } finally {
     await reader.cancel().catch(() => undefined);
     reader.releaseLock();
+  }
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(
+      Buffer.concat(chunks),
+    );
+  } catch {
+    throw new RequestError(400, 'Send JSON as UTF-8 text.');
   }
 }
 
