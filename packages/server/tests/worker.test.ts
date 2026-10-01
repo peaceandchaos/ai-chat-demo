@@ -112,7 +112,7 @@ test('Stop during selection cancels evaluation and prevents a later provider lau
   const input = submission();
   let aborted = false;
   providers.select = async (_input, signal) => {
-    await jobs.cancel(owner, input.attemptId);
+    await jobs.requestCancellation(owner, input.attemptId);
     await new Promise<void>(resolve =>
       signal.addEventListener(
         'abort',
@@ -137,7 +137,7 @@ test('Stop during selection cancels evaluation and prevents a later provider lau
 test('Stop during compaction prevents generation even if compaction returns late', async () => {
   const input = submission();
   providers.prepare = async () => {
-    await jobs.cancel(owner, input.attemptId);
+    await jobs.requestCancellation(owner, input.attemptId);
     return { items: [], checkpoint: null };
   };
   await jobs.submit(owner, input, async () => 'run');

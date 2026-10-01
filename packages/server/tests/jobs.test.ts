@@ -108,9 +108,12 @@ test('another device cannot read, stream, cancel, or acknowledge a job', async (
   await expect(
     jobs.poll(otherOwner, input.attemptId, 0, staleAfterMs),
   ).rejects.toMatchObject({ status: 404 });
-  await expect(jobs.cancel(otherOwner, input.attemptId)).rejects.toMatchObject({
-    status: 404,
-  });
+  expect(
+    await jobs.requestCancellation(otherOwner, input.attemptId),
+  ).toBeNull();
+  expect(
+    (await jobs.get(owner, input.attemptId)).snapshot.cancelRequested,
+  ).toBe(false);
   await expect(
     jobs.acknowledge(otherOwner, input.attemptId, 0),
   ).rejects.toMatchObject({ status: 404 });
@@ -183,7 +186,7 @@ test('a cancellation reaches another repository instance and rejects late output
   await jobs.claim(owner, input.attemptId, 'run_1', 'claim');
   await jobs.update(owner, input.attemptId, 'claim', { text: 'Partial' });
   const otherInstance = new JobRepository(database);
-  await otherInstance.cancel(owner, input.attemptId);
+  await otherInstance.requestCancellation(owner, input.attemptId);
   expect(await jobs.heartbeat(owner, input.attemptId, 'claim')).toBe(false);
   await expect(
     jobs.update(owner, input.attemptId, 'claim', { text: ' late' }),
