@@ -42,10 +42,21 @@ The user approved repository instructions, repository/global `test-prune`, check
 - The owner accepted the Xcode 27.0 license. Native networking repair and the session controller are in progress on separate branches.
   Update this section with meaningful results, decisions, and unresolved failures as work proceeds. Keep task history concise.
 
-## Next: native iOS transport
+## Native transport and session controller (merged)
 
-Repair cancellation and redirects in the native adapter before connecting it to the client. Use a controlled local server and narrow native harness. Verify cancellation, loss around acceptance, app lifecycle, credentialed redirects/admission errors, and split/truncated/large streams. Fake-driver tests remain contract evidence only.
+PR #16 (`d212999`) added the saved-chat session controller and PR #17 (`8491730`) repaired native iOS networking. Neither changes a screen or component; the screens still use the demo connection.
+
+- The session controller reads each saved reply into one phase and one next operation, runs one runner per reply, saves turns before requests and results before receipts, reuses attempt ids for every recovery, keeps Stop separate from reader detach, and keeps deletion tombstones. Integration tests run the real archive, `ServerTransport`, and server routes over PGlite; 30 deliberate defects each failed their test.
+- The native drivers stop the real request on abort and cancel, refuse HTTP and WebSocket redirects, settle once, and keep the device credential out of the JS inspector and, through the nitro-fetch patch, out of DevTools reporting. Simulator evidence (iPhone 16 Pro, iOS 18.5) covers abort timing, redirects, admission errors, split UTF-8, truncated and malformed streams, recovery after lost acceptance, and released connections.
+- Documented limits: iOS reports an HTTP/1.1 chunked body cut at a record boundary as a normal end (the session re-watches), and CFNetwork buffers a fast large response ahead of JavaScript.
+- Still required on a physical iPhone: lock, OS suspension, termination, network changes, HTTPS/HTTP-2 cut behavior, and the DevTools frontend view.
+
+## Next decisions
+
+1. UI integration (`outputs/ui-integration-proposal.md` in the planning directory): PRs 1 to 3 wire the existing screens to the session layer, remove the demo provider path and embedded keys, and show real Recents, with no visible change. Later PRs need owner visual decisions D1 to D11.
+2. Hosted acceptance (`outputs/hosted-acceptance-proposal.md`): hosting, database, secrets, spend limits, and four minimal paid calls to confirm GPT over the Responses WebSocket (`outputs/gpt-transport-research.md`).
+3. Physical-device verification once an iPhone is connected.
 
 ## Later: application and hosted acceptance
 
-The server jobs, provider adapters, saved-chat archive, and client protocol exist as separate foundations. Connect the session controller and the user-owned UI later. Verify parallel chats, saved reply branches, background completion, durable receipt, and provider compaction across the full path before claiming completion. Hosted tests, provider spending, deployment, and release require their own authorization.
+Verify parallel chats, saved reply branches, background completion, durable receipt, and provider compaction across the full path before claiming completion. Hosted tests, provider spending, deployment, and release require their own authorization.
