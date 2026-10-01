@@ -126,6 +126,10 @@ async function runController(f) {
   }
 }
 
+function pointApprovalAtRun(externalId, runId) {
+  return externalId.replace(/\d+$/u, String(runId));
+}
+
 function repairDispatch(f) {
   f.context.eventName = 'workflow_dispatch';
   f.context.payload.inputs = {
@@ -405,7 +409,7 @@ test('repair approval must come from a successful dispatch with the same inputs'
 
   approval.conclusion = 'success';
   const check = f.state.approvals[0];
-  check.external_id = check.external_id.replace(/\d+$/u, String(refresh));
+  check.external_id = pointApprovalAtRun(check.external_id, refresh);
   await runController(f);
   expect(lastState(f)).toBe('failure');
 });

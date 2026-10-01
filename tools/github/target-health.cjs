@@ -171,15 +171,15 @@ async function status(github, repo, sha, state, description) {
   });
 }
 
-async function groupHealthy(github, context, pulls, targets) {
+async function groupHealthy(github, context, pulls, inspectionTargets) {
   for (const pr of pulls) {
     if (pr.base.ref.startsWith('submission/')) return false;
-    if (!targets.has(pr.base.ref))
-      targets.set(
+    if (!inspectionTargets.has(pr.base.ref))
+      inspectionTargets.set(
         pr.base.ref,
         await targetState(github, context.repo, pr.base.ref),
       );
-    const target = targets.get(pr.base.ref);
+    const target = inspectionTargets.get(pr.base.ref);
     if (!target.passed && !(await repairAllowed(github, context, pr, target)))
       return false;
   }
@@ -196,12 +196,12 @@ async function groupHealthy(github, context, pulls, targets) {
       current.state !== 'open' ||
       current.head.sha !== pr.head.sha ||
       current.base.ref !== pr.base.ref ||
-      target.data.object.sha !== targets.get(pr.base.ref).sha
+      target.data.object.sha !== inspectionTargets.get(pr.base.ref).sha
     )
       return false;
   }
   for (const branch of new Set(pulls.map(pr => pr.base.ref))) {
-    const target = targets.get(branch);
+    const target = inspectionTargets.get(branch);
     if (!target.repairRun) continue;
     const current = await targetState(github, context.repo, branch);
     if (current.sha !== target.sha || current.repairRun !== target.repairRun)
@@ -234,10 +234,15 @@ async function inspect(github, context, core) {
       'pending',
       'Checking the current integration target.',
     );
-  const targets = new Map();
+  const inspectionTargets = new Map();
   for (const [sha, group] of groups) {
     try {
-      const healthy = await groupHealthy(github, context, group, targets);
+      const healthy = await groupHealthy(
+        github,
+        context,
+        group,
+        inspectionTargets,
+      );
       await status(
         github,
         context.repo,
