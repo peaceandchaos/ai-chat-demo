@@ -148,7 +148,7 @@ export class ChatSession {
   }
 
   stop(replyId: string): void {
-    const message = this.load(replyId);
+    const message = this.loadUnsettled(replyId);
     if (!message) return;
     const phase = phaseOf(message);
     if (phase !== 'unsent' && phase !== 'accepted') return;
@@ -185,13 +185,13 @@ export class ChatSession {
 
   private resume(): void {
     this.foreground = true;
-    this.report(() => {
+    this.catchStorageFailure(() => {
       for (const id of this.archive.metadata().jobIds) {
         const runner = this.runners.get(id);
         if (runner?.kind === 'running' || runner?.kind === 'waiting') continue;
         let message: SavedMessage | null;
         try {
-          message = this.load(id);
+          message = this.loadUnsettled(id);
         } catch {
           this.runners.set(id, {
             kind: 'halted',
@@ -201,7 +201,7 @@ export class ChatSession {
           continue;
         }
         if (message) this.launch(id);
-        else this.report(() => this.archive.acknowledge(id));
+        else this.catchStorageFailure(() => this.archive.acknowledge(id));
       }
     });
     this.refusedDeletions.clear();
@@ -227,7 +227,7 @@ export class ChatSession {
     return reply;
   }
 
-  private load(id: string): SavedMessage | null {
+  private loadUnsettled(id: string): SavedMessage | null {
     const cached = this.live.get(id);
     if (cached) return cached;
     const saved = this.local(() => this.archive.message(id));
@@ -480,8 +480,11 @@ export class ChatSession {
       failures = this.deletion.failures;
     }
     this.deletion = null;
-    if (this.report(() => this.archive.metadata().deletions.length) === 0)
-      return;
+    const pendingDeletions = this.catchStorageFailure(
+      () => this.archive.metadata().deletions.length,
+    );
+    const indexUnreadable = pendingDeletions === null;
+    if (!indexUnreadable && pendingDeletions === 0) return;
     const run: DeletionRunner = {
       kind: 'running',
       controller: new AbortController(),
@@ -564,7 +567,7 @@ export class ChatSession {
     this.storageProblem = null;
   }
 
-  private report<T>(operation: () => T): T | null {
+  private catchStorageFailure<T>(operation: () => T): T | null {
     try {
       return operation();
     } catch {
@@ -574,7 +577,7 @@ export class ChatSession {
   }
 
   private checkpoint(): void {
-    this.report(() => this.flush());
+    this.catchStorageFailure(() => this.flush());
   }
 
   private scheduleCheckpoint(): void {

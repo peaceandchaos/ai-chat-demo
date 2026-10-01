@@ -92,7 +92,7 @@ export function isActive(message: SavedMessage): boolean {
 }
 
 export class ChatArchive {
-  private journalPending = false;
+  private halfAppliedJournal = false;
 
   constructor(
     private readonly storage: ArchiveStorage,
@@ -110,38 +110,39 @@ export class ChatArchive {
   private replayJournal(): void {
     const journal = this.storage.getString(journalKey);
     if (journal !== undefined) this.apply(decodeJson(journalSchema, journal));
-    this.journalPending = false;
+    this.halfAppliedJournal = false;
   }
 
-  private read(key: string): string | undefined {
-    if (this.journalPending) this.replayJournal();
+  private readAfterJournal(key: string): string | undefined {
+    if (this.halfAppliedJournal) this.replayJournal();
     return this.storage.getString(key);
   }
 
-  private put(change: Write): void {
+  private writeOneKey(change: Write): void {
     if (change.value === null) this.storage.remove(change.key);
     else this.storage.set(change.key, change.value);
   }
 
   private apply(writes: Write[]): void {
-    for (const change of writes) this.put(change);
+    for (const change of writes) this.writeOneKey(change);
     this.storage.remove(journalKey);
   }
 
   private commit(writes: Write[]): void {
-    if (writes.length === 1) {
-      this.put(writes[0]);
-      return;
-    }
+    if (writes.length === 1) this.writeOneKey(writes[0]);
+    else this.writeJournaled(writes);
+  }
+
+  private writeJournaled(writes: Write[]): void {
     // Replaying the same journal is idempotent if the process exits mid-write.
     this.storage.set(journalKey, JSON.stringify(writes));
-    this.journalPending = true;
+    this.halfAppliedJournal = true;
     this.apply(writes);
-    this.journalPending = false;
+    this.halfAppliedJournal = false;
   }
 
   metadata(): ArchiveMetadata {
-    const raw = this.read(metaKey);
+    const raw = this.readAfterJournal(metaKey);
     if (raw !== undefined) return decodeJson(metadataSchema, raw);
     if (this.storage.getAllKeys().some(key => key.startsWith('archive/')))
       throw new Error(
@@ -157,7 +158,7 @@ export class ChatArchive {
   }
 
   chat(id: string): ChatRecord {
-    const raw = this.read(chatKey(id));
+    const raw = this.readAfterJournal(chatKey(id));
     if (raw === undefined)
       throw new Error('A saved chat is missing. Stored data was preserved.');
     const result = decodeJson(chatSchema, raw);
@@ -166,11 +167,11 @@ export class ChatArchive {
   }
 
   hasChat(id: string): boolean {
-    return this.read(chatKey(id)) !== undefined;
+    return this.readAfterJournal(chatKey(id)) !== undefined;
   }
 
   message(id: string): SavedMessage {
-    const raw = this.read(messageKey(id));
+    const raw = this.readAfterJournal(messageKey(id));
     if (raw === undefined)
       throw new Error('A saved message is missing. Stored data was preserved.');
     const result = decodeJson(messageSchema, raw);
@@ -179,12 +180,12 @@ export class ChatArchive {
   }
 
   children(chatId: string, parentId: string | null): string[] {
-    const raw = this.read(childrenKey(chatId, parentId));
+    const raw = this.readAfterJournal(childrenKey(chatId, parentId));
     return raw === undefined ? [] : decodeJson(z.array(idSchema), raw);
   }
 
   private selected(chatId: string, parentId: string): string | null {
-    const raw = this.read(selectedKey(chatId, parentId));
+    const raw = this.readAfterJournal(selectedKey(chatId, parentId));
     return raw === undefined ? null : decodeJson(idSchema, raw);
   }
 
