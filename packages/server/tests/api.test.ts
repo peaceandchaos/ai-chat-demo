@@ -62,6 +62,22 @@ test('unauthorized requests are rejected before body decoding, database access, 
   expect(rank).not.toHaveBeenCalled();
 });
 
+test('a body that is not UTF-8 is a client error, not a server failure', async () => {
+  const jobs = jest.fn(() =>
+    Promise.reject(new Error('Must not load database')),
+  );
+  const response = await handleRequest(
+    new Request('https://fixture.example/v1/chat', {
+      method: 'POST',
+      headers,
+      body: new Uint8Array([0x7b, 0xff, 0x7d]),
+    }),
+    { allowlist: device, jobs, dispatch: jest.fn(), rank: jest.fn() },
+  );
+  expect(response.status).toBe(400);
+  expect(jobs).not.toHaveBeenCalled();
+});
+
 test('contract errors and foreign-device reads return errors without reaching a provider', async () => {
   const f = await fixture();
   try {
