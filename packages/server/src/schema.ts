@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS chat_jobs (
   request_hash text NOT NULL,
   input jsonb,
   state jsonb NOT NULL,
+  checkpoint jsonb,
   PRIMARY KEY (owner, attempt_id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS chat_jobs_active_path
