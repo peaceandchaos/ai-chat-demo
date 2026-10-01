@@ -99,7 +99,6 @@ function createFixture(check, message, extraScripts = {}) {
 const needsLocalFix = code =>
   `process.exit(require('node:fs').existsSync('node_modules/local-fix') ? 0 : ${code});\n`;
 
-// No per-child timeout: load-dependent limits killed healthy runs. test:verified bounds the suite.
 function verifyFixture(fixture, args, env = process.env) {
   return spawnSync(
     process.execPath,
@@ -113,7 +112,6 @@ test('personal npm configuration cannot skip install scripts in the snapshot', (
     postinstall: 'node -e "process.exit(7)"',
   });
   try {
-    // `npm run` exports personal .npmrc values such as ignore-scripts=true this way.
     const result = verifyFixture(fixture, ['commit', 'HEAD'], {
       ...process.env,
       npm_config_ignore_scripts: 'true',
@@ -145,7 +143,6 @@ test('committed and staged checks reject a broken tree despite an unstaged fix a
     );
     const result = verifyFixture(fixture, ['commit', commit]);
     expect(result.status).toBe(1);
-    // The failures come from the checks, not from installing the snapshot.
     expect(result.stdout).toContain('install: PASS');
     expect(result.stdout).toContain('lint: FAIL');
     expect(result.stdout).toContain(`commit ${commit}`);
