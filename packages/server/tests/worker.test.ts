@@ -143,6 +143,9 @@ test('Stop during compaction prevents generation even if compaction returns late
   await jobs.submit(owner, input, async () => 'run');
   await execute(input.attemptId);
   expect(generationCalls).toBe(0);
+  expect((await jobs.get(owner, input.attemptId)).snapshot.status).toBe(
+    'stopped',
+  );
 });
 
 test('an upstream disconnect retains the partial answer without another paid call', async () => {

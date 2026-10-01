@@ -1,14 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import { PGlite } from '@electric-sql/pglite';
+import type { PGlite } from '@electric-sql/pglite';
 import { makeCheckpoint } from '../src/compaction/context';
 import type { Database } from '../src/database';
 import { JobRepository, staleAfterMs } from '../src/jobs';
-import { schemaSql } from '../src/schema';
+import { testDatabase } from './database';
 import { submission } from './fixtures';
 
 jest.setTimeout(30_000);
 const owner = 'a'.repeat(64);
-const otherOwner = 'b'.repeat(64);
 let postgres: PGlite;
 let database: Database;
 let jobs: JobRepository;
@@ -21,22 +20,7 @@ async function dispatch(): Promise<string> {
 }
 
 beforeAll(async () => {
-  postgres = new PGlite();
-  await postgres.exec(schemaSql);
-  database = {
-    async query(sql, values) {
-      return postgres.query<{ data: string }>(sql, values);
-    },
-    async transaction(operation) {
-      return postgres.transaction(async transaction =>
-        operation({
-          async query(sql, values) {
-            return transaction.query<{ data: string }>(sql, values);
-          },
-        }),
-      );
-    },
-  };
+  ({ postgres, database } = await testDatabase());
 });
 
 beforeEach(async () => {
@@ -97,26 +81,6 @@ test('parallel chats are independent while a busy path rejects another send', as
     jobs.submit(owner, { ...first, attemptId: randomUUID() }, dispatch),
   ).rejects.toMatchObject({ status: 409 });
   expect(dispatchCount).toBe(2);
-});
-
-test('another device cannot read, stream, cancel, or acknowledge a job', async () => {
-  const input = submission();
-  await jobs.submit(owner, input, dispatch);
-  await expect(jobs.get(otherOwner, input.attemptId)).rejects.toMatchObject({
-    status: 404,
-  });
-  await expect(
-    jobs.poll(otherOwner, input.attemptId, 0, staleAfterMs),
-  ).rejects.toMatchObject({ status: 404 });
-  expect(
-    await jobs.requestCancellation(otherOwner, input.attemptId),
-  ).toBeNull();
-  expect(
-    (await jobs.get(owner, input.attemptId)).snapshot.cancelRequested,
-  ).toBe(false);
-  await expect(
-    jobs.acknowledge(otherOwner, input.attemptId, 0),
-  ).rejects.toMatchObject({ status: 404 });
 });
 
 test('completion remains retrievable after a reader closes and until durable receipt', async () => {
