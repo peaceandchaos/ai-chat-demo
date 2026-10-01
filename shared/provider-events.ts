@@ -111,7 +111,6 @@ function recordData(record: string): string | null {
 // UTF-8 boundaries; this parser retains incomplete records between calls.
 export class SseDecoder {
   private buffer = '';
-  // The buffer before this index holds no record boundary.
   private scanned = 0;
 
   constructor(private readonly maxRecordCharacters = 1_048_576) {}
@@ -120,8 +119,6 @@ export class SseDecoder {
     this.buffer += chunk;
     const records: string[] = [];
     const boundary = /\r?\n\r?\n/gu;
-    // A boundary is at most four characters, so one ending in this chunk
-    // starts no earlier than three characters before the unscanned text.
     boundary.lastIndex = Math.max(0, this.scanned - 3);
     let start = 0;
     for (

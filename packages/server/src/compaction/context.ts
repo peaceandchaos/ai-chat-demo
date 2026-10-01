@@ -173,7 +173,6 @@ export async function prepareContext(
   const pieceBudget = Math.floor(threshold / 4);
   if (threshold <= 0)
     throw new ProviderFailure('The model context configuration is invalid.');
-  // contextSize is a per-item sum, so the running total stays exact.
   let size = contextSize(items);
   const shrink = async () => {
     const before = size;
