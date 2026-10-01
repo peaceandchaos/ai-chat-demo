@@ -32,6 +32,15 @@ test('SSE handles comments and multiline data, and rejects a truncated record', 
   expect(() => decoder.finish()).toThrow('inside a record');
 });
 
+test('the SSE record cap holds however the record is chunked', () => {
+  const record = `data: ${'x'.repeat(100)}\n\n`;
+  expect(() => new SseDecoder(64).push(record)).toThrow('too large');
+  const split = new SseDecoder(64);
+  expect(() => {
+    for (const piece of record.match(/.{1,10}/gsu) ?? []) split.push(piece);
+  }).toThrow('too large');
+});
+
 test('both provider readers reject malformed trusted fields', () => {
   expect(() => parseResponsesEvent('{')).toThrow();
   expect(() =>

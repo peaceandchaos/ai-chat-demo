@@ -111,6 +111,8 @@ export class SseDecoder {
     const records: string[] = [];
     let boundary = /\r?\n\r?\n/u.exec(this.buffer);
     while (boundary) {
+      if (boundary.index > this.maxRecordCharacters)
+        throw new Error('A stream record is too large.');
       const record = this.buffer.slice(0, boundary.index);
       this.buffer = this.buffer.slice(boundary.index + boundary[0].length);
       const data: string[] = [];
