@@ -34,7 +34,7 @@ index e0a9c63..0d05b68 100644
    }
  
 diff --git a/node_modules/react-native-nitro-fetch/ios/HybridUrlRequestBuilder.swift b/node_modules/react-native-nitro-fetch/ios/HybridUrlRequestBuilder.swift
-index 310efae..25f93b0 100644
+index 310efae..d494473 100644
 --- a/node_modules/react-native-nitro-fetch/ios/HybridUrlRequestBuilder.swift
 +++ b/node_modules/react-native-nitro-fetch/ios/HybridUrlRequestBuilder.swift
 @@ -88,6 +88,8 @@ class HybridUrlRequestBuilder: HybridUrlRequestBuilderSpec {
@@ -77,18 +77,19 @@ index 310efae..25f93b0 100644
    let onRedirectReceived: ((_ info: UrlResponseInfo, _ newLocationUrl: String) -> Void)?
    let onResponseStarted: ((_ info: UrlResponseInfo) -> Void)?
    let onReadCompleted: ((_ info: UrlResponseInfo, _ byteBuffer: ArrayBuffer, _ bytesRead: Double) -> Void)?
-@@ -143,7 +149,10 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
+@@ -143,7 +149,11 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
    weak var hybridRequest: HybridUrlRequest?
  
    private var response: HTTPURLResponse?
 +  private let redirectLock = NSLock()
 +  private var pendingRedirect: ((Bool) -> Void)?
++  private var cancelled = false
    private let devToolsRequestId: String
 +  private let reportsToDevTools: Bool
    private var devToolsBytes: Int = 0
    private var devToolsTextual: Bool = false
  
-@@ -156,7 +165,8 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
+@@ -156,7 +166,8 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
      onCanceled: ((_ info: UrlResponseInfo?) -> Void)?,
      executor: DispatchQueue,
      hybridRequest: HybridUrlRequest?,
@@ -98,7 +99,7 @@ index 310efae..25f93b0 100644
    ) {
      self.onRedirectReceived = onRedirectReceived
      self.onResponseStarted = onResponseStarted
-@@ -167,9 +177,29 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
+@@ -167,9 +178,29 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
      self.executor = executor
      self.hybridRequest = hybridRequest
      self.devToolsRequestId = devToolsRequestId
@@ -128,7 +129,7 @@ index 310efae..25f93b0 100644
    func urlSession(
      _ session: URLSession,
      task: URLSessionTask,
-@@ -177,15 +207,25 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
+@@ -177,15 +208,33 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
      newRequest request: URLRequest,
      completionHandler: @escaping (URLRequest?) -> Void
    ) {
@@ -142,27 +143,35 @@ index 310efae..25f93b0 100644
 +    guard let callback = onRedirectReceived else {
 +      completionHandler(request)
 +      return
-     }
--    completionHandler(request)
++    }
 +    // As with Cronet, a registered listener decides: followRedirect() or cancel().
++    // After cancel() nothing would resolve a held handler, and it would keep this
++    // delegate alive (tools/native-transport/redirect-handler.mjs).
 +    redirectLock.lock()
++    if cancelled {
++      redirectLock.unlock()
++      completionHandler(nil)
++      return
++    }
 +    pendingRedirect = { follow in completionHandler(follow ? request : nil) }
 +    redirectLock.unlock()
 +    executor.sync {
 +      callback(response.toNitro(), request.url?.absoluteString ?? "")
-+    }
+     }
+-    completionHandler(request)
 +  }
 +
 +  func resolveRedirect(follow: Bool) {
 +    redirectLock.lock()
 +    let pending = pendingRedirect
 +    pendingRedirect = nil
++    if !follow { cancelled = true }
 +    redirectLock.unlock()
 +    pending?(follow)
    }
  
    func urlSession(
-@@ -193,6 +233,8 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
+@@ -193,6 +242,8 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
      task: URLSessionTask,
      didCompleteWithError error: Error?
    ) {
@@ -171,7 +180,7 @@ index 310efae..25f93b0 100644
      executor.sync { [weak self] in
        guard let self = self else { return }
        self.hybridRequest?.markDone()
-@@ -201,7 +243,7 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
+@@ -201,7 +252,7 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
          let nsError = error as NSError
          if nsError.code == NSURLErrorCancelled {
            #if DEBUG
@@ -180,7 +189,7 @@ index 310efae..25f93b0 100644
              NitroDevToolsReporter.reportRequestFailed(self.devToolsRequestId, cancelled: true)
            }
            #endif
-@@ -211,7 +253,7 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
+@@ -211,7 +262,7 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
            }
          } else {
            #if DEBUG
@@ -189,7 +198,7 @@ index 310efae..25f93b0 100644
              NitroDevToolsReporter.reportRequestFailed(self.devToolsRequestId, cancelled: false)
            }
            #endif
-@@ -223,7 +265,7 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
+@@ -223,7 +274,7 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
          }
        } else if let response = self.response {
          #if DEBUG
@@ -198,7 +207,7 @@ index 310efae..25f93b0 100644
            NitroDevToolsReporter.reportResponseEnd(self.devToolsRequestId, encodedDataLength: self.devToolsBytes)
          }
          #endif
-@@ -251,7 +293,7 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
+@@ -251,7 +302,7 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
      executor.sync { [weak self] in
        guard let self = self else { return }
        #if DEBUG
@@ -207,7 +216,7 @@ index 310efae..25f93b0 100644
          var headerDict: [String: String] = [:]
          httpResponse.allHeaderFields.forEach { k, v in
            if let key = k as? String { headerDict[key] = String(describing: v) }
-@@ -285,7 +327,7 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
+@@ -285,7 +336,7 @@ private class URLSessionDelegateAdapter: NSObject, URLSessionDataDelegate, URLSe
          guard let self = self, let response = self.response else { return }
  
          #if DEBUG
