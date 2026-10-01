@@ -64,23 +64,18 @@ test('Gateway sends only its fixed model and emits a split UTF-8 stream once', a
 });
 
 test.each([
-  [chunk('Partial')],
-  [chunk('Partial'), '[DONE]'],
-  [chunk('Partial'), chunk(null, 'length'), '[DONE]'],
-  [chunk(null, 'stop'), '[DONE]'],
-])(
-  'Gateway rejects a truncated, limited, or empty stream: %p',
-  async (...records) => {
-    const requests: RequestInit[] = [];
-    const client = fakeGateway(records, requests);
-    await expect(
-      client.generate('deepseek', input, signal, before, () =>
-        Promise.resolve(),
-      ),
-    ).rejects.toThrow();
-    expect(requests).toHaveLength(1);
-  },
-);
+  ['truncated', [chunk('Partial')]],
+  ['missing its stop', [chunk('Partial'), '[DONE]']],
+  ['length-limited', [chunk('Partial'), chunk(null, 'length'), '[DONE]']],
+  ['empty', [chunk(null, 'stop'), '[DONE]']],
+])('Gateway rejects a stream that is %s', async (_name, records) => {
+  const requests: RequestInit[] = [];
+  const client = fakeGateway(records, requests);
+  await expect(
+    client.generate('deepseek', input, signal, before, () => Promise.resolve()),
+  ).rejects.toBeInstanceOf(ProviderFailure);
+  expect(requests).toHaveLength(1);
+});
 
 test('a Gateway connection lost mid-stream is an uncertain interruption', async () => {
   const record = new TextEncoder().encode(`data: ${chunk('Partial')}\r\n\r\n`);
