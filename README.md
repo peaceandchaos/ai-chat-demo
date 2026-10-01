@@ -37,7 +37,7 @@ npm run verify:commit -- HEAD
 
 ## Verification and review
 
-The pre-commit hook checks lint, formatting, and credentials in a snapshot of the Git index. It performs a fresh locked install there. It cannot use unstaged fixes or your local `node_modules`. The pre-push hook runs the full implemented suite for each commit being published.
+The pre-commit hook checks lint, formatting, and credentials in a snapshot of the Git index. It performs a fresh locked install there. It cannot use unstaged fixes or your local `node_modules`. The pre-push hook runs the full implemented suite on the tip commit of each pushed branch. Hosted CI checks each PR head, its proposed merge result, and each push.
 
 `verify:commit` runs the selected commit's own checking code in a fresh checkout. It records the commit, tree, commands, results, and source integrity in ignored `.quality-results/`. A commit that tracks files under `.quality-results/` fails, so a candidate cannot supply its own result records. Only committed example configuration enters that checkout. Checks cannot silently change source while running. Logs and results remain available after the temporary checkout is removed.
 
