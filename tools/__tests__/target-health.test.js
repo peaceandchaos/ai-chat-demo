@@ -89,7 +89,6 @@ function fixture() {
   const github = { rest: api, paginate: (endpoint, args) => endpoint(args) };
   const context = {
     repo: { owner: 'peaceandchaos', repo: 'ai-chat-demo' },
-    serverUrl: 'https://github.com',
     eventName: 'workflow_run',
     actor: 'peaceandchaos',
     ref: 'refs/heads/main',
