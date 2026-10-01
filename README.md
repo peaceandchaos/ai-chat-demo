@@ -51,7 +51,7 @@ The 13 selected anti-slop rules remain errors. Their source and license are in `
 
 Every high/critical dependency advisory blocks acceptance, regardless of exposure. Moderate/low findings have dated dispositions in `tools/verification/dependency-dispositions.json`; new or expired findings need review. No update or override is automatic.
 
-The scanner excludes Android-specific files and scans the remaining app. Stream and tool arguments receive schema validation; raw network errors are not logged. Reply links require HTTP/HTTPS, structural validation, and OS support. Checks exercise React Native's actual JavaScript URL implementation. The fresh scanner run reports no shared-code findings and six medium dependency entries. The separate dependency gate checks their advisory dispositions. Any other scanner finding fails unless `tools/verification/security-dispositions.json` records a current, reasoned disposition for it. Neither check proves native networking safety. All four native patches and the Metro patch must apply during `npm ci`.
+The scanner excludes Android-specific files and scans the remaining app. Stream and tool arguments receive schema validation; raw network errors are not logged. Reply links require HTTP/HTTPS, structural validation, and OS support. Checks exercise React Native's actual JavaScript URL implementation. The fresh scanner run reports no shared-code findings and six medium dependency entries. The separate dependency gate checks their advisory dispositions. Any other scanner finding fails unless `tools/verification/security-dispositions.json` records a current, reasoned disposition for it. Neither check proves native networking safety. All five native patches and the Metro patch must apply during `npm ci`.
 
 ## Test review
 
@@ -76,20 +76,41 @@ cursors before acknowledging them to the server.
 This layer is not connected to the app yet. The user owns the UI work. The existing
 screens and mocked Recents list retain their UI. The demo store now validates tool inputs,
 and the old connection no longer logs raw errors. Its native connection behavior is unchanged.
-The native transport binding remains separate work.
+The native binding and the session controller below are not connected to the screens yet.
 
-Before native integration, fix or replace the streaming adapter in the installed
-`react-native-nitro-fetch` package. Inspection of `src/fetch.ts` found that
-`nitroStreamFetch` does not connect `init.signal` or stream cancellation to the native
-request. It also does not enforce `init.redirect`. The iOS builder follows redirects
-after its callback. The new driver must stop native readers and reject credentialed
-redirects. Disable header recording in the network inspector before using the device
-credential. These are source findings; native behavior still needs a device check.
+`packages/app/src/network/nativeDrivers.ts` is the iOS binding for these drivers. It
+uses the Nitro request builder and WebSocket objects directly, so nothing reaches the
+nitro-fetch network inspector. The `react-native-nitro-fetch` patch holds a redirect
+until JavaScript follows or cancels it, releases each request's URL session, and keeps
+requests carrying `X-Device-Id` out of the React Native DevTools network reporter.
 
-Focused client tests use injected drivers. They verify protocol routing, parallel
-reply isolation, multipart handoff, interrupted delivery, explicit cancellation,
-large snapshots, and invalid data. They do not prove native networking or end-to-end
-app recovery. Hosted CI requires a push; local checks are reported separately.
+`node tools/native-transport/run.mjs` runs the binding on an iOS simulator against a
+localhost server and judges the evidence. On an iPhone 16 Pro (iOS 18.5) simulator it
+showed the following:
+
+- Abort before headers and during a stream closes the native request, and the call
+  settles once. Detaching a reader never calls Stop.
+- Credentialed HTTP redirects fail, and the redirect target receives nothing.
+- Admission errors keep their status and message. Split UTF-8 reconstructs exactly.
+  Truncated and malformed SSE fail.
+- After lost acceptance, the client recovers the same attempt with one dispatch.
+- The inspector and device log hold neither the credential nor bodies. Instrumented
+  builds (`NITROFETCH_HARNESS`) show no DevTools reports and no retained request objects.
+
+Three checks still fail, and they stay visible:
+
+- iOS reports an HTTP/1.1 chunked body cut at a record boundary as success. A lost
+  connection after acceptance can therefore end `submit()` without a terminal record.
+  The protocol needs an explicit end record; the binding cannot detect the cut.
+- CFNetwork reads a fast response ahead of JavaScript. A 314 MB stream raised memory by
+  about its full size. Suspending the task did not limit it.
+- The native WebSocket handshake follows redirects and resends `X-Device-Id`. The
+  `react-native-nitro-websockets` delegate needs to refuse redirects.
+
+Backgrounding on the simulator kept the stream open and delivered the backlog on return.
+Readers therefore rely on the detach that `nativeSession.ts` performs on background. Lock, suspension, process
+termination, and network changes need a physical iPhone. Fake-driver tests remain
+contract evidence. Hosted CI requires a push; local checks are reported separately.
 
 ### Session controller checkpoint
 
