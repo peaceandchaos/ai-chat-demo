@@ -34,7 +34,6 @@ const pollSchema = z.strictObject({
   heartbeat: z.number(),
   events: z.array(jobEventSchema),
 });
-// A job with no heartbeat for this long has lost its worker.
 export const staleAfterMs = 330_000;
 export type JobUpdate = {
   events?: EventPayload[];
@@ -72,9 +71,6 @@ function newJob(input: Submission, now: number): StoredJob {
   };
 }
 
-// state holds the snapshot without its checkpoint, which can be large. The
-// checkpoint column holds it, so token writes and heartbeats never parse or
-// rewrite it. readJob reassembles the full snapshot.
 async function readJob(
   db: SqlConnection,
   owner: string,
@@ -91,8 +87,6 @@ async function readJob(
   return decodeJson(storedJobSchema, row.data);
 }
 
-// Locks the job for a write that does not need its checkpoint. The returned
-// snapshot's checkpoint is null even when one is saved.
 async function lockState(
   db: SqlConnection,
   owner: string,
@@ -377,8 +371,6 @@ export class JobRepository {
     });
   }
 
-  // One round trip per delivery poll. reconcile is true when the job has
-  // ended or gone stale, so the reader should reconcile and send the result.
   async poll(
     owner: string,
     attemptId: string,
