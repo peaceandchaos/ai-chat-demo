@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import {
   attemptSnapshotSchema,
+  checkpointSchema,
   contractVersion,
   decodeJson,
   isTerminal,
@@ -63,6 +64,9 @@ function newJob(input: Submission, now: number): StoredJob {
   };
 }
 
+// state holds the snapshot without its checkpoint, which can be large. The
+// checkpoint column holds it, so token writes and heartbeats never parse or
+// rewrite it. readJob reassembles the full snapshot.
 async function readJob(
   db: SqlConnection,
   owner: string,
@@ -70,13 +74,42 @@ async function readJob(
   lock = false,
 ): Promise<StoredJob> {
   const result = await db.query(
-    `SELECT state::text AS data FROM chat_jobs
-     WHERE owner = $1 AND attempt_id = $2 ${lock ? 'FOR UPDATE' : ''}`,
+    `SELECT jsonb_set(state, '{snapshot,checkpoint}', COALESCE(checkpoint, 'null'))::text AS data
+     FROM chat_jobs WHERE owner = $1 AND attempt_id = $2 ${lock ? 'FOR UPDATE' : ''}`,
     [owner, attemptId],
   );
   const row = result.rows[0];
   if (!row) throw new RequestError(404, 'Reply not found.');
   return decodeJson(storedJobSchema, row.data);
+}
+
+// Locks the job for a write that does not need its checkpoint. The returned
+// snapshot's checkpoint is null even when one is saved.
+async function lockState(
+  db: SqlConnection,
+  owner: string,
+  attemptId: string,
+): Promise<StoredJob> {
+  const result = await db.query(
+    'SELECT state::text AS data FROM chat_jobs WHERE owner = $1 AND attempt_id = $2 FOR UPDATE',
+    [owner, attemptId],
+  );
+  const row = result.rows[0];
+  if (!row) throw new RequestError(404, 'Reply not found.');
+  return decodeJson(storedJobSchema, row.data);
+}
+
+async function readCheckpoint(
+  db: SqlConnection,
+  owner: string,
+  attemptId: string,
+): Promise<ContextCheckpoint | null> {
+  const result = await db.query(
+    'SELECT checkpoint::text AS data FROM chat_jobs WHERE owner = $1 AND attempt_id = $2',
+    [owner, attemptId],
+  );
+  const data = result.rows[0]?.data;
+  return data ? decodeJson(checkpointSchema, data) : null;
 }
 
 async function writeJob(
@@ -86,7 +119,14 @@ async function writeJob(
 ): Promise<void> {
   await db.query(
     'UPDATE chat_jobs SET state = $3::jsonb WHERE owner = $1 AND attempt_id = $2',
-    [owner, job.snapshot.attemptId, JSON.stringify(job)],
+    [
+      owner,
+      job.snapshot.attemptId,
+      JSON.stringify({
+        ...job,
+        snapshot: { ...job.snapshot, checkpoint: null },
+      }),
+    ],
   );
 }
 
@@ -234,7 +274,7 @@ export class JobRepository {
     claimId: string,
   ): Promise<boolean> {
     return this.database.transaction(async db => {
-      const job = await readJob(db, owner, attemptId, true);
+      const job = await lockState(db, owner, attemptId);
       if (
         job.claimId ||
         isTerminal(job.snapshot.status) ||
@@ -255,7 +295,7 @@ export class JobRepository {
     claimId: string,
   ): Promise<boolean> {
     return this.database.transaction(async db => {
-      const job = await readJob(db, owner, attemptId, true);
+      const job = await lockState(db, owner, attemptId);
       if (
         job.claimId !== claimId ||
         job.snapshot.cancelRequested ||
@@ -274,7 +314,7 @@ export class JobRepository {
     claimId: string,
   ): Promise<void> {
     await this.database.transaction(async db => {
-      const job = await readJob(db, owner, attemptId, true);
+      const job = await lockState(db, owner, attemptId);
       this.assertActive(job, claimId);
       job.providerStarted = true;
       job.heartbeat = this.now();
@@ -299,15 +339,19 @@ export class JobRepository {
     update: JobUpdate,
   ): Promise<JobEvent[]> {
     return this.database.transaction(async db => {
-      const job = await readJob(db, owner, attemptId, true);
+      const job = await lockState(db, owner, attemptId);
       this.assertActive(job, claimId);
       if (update.text) job.snapshot.text += update.text;
       if (update.reasoning) job.snapshot.reasoning += update.reasoning;
       if (update.status) job.snapshot.status = update.status;
       if (update.actualModel) job.snapshot.actualModel = update.actualModel;
-      if (update.checkpoint) job.snapshot.checkpoint = update.checkpoint;
       if (update.error) job.snapshot.error = update.error;
       job.heartbeat = this.now();
+      if (update.checkpoint)
+        await db.query(
+          'UPDATE chat_jobs SET checkpoint = $3::jsonb WHERE owner = $1 AND attempt_id = $2',
+          [owner, attemptId, JSON.stringify(update.checkpoint)],
+        );
       const payloads = [...(update.events ?? [])];
       if (update.status || update.actualModel) {
         payloads.push({
@@ -316,8 +360,11 @@ export class JobRepository {
           actualModel: job.snapshot.actualModel,
         });
       }
-      if (isTerminal(job.snapshot.status))
+      if (isTerminal(job.snapshot.status)) {
+        job.snapshot.checkpoint =
+          update.checkpoint ?? (await readCheckpoint(db, owner, attemptId));
         payloads.push({ kind: 'snapshot', snapshot: { ...job.snapshot } });
+      }
       return appendEvents(db, owner, job, payloads);
     });
   }
@@ -352,18 +399,17 @@ export class JobRepository {
       await db.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
         owner + attemptId,
       ]);
-      const rows = await db.query(
-        'SELECT state::text AS data FROM chat_jobs WHERE owner = $1 AND attempt_id = $2 FOR UPDATE',
-        [owner, attemptId],
-      );
-      if (!rows.rows[0]) {
+      const job = await readJob(db, owner, attemptId, true).catch(error => {
+        if (error instanceof RequestError && error.status === 404) return null;
+        throw error;
+      });
+      if (!job) {
         await db.query(
           'INSERT INTO cancelled_attempts (owner, attempt_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
           [owner, attemptId],
         );
         return null;
       }
-      const job = decodeJson(storedJobSchema, rows.rows[0].data);
       if (isTerminal(job.snapshot.status)) return job.snapshot;
       job.snapshot.cancelRequested = true;
       job.snapshot.status = 'stopped';
@@ -380,7 +426,7 @@ export class JobRepository {
     sequence: number,
   ): Promise<void> {
     await this.database.transaction(async db => {
-      const job = await readJob(db, owner, attemptId, true);
+      const job = await lockState(db, owner, attemptId);
       if (
         !isTerminal(job.snapshot.status) ||
         sequence !== job.snapshot.sequence
@@ -393,11 +439,10 @@ export class JobRepository {
       job.snapshot.delivered = true;
       job.snapshot.text = '';
       job.snapshot.reasoning = '';
-      job.snapshot.checkpoint = null;
       job.snapshot.error = null;
       await writeJob(db, owner, job);
       await db.query(
-        'UPDATE chat_jobs SET input = NULL WHERE owner = $1 AND attempt_id = $2',
+        'UPDATE chat_jobs SET input = NULL, checkpoint = NULL WHERE owner = $1 AND attempt_id = $2',
         [owner, attemptId],
       );
       await db.query(
@@ -420,28 +465,18 @@ export class JobRepository {
         'DELETE FROM chat_input_parts WHERE owner = $1 AND chat_id = $2',
         [owner, chatId],
       );
-      const rows = await db.query(
-        'SELECT state::text AS data FROM chat_jobs WHERE owner = $1 AND chat_id = $2 FOR UPDATE',
+      await db.query(
+        `UPDATE chat_jobs SET input = NULL, checkpoint = NULL,
+           state = jsonb_set(state, '{snapshot}', state->'snapshot' ||
+             '{"status":"deleted","cancelRequested":true,"text":"","reasoning":"","checkpoint":null,"error":null}')
+         WHERE owner = $1 AND chat_id = $2`,
         [owner, chatId],
       );
-      for (const row of rows.rows) {
-        const job = decodeJson(storedJobSchema, row.data);
-        job.snapshot.status = 'deleted';
-        job.snapshot.cancelRequested = true;
-        job.snapshot.text = '';
-        job.snapshot.reasoning = '';
-        job.snapshot.checkpoint = null;
-        job.snapshot.error = null;
-        await writeJob(db, owner, job);
-        await db.query(
-          'UPDATE chat_jobs SET input = NULL WHERE owner = $1 AND attempt_id = $2',
-          [owner, job.snapshot.attemptId],
-        );
-        await db.query(
-          'DELETE FROM chat_job_events WHERE owner = $1 AND attempt_id = $2',
-          [owner, job.snapshot.attemptId],
-        );
-      }
+      await db.query(
+        `DELETE FROM chat_job_events WHERE owner = $1 AND attempt_id IN
+           (SELECT attempt_id FROM chat_jobs WHERE owner = $1 AND chat_id = $2)`,
+        [owner, chatId],
+      );
     });
   }
 
