@@ -38,8 +38,9 @@ function fixture() {
     runLookups: 0,
     onRunLookup: null,
     approvals: [],
-    approvalRunAttempt: 1,
-    approvalConclusion: 'success',
+    // Target-health runs by id, as GitHub reports them during and after each run.
+    controllerRuns: new Map(),
+    nextRunId: 73,
     changedHead: false,
   };
   const api = {
@@ -64,17 +65,7 @@ function fixture() {
         return state.jobs;
       },
       getWorkflowRun: async ({ run_id }) => ({
-        data: {
-          id: run_id,
-          display_title: Object.values(context.payload.inputs).join(' '),
-          conclusion: state.approvalConclusion,
-          event: 'workflow_dispatch',
-          path: '.github/workflows/target-health.yml',
-          actor: { login: 'peaceandchaos' },
-          triggering_actor: { login: 'peaceandchaos' },
-          head_branch: 'main',
-          run_attempt: state.approvalRunAttempt,
-        },
+        data: state.controllerRuns.get(run_id),
       }),
     },
     checks: {
@@ -102,16 +93,57 @@ function fixture() {
     eventName: 'workflow_run',
     actor: 'peaceandchaos',
     ref: 'refs/heads/main',
-    runId: 73,
+    runId: null,
     payload: { repository: { default_branch: 'main' }, inputs: {} },
   };
   const core = { error: jest.fn(), setFailed: jest.fn() };
   return { state, github, context, core };
 }
 
+// One new target-health run. GitHub reports no conclusion while it inspects.
+async function runController(f) {
+  const { state, context, core } = f;
+  const run = {
+    id: state.nextRunId++,
+    run_attempt: 1,
+    event: context.eventName,
+    display_title:
+      context.eventName === 'workflow_dispatch'
+        ? Object.values(context.payload.inputs).join(' ')
+        : 'Target health',
+    conclusion: null,
+    path: '.github/workflows/target-health.yml',
+    actor: { login: context.actor },
+    triggering_actor: { login: context.actor },
+    head_branch: 'main',
+  };
+  state.controllerRuns.set(run.id, run);
+  context.runId = run.id;
+  core.setFailed.mockClear();
+  try {
+    await inspect(f.github, context, core);
+    run.conclusion = core.setFailed.mock.calls.length ? 'failure' : 'success';
+  } catch (error) {
+    run.conclusion = 'failure';
+    throw error;
+  }
+}
+
+function repairDispatch(f) {
+  f.context.eventName = 'workflow_dispatch';
+  f.context.payload.inputs = {
+    operation: 'approve-repair',
+    pr: '1',
+    head: f.state.pr.head.sha,
+    base: f.state.base,
+  };
+}
+
+const lastState = f => f.state.statuses.at(-1).state;
+
 test('metadata controller checks the exact target and latest attempt before publishing on the candidate', async () => {
   const f = fixture();
-  await inspect(f.github, f.context, f.core);
+  await runController(f);
   expect(f.state.queries[0]).toMatchObject({
     branch: 'main',
     event: 'push',
@@ -147,8 +179,8 @@ test('missing, pending, failed, skipped, and stale verification all hold the can
   for (const fault of faults) {
     const f = fixture();
     fault(f);
-    await inspect(f.github, f.context, f.core);
-    expect(f.state.statuses.at(-1).state).toBe('failure');
+    await runController(f);
+    expect(lastState(f)).toBe('failure');
   }
 });
 
@@ -164,7 +196,7 @@ test('a target that moves during inspection holds candidates published after the
     await publish(value);
     if (value.state === 'success') f.state.base = 'd'.repeat(40);
   };
-  await inspect(f.github, f.context, f.core);
+  await runController(f);
   expect(f.state.statuses.map(value => [value.sha, value.state])).toEqual([
     [f.state.pr.head.sha, 'pending'],
     [second.head.sha, 'pending'],
@@ -176,28 +208,21 @@ test('a target that moves during inspection holds candidates published after the
 test('owner repair binds PR, head, and base; a changed target invalidates it', async () => {
   const f = fixture();
   f.state.run.conclusion = 'failure';
-  f.context.eventName = 'workflow_dispatch';
-  f.context.payload.inputs = {
-    operation: 'approve-repair',
-    pr: '1',
-    head: f.state.pr.head.sha,
-    base: f.state.base,
-  };
-  await inspect(f.github, f.context, f.core);
+  repairDispatch(f);
+  await runController(f);
   expect(f.state.approvals).toHaveLength(1);
   expect(f.state.approvals[0].external_id).toBe(
     `1:${f.state.pr.head.sha}:${f.state.base}:42:1:73`,
   );
-  expect(f.state.statuses.at(-1).state).toBe('success');
+  // The approving run publishes the repaired result while it is still in progress.
+  expect(lastState(f)).toBe('success');
   f.context.eventName = 'workflow_run';
   f.state.base = 'd'.repeat(40);
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('failure');
+  await runController(f);
+  expect(lastState(f)).toBe('failure');
   f.context.eventName = 'workflow_dispatch';
   f.context.actor = 'agent[bot]';
-  await expect(inspect(f.github, f.context, f.core)).rejects.toThrow(
-    'Only the owner',
-  );
+  await expect(runController(f)).rejects.toThrow('Only the owner');
   expect(f.state.approvals).toHaveLength(1);
 });
 
@@ -227,14 +252,8 @@ test('owner repair requires an exact completed target push run that failed verif
   for (const fault of faults) {
     const f = fixture();
     fault(f);
-    f.context.eventName = 'workflow_dispatch';
-    f.context.payload.inputs = {
-      operation: 'approve-repair',
-      pr: '1',
-      head: f.state.pr.head.sha,
-      base: f.state.base,
-    };
-    await expect(inspect(f.github, f.context, f.core)).rejects.toThrow(
+    repairDispatch(f);
+    await expect(runController(f)).rejects.toThrow(
       'no exact completed push run that failed verification',
     );
     expect(f.state.approvals).toHaveLength(0);
@@ -244,61 +263,49 @@ test('owner repair requires an exact completed target push run that failed verif
 test('an approved repair expires when the target run or attempt changes', async () => {
   const f = fixture();
   f.state.run.conclusion = 'failure';
-  f.context.eventName = 'workflow_dispatch';
-  f.context.payload.inputs = {
-    operation: 'approve-repair',
-    pr: '1',
-    head: f.state.pr.head.sha,
-    base: f.state.base,
-  };
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('success');
+  repairDispatch(f);
+  await runController(f);
+  expect(lastState(f)).toBe('success');
 
   f.context.eventName = 'workflow_run';
   f.state.run.run_attempt = 2;
   f.state.run.status = 'in_progress';
   f.state.run.conclusion = null;
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('failure');
+  await runController(f);
+  expect(lastState(f)).toBe('failure');
 
   f.state.run.status = 'completed';
   f.state.run.conclusion = 'failure';
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('failure');
+  await runController(f);
+  expect(lastState(f)).toBe('failure');
 
   f.state.run.run_attempt = 1;
   f.state.run.conclusion = 'cancelled';
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('failure');
+  await runController(f);
+  expect(lastState(f)).toBe('failure');
   f.state.run.run_attempt = 2;
   f.state.run.conclusion = 'failure';
 
   f.context.eventName = 'workflow_dispatch';
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('success');
+  await runController(f);
+  expect(lastState(f)).toBe('success');
   expect(f.state.approvals.at(-1).external_id).toBe(
-    `1:${f.state.pr.head.sha}:${f.state.base}:42:2:73`,
+    `1:${f.state.pr.head.sha}:${f.state.base}:42:2:${f.context.runId}`,
   );
 
   f.context.eventName = 'workflow_run';
   f.state.run.id = 43;
   f.state.run.run_attempt = 1;
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('failure');
+  await runController(f);
+  expect(lastState(f)).toBe('failure');
 });
 
 test('a target rerun during inspection prevents repaired success', async () => {
   const f = fixture();
   f.state.run.conclusion = 'failure';
-  f.context.eventName = 'workflow_dispatch';
-  f.context.payload.inputs = {
-    operation: 'approve-repair',
-    pr: '1',
-    head: f.state.pr.head.sha,
-    base: f.state.base,
-  };
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('success');
+  repairDispatch(f);
+  await runController(f);
+  expect(lastState(f)).toBe('success');
 
   f.context.eventName = 'workflow_run';
   f.state.runLookups = 0;
@@ -308,19 +315,9 @@ test('a target rerun during inspection prevents repaired success', async () => {
     f.state.run.status = 'in_progress';
     f.state.run.conclusion = null;
   };
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('failure');
+  await runController(f);
+  expect(lastState(f)).toBe('failure');
 });
-
-function repairDispatch(f) {
-  f.context.eventName = 'workflow_dispatch';
-  f.context.payload.inputs = {
-    operation: 'approve-repair',
-    pr: '1',
-    head: f.state.pr.head.sha,
-    base: f.state.base,
-  };
-}
 
 test('owner repair covers every completed target run that fails verification', async () => {
   const faults = [
@@ -337,14 +334,14 @@ test('owner repair covers every completed target run that fails verification', a
   for (const fault of faults) {
     const f = fixture();
     fault(f);
-    await inspect(f.github, f.context, f.core);
-    expect(f.state.statuses.at(-1).state).toBe('failure');
+    await runController(f);
+    expect(lastState(f)).toBe('failure');
     repairDispatch(f);
-    await inspect(f.github, f.context, f.core);
+    await runController(f);
     expect(f.state.approvals.map(value => value.external_id)).toEqual([
-      `1:${f.state.pr.head.sha}:${f.state.base}:42:1:73`,
+      `1:${f.state.pr.head.sha}:${f.state.base}:42:1:${f.context.runId}`,
     ]);
-    expect(f.state.statuses.at(-1).state).toBe('success');
+    expect(lastState(f)).toBe('success');
   }
 });
 
@@ -352,20 +349,22 @@ test('a rerun of an approval dispatch cannot approve or count as approval', asyn
   const f = fixture();
   f.state.run.conclusion = 'failure';
   repairDispatch(f);
-  f.state.approvalRunAttempt = 2;
+  await runController(f);
+  expect(lastState(f)).toBe('success');
+
+  // A rerun keeps the run id and raises its attempt.
+  const approval = f.state.controllerRuns.get(f.context.runId);
+  Object.assign(approval, { run_attempt: 2, conclusion: null });
   await expect(inspect(f.github, f.context, f.core)).rejects.toThrow(
     'fresh owner dispatch',
   );
-  expect(f.state.approvals).toHaveLength(0);
+  expect(f.state.approvals).toHaveLength(1);
 
-  f.state.approvalRunAttempt = 1;
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('success');
-
-  f.state.approvalRunAttempt = 2;
+  // Even a successful second attempt does not count.
+  approval.conclusion = 'success';
   f.context.eventName = 'workflow_run';
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('failure');
+  await runController(f);
+  expect(lastState(f)).toBe('failure');
 });
 
 test('the controller reads job and step names that the CI workflow defines', () => {
@@ -391,22 +390,30 @@ test('repair approval must come from a successful dispatch with the same inputs'
   const f = fixture();
   f.state.run.conclusion = 'failure';
   repairDispatch(f);
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('success');
+  await runController(f);
+  expect(lastState(f)).toBe('success');
+  const approval = f.state.controllerRuns.get(f.context.runId);
 
-  f.context.eventName = 'workflow_run';
-  f.context.runId = 74;
-  f.state.approvalConclusion = 'failure';
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('failure');
-
-  f.state.approvalConclusion = 'success';
+  // A later owner refresh still counts the completed approval.
   f.context.payload.inputs = {
     operation: 'refresh',
     pr: '',
     head: '',
     base: '',
   };
-  await inspect(f.github, f.context, f.core);
-  expect(f.state.statuses.at(-1).state).toBe('failure');
+  await runController(f);
+  expect(lastState(f)).toBe('success');
+  const refresh = f.context.runId;
+
+  f.context.eventName = 'workflow_run';
+  approval.conclusion = 'failure';
+  await runController(f);
+  expect(lastState(f)).toBe('failure');
+
+  // A check that names a successful owner dispatch with other inputs does not count.
+  approval.conclusion = 'success';
+  const check = f.state.approvals[0];
+  check.external_id = check.external_id.replace(/\d+$/u, String(refresh));
+  await runController(f);
+  expect(lastState(f)).toBe('failure');
 });
