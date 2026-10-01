@@ -148,6 +148,25 @@ test('the write journal restores a send interrupted between message and index wr
   expect(storage.getString('archive/journal')).toBeUndefined();
 });
 
+test('a save that fails partway is completed before the next save, so a later write cannot strand it', () => {
+  const storage = new MemoryStorage();
+  const archive = new ChatArchive(storage, randomUUID);
+  const kept = archive.createChat();
+  const deleted = archive.createChat();
+  complete(archive, archive.createTurn(deleted.id, 'Delete me', []));
+  // The journal is saved and the records removed, but the index write fails.
+  storage.failAfter = 1;
+  expect(() => archive.deleteChat(deleted.id)).toThrow('Simulated termination');
+  archive.rename(kept.id, 'Kept');
+  const restored = new ChatArchive(storage, randomUUID);
+  restored.recover();
+  expect(restored.metadata()).toMatchObject({
+    chatIds: [kept.id],
+    deletions: [deleted.id],
+  });
+  expect(restored.chat(kept.id).title).toBe('Kept');
+});
+
 test('unsupported or corrupt records are preserved and cannot silently become empty chats', () => {
   const storage = new MemoryStorage();
   storage.values.set('archive/index', '{"version":99}');

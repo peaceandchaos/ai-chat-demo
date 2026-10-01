@@ -92,6 +92,9 @@ export function isActive(message: SavedMessage): boolean {
 }
 
 export class ChatArchive {
+  // A commit that threw after saving its journal left records half-written.
+  private journalPending = false;
+
   constructor(
     private readonly storage: ArchiveStorage,
     private readonly uuid: () => string,
@@ -99,11 +102,23 @@ export class ChatArchive {
   ) {}
 
   recover(): void {
-    const journal = this.storage.getString(journalKey);
-    if (journal !== undefined) this.apply(decodeJson(journalSchema, journal));
+    this.replayJournal();
     // Validate the index before creating or selecting anything.
     const metadata = this.metadata();
     for (const id of metadata.chatIds) this.chat(id);
+  }
+
+  private replayJournal(): void {
+    const journal = this.storage.getString(journalKey);
+    if (journal !== undefined) this.apply(decodeJson(journalSchema, journal));
+    this.journalPending = false;
+  }
+
+  // Every read first finishes a half-applied commit, so no later commit is
+  // computed from, or overwrites the journal of, a partial state.
+  private read(key: string): string | undefined {
+    if (this.journalPending) this.replayJournal();
+    return this.storage.getString(key);
   }
 
   private apply(writes: Write[]): void {
@@ -117,11 +132,13 @@ export class ChatArchive {
   private commit(writes: Write[]): void {
     // Replaying the same journal is idempotent if the process exits mid-write.
     this.storage.set(journalKey, JSON.stringify(writes));
+    this.journalPending = true;
     this.apply(writes);
+    this.journalPending = false;
   }
 
   metadata(): ArchiveMetadata {
-    const raw = this.storage.getString(metaKey);
+    const raw = this.read(metaKey);
     if (raw !== undefined) return decodeJson(metadataSchema, raw);
     if (this.storage.getAllKeys().some(key => key.startsWith('archive/')))
       throw new Error(
@@ -137,7 +154,7 @@ export class ChatArchive {
   }
 
   chat(id: string): ChatRecord {
-    const raw = this.storage.getString(chatKey(id));
+    const raw = this.read(chatKey(id));
     if (raw === undefined)
       throw new Error('A saved chat is missing. Stored data was preserved.');
     const result = decodeJson(chatSchema, raw);
@@ -146,11 +163,11 @@ export class ChatArchive {
   }
 
   hasChat(id: string): boolean {
-    return this.storage.getString(chatKey(id)) !== undefined;
+    return this.read(chatKey(id)) !== undefined;
   }
 
   message(id: string): SavedMessage {
-    const raw = this.storage.getString(messageKey(id));
+    const raw = this.read(messageKey(id));
     if (raw === undefined)
       throw new Error('A saved message is missing. Stored data was preserved.');
     const result = decodeJson(messageSchema, raw);
@@ -159,12 +176,12 @@ export class ChatArchive {
   }
 
   children(chatId: string, parentId: string | null): string[] {
-    const raw = this.storage.getString(childrenKey(chatId, parentId));
+    const raw = this.read(childrenKey(chatId, parentId));
     return raw === undefined ? [] : decodeJson(z.array(idSchema), raw);
   }
 
   private selected(chatId: string, parentId: string): string | null {
-    const raw = this.storage.getString(selectedKey(chatId, parentId));
+    const raw = this.read(selectedKey(chatId, parentId));
     return raw === undefined ? null : decodeJson(idSchema, raw);
   }
 
