@@ -158,6 +158,8 @@ beforeAll(() => {
   receipt.source = sign('source-care');
   receipt.reviewAlways = sign('always', { session_id: 'session-review' });
   receipt.reviewSource = sign('source-care', { session_id: 'session-review' });
+  receipt.subagentAlways = sign('always', { agent_id: 'agent-review' });
+  receipt.subagentSource = sign('source-care', { agent_id: 'agent-review' });
 }, 30000);
 
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
@@ -326,7 +328,7 @@ test('rejects tampered, foreign-key, stale, partial, misfiled, and out-of-range 
   );
 }, 20000);
 
-test('a review section needs receipts from a session that wrote no author receipt', () => {
+test('a review section needs receipts from a session and agent pair that wrote no author receipt', () => {
   const entry = (skill, files, author) => ({
     skill,
     files,
@@ -363,15 +365,20 @@ test('a review section needs receipts from a session that wrote no author receip
       '',
     ].join('\n'),
   );
-  recordOn('reviewed', [
-    reviewed('reviewed', {
-      always: receipt.reviewAlways,
-      source: receipt.reviewSource,
-    }),
-  ]);
-  const result = skills(['check', base]);
-  expect(result.stderr).toBe('');
-  expect(result.status).toBe(0);
+  for (const [branch, reviewer] of [
+    [
+      'reviewed',
+      { always: receipt.reviewAlways, source: receipt.reviewSource },
+    ],
+    [
+      'subagent-reviewed',
+      { always: receipt.subagentAlways, source: receipt.subagentSource },
+    ],
+  ]) {
+    recordOn(branch, [reviewed(branch, reviewer)]);
+    const result = skills(['check', base]);
+    expect([branch, result.stderr, result.status]).toEqual([branch, '', 0]);
+  }
 });
 
 test('fails closed without a committed public key or lock, and still checks citations', () => {
