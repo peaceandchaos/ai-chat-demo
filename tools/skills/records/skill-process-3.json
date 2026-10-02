@@ -298,7 +298,7 @@
       ],
       "findings": [
         {
-          "finding": "Each lint fixture covers a distinct assertion syntax, and each export fixture covers a distinct import form; removing any one let a mutation survive.",
+          "finding": "Each lint fixture covers a distinct assertion syntax, and each export fixture covers a distinct import form. Dropping the handling of non-null, definite, namespace, import-type, dynamic-import, or re-export cases each failed the tests.",
           "none": "Kept all."
         }
       ]
