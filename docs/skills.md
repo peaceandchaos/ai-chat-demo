@@ -38,6 +38,53 @@ Globs match whole repository paths. `**` matches any number of directories, incl
 
 `large-change` requires `thermo-nuclear-code-quality-review` above 400 changed lines. That is a judgment of what one reviewer reads in one sitting. Lockfile and skill-record lines do not count.
 
+## Record the skills a change applied
+
+Each change carries a record at `tools/skills/records/<change-id>.json`. Write or update it from the branch:
+
+```sh
+npm run skills:record -- skill-routing origin/main
+```
+
+The command adds every required skill with the files that require it and keeps any findings already in the file, so running it again is safe. Fill in what each skill found:
+
+```json
+{
+  "skill": "principle-boundary-discipline",
+  "files": ["packages/server/src/**"],
+  "findings": [
+    {
+      "finding": "The handler trusted a parsed header.",
+      "commit": "2958652b9656"
+    },
+    {
+      "finding": "Checked the new route.",
+      "none": "It already parses its input."
+    }
+  ]
+}
+```
+
+A finding names the commit that resolves it, or gives the reason under `none`. A skill that found nothing still records one `none` finding. A skill the routing did not require needs a `reason` field.
+
+`npm run skills:check -- origin/main` reads only the records that the range adds or changes, from the head commit. It fails when:
+
+- a required skill has no entry whose `files` globs cover each file that requires it
+- a finding has no resolution, or has both
+- a cited commit is not in the range
+- an entry names a skill outside the catalog, appears twice in one record, has no findings, or is not required and has no `reason`
+- the range changes no record
+
+`verify:commit` and the pre-push hook run this check against the merge base with `origin/main`. Pass `--base <ref>` to use another base. `verify:current` runs it only when it gets `--base`, because CI checks out one commit without history.
+
+The check proves that a change claimed each required skill and that every finding it recorded has a resolution. It does not prove the skill was applied well, or that the findings are complete. Review judges that.
+
+### Where records live
+
+Records live in the repository, so `verify:commit` checks the same commit offline in a fresh clone, and review sees the record in the diff next to the code. Each change has its own file, so stacked branches do not conflict: a range that spans two stacked changes reads both records.
+
+Records stay in the tree after merge, and git history keeps every version. The check ignores records that a range does not change, so old records cost one small file per change and never affect later checks. Remove old records only by owner decision.
+
 ## Limits
 
 The routing lists skills. It cannot tell whether an agent read or applied one. `security-review` is a Claude Code command with no skill file, so the catalog leaves it out.

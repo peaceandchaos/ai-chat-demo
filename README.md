@@ -35,6 +35,7 @@ npm run build:server
 npm run build:ios-js          # release JS bundle; not native compilation
 npm run react-compiler-check # report; not proof of native compilation
 npm run skills:required -- origin/main # skills this branch must apply
+npm run skills:check -- origin/main # the branch's skill record covers them
 npm run verify:commit -- HEAD
 ```
 
@@ -42,7 +43,7 @@ npm run verify:commit -- HEAD
 
 The pre-commit hook checks lint, formatting, and credentials in a snapshot of the Git index. It performs a fresh locked install there. It cannot use unstaged fixes or your local `node_modules`. The pre-push hook runs the full implemented suite on the tip commit of each pushed branch. Hosted CI checks each PR head, its proposed merge result, and each push.
 
-`verify:commit` runs the selected commit's own checking code in a fresh checkout. It records the commit, tree, commands, results, and source integrity in ignored `.quality-results/`. A commit that tracks files under `.quality-results/` fails, so a candidate cannot supply its own result records. Only committed example configuration enters that checkout. Checks cannot silently change source while running. Logs and results remain available after the temporary checkout is removed.
+`verify:commit` runs the selected commit's own checking code in a fresh checkout. It records the commit, tree, commands, results, and source integrity in ignored `.quality-results/`. A commit that tracks files under `.quality-results/` fails, so a candidate cannot supply its own result records. Only committed example configuration enters that checkout. Checks cannot silently change source while running. Logs and results remain available after the temporary checkout is removed. It also runs range checks, such as the skill-record check, from the merge base with `origin/main` or with `--base <ref>`. Hosted CI checks out one commit without history, so it skips range checks and says so until its workflow passes `--base`.
 
 Local hooks are feedback controls and remain bypassable by the machine owner. Git runs the hooks only after `npm ci` has installed them in that checkout. A new worktree without an install skips them without warning. Acceptance also requires protected GitHub checks and owner review. CI checks both the PR head and proposed merge result, then checks the exact resulting commit after a push. Only PR runs publish the required `quality-gate` check; push runs publish `post-push-gate`. Every implemented check must finish successfully. The compiler report fails only if the tool crashes, so it is a report, not a gate. Dependency and scanner failures remain failures.
 
@@ -58,7 +59,7 @@ The scanner excludes Android-specific files and scans the remaining app. Stream 
 
 ## Skill routing
 
-`tools/skills/routing.json` maps paths, file statuses, removed exports, added lines, commit subjects, and change size to required skills. `npm run skills:required` prints each required skill with the rule and file that require it. [Skill routing](docs/skills.md) describes the rules and the skill roots.
+`tools/skills/routing.json` maps paths, file statuses, removed exports, added lines, commit subjects, and change size to required skills. `npm run skills:required` prints each required skill with the rule and file that require it. Each change commits a skill record under `tools/skills/records/`, and `verify:commit` fails when the record misses a required skill or leaves a finding unresolved. [Skill routing](docs/skills.md) describes the rules, the skill roots, and the record format.
 
 ## Test review
 
