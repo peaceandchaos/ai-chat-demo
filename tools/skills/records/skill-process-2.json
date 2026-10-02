@@ -33,6 +33,11 @@
         {
           "finding": "verify:push now fails a pushed branch with no commits ahead of origin/main. The CI patch's push to main runs verify:current, which reports an empty range as not run and still exits 0.",
           "none": "Documented in docs/skills.md and the CI note."
+        },
+        {
+          "finding": "Second author pass: a later change that edits an earlier change's record pulls that record into its own range. On work/skill-process-2b, skills:check from the PR1 head fails on record 1's citations and its boundary-discipline entry, because 467868b refilled record 1's patch-ids inside PR2. From origin/main it passes. docs/skills.md said stacked branches do not conflict.",
+          "commit": "67e246cd8fd9",
+          "patch": "8dc8f5aa4154921080d5436559f4281695497f0b"
         }
       ]
     },
@@ -57,6 +62,11 @@
         {
           "finding": "Three comments remain: the range-check argument contract in checks.cjs, why verify.cjs resolves the base in the source repository, and why the fixture base holds a merged record.",
           "none": "Each states a constraint the code cannot show."
+        },
+        {
+          "finding": "Second author pass, audited inline because this pass runs without subagents: the patchIds comment overstated when a copy keeps its patch-id, so it now names the conflict case. The range-check argument contract in checks.cjs and the base-ref note in verify.cjs describe contracts the code cannot show.",
+          "commit": "bbe4114c0350",
+          "patch": "009f3d19cdbc20a3a4f625b9f0b5364116e77100"
         }
       ]
     },
@@ -178,6 +188,11 @@
           "finding": "AGENTS.md and README.md said each finding was resolved. The check proves only that each finding has a resolution.",
           "commit": "152eb3b",
           "patch": "2eeec2d4fe4426e86b542265834fe847303ba06d"
+        },
+        {
+          "finding": "Second author pass: docs/skills.md and the patchIds comment said every cherry-picked or rebased copy keeps its patch-id. Building work/skill-process-2c, the copy of 467868b conflicted in record 1 and its patch-id changed, while the eight clean copies kept theirs.",
+          "commit": "bbe4114c0350",
+          "patch": "009f3d19cdbc20a3a4f625b9f0b5364116e77100"
         }
       ]
     },
