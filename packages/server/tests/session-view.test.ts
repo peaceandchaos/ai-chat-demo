@@ -272,7 +272,7 @@ test('background and resume, then a relaunch mid-reply, show the same reply with
   expect(server.providers.generations).toHaveLength(2);
 });
 
-test('a rejected send reports why, saves nothing, and returns false so the composer keeps its text', async () => {
+test('a rejected send reports why, saves nothing, and returns null so the composer keeps its text', async () => {
   const phone = openPhone(server);
   createChat(phone, 'kimi');
   const { errors, state } = openView(phone);
