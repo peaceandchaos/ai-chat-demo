@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import type { ChatArchive, SavedMessage } from './archive';
 import type { AttemptActivity, ChatSession } from './session';
@@ -176,7 +177,9 @@ export function createChatView(
           attachments.map(attachment => attachment.dataUrl),
         );
       } catch (error) {
-        reportError(error);
+        // Only the images in a new turn can fail the saved-message contract.
+        if (error instanceof z.ZodError) report('These images can’t be sent.');
+        else reportError(error);
         return false;
       }
       if (reply.parentId && attachments.length > 0)

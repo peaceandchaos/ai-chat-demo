@@ -302,3 +302,17 @@ test('a halted reply shows its error and the composer offers Send, then it strea
   await until('the view settles', () => !state().isStreaming);
   expect(state().messages[1]).toMatchObject({ text: 'Answer', status: 'done' });
 });
+
+test('an image the contract rejects is reported in plain words and nothing is saved', () => {
+  const phone = openPhone(server);
+  createChat(phone, 'kimi');
+  const { errors, state } = openView(phone);
+  const heic = {
+    uri: 'file:///tmp/a.heic',
+    dataUrl: 'data:image/heic;base64,AAAA',
+  };
+  expect(state().send('Look', [heic])).toBe(false);
+  expect(errors).toEqual(['These images can’t be sent.']);
+  expect(state().messages).toEqual([]);
+  expect(phone.archive.metadata().jobIds).toEqual([]);
+});
