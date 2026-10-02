@@ -46,7 +46,7 @@ export function textItem(
 // Providers count an image by its dimensions, not its encoded bytes. This is the
 // largest per-image cost documented for the configured models: OpenAI's
 // 30,000-patch limit at its 1.2 multiplier. Sources are in docs/providers.md.
-export const imageEstimate = 36_000;
+const imageEstimate = 36_000;
 
 // A byte upper estimate protects multilingual text when provider tokenizers are
 // unavailable. It intentionally compacts earlier than the CLI's chars/4 estimate.

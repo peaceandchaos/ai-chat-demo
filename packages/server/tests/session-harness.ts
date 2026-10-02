@@ -63,7 +63,7 @@ type Step =
   | { kind: 'fail' };
 
 // The provider side of one attempt. The test decides when each chunk arrives.
-export class Script {
+class Script {
   private readonly steps: Step[] = [];
   private wake: (() => void) | null = null;
   // A Responses output item starting, before any of its text.
@@ -121,7 +121,7 @@ function providerChunk(model: ModelKey, text: string): ProviderChunk {
       };
 }
 
-export class FakeProviders implements Providers {
+class FakeProviders implements Providers {
   selection: ModelKey | 'fail' = 'deepseek';
   selections = 0;
   readonly generations: { input: Submission; model: ModelKey }[] = [];
@@ -392,7 +392,7 @@ function fetchDriver(server: Server, network: Network): ClientDrivers['fetch'] {
 
 // A WebSocket frame shell around the route's own SocketConnection. Frames
 // cross asynchronously, as they would over a network.
-export class InProcessSocket implements ClientSocket {
+class InProcessSocket implements ClientSocket {
   readyState = 'CONNECTING';
   onopen: (() => void) | null = null;
   onmessage: ((event: { data: string }) => void) | null = null;

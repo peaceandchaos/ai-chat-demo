@@ -7,7 +7,7 @@ import { AttemptCancelled, ProviderFailure } from './errors';
 import type { JobRepository } from './jobs';
 import type { Providers } from './provider';
 
-export type WorkerOptions = {
+type WorkerOptions = {
   jobs: JobRepository;
   providers: Providers;
   owner: string;

@@ -68,7 +68,7 @@ function dataText(data: RawData): string {
   return data.toString('utf8');
 }
 
-export type ResponsesOptions = {
+type ResponsesOptions = {
   apiKey: string;
   socketUrl?: string;
   httpUrl?: string;

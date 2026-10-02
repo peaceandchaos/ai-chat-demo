@@ -29,7 +29,7 @@ export function gatewayMessages(items: ResponseInputItem[]): GatewayMessage[] {
   });
 }
 
-export type GatewayOptions = {
+type GatewayOptions = {
   apiKey: string;
   endpoint?: string;
   fetcher?: typeof fetch;
