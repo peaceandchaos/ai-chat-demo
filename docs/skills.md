@@ -78,7 +78,9 @@ A finding names the commit that resolves it, or gives the reason under `none`. W
 `npm run skills:check -- origin/main` reads only the records that the range adds or changes, from the head commit. It fails when:
 
 - a required skill has no entry whose `files` globs cover each file that requires it
-- a required skill has no valid author receipt, or the record has a `review` section and the skill has no valid receipt from a reviewer
+- a required skill has no valid author receipt
+- the run requires review, and a required skill has no valid receipt from a reviewer. A run requires review when a record in the range has a `review` section, and in every pull request run
+- a pull request run finds a record in the range without a `review` section
 - a record holds an invalid receipt
 - a finding cites a heading or rule that the lock does not list for its skill
 - the head commit has no `tools/skills/catalog.lock.json` or no `tools/skills/receipt-public-key.pem`
@@ -87,6 +89,8 @@ A finding names the commit that resolves it, or gives the reason under `none`. W
 - a cited commit is in the range but its patch-id differs from `patch`
 - an entry names a skill outside the catalog, appears twice in one record, has no findings, or is not required and has no `reason`
 - the range changes no record
+
+A run is a pull request run when `GITHUB_EVENT_NAME` is `pull_request`. GitHub Actions sets that value for the `pull_request` event. The pre-push hook, `verify:commit`, and an author's own runs do not set it, so they pass before a reviewer adds the `review` sections. A passing pull request run ends its summary with `with independent review`.
 
 `verify:commit` and the pre-push hook run this check against the merge base with `origin/main`. Pass `--base <ref>` to use another base. They fail when the range from the base to the commit has no commits, because the range checks would check nothing. `verify:current` runs the range checks only when it gets `--base` and the range has commits, because CI checks out one commit without history. Otherwise it lists them under `notRun` in `result.json` and ends its summary with `PASS (range checks not run: <names>)`.
 
@@ -126,7 +130,7 @@ The Skill tool reports only the skill name. The hook finds the `SKILL.md` throug
 
 ### Pull receipts into the record
 
-`npm run skills:record -- <change-id> <base>` copies receipts into the record's `skills` entries. A reviewer loads the required skills as another session or another agent and runs the same command with `--review`, which fills a `review` section:
+`npm run skills:record -- <change-id> <base>` copies receipts into the record's `skills` entries. A reviewer loads the required skills as another session or another agent and runs the same command with `--review`, which fills a `review` section. A pull request run needs one in every record that the range changes:
 
 ```json
 "review": {
@@ -157,6 +161,9 @@ This rule survives a cherry-pick and a rebase that keep the patches, because a c
 - A receipt made on the base by another change in the same clone also counts for this change. `skills:record` reads only this clone's receipts, but CI cannot check the clone, because the common-dir hash differs in CI.
 - The deny rules stop an agent that names the key, the hook, or the receipts. A program that opens those files without naming them can still read the key and sign a receipt. The receipts stop lazy and mistaken claims. They do not stop deliberate forgery by a process running as the same user.
 - A subagent that the author's session starts has its own agent id, so its receipts count as a reviewer's. The check cannot tell an independent reviewer from the author's helper. Review policy decides who may review.
+- The pull request rule applies only where the skill-record check runs. Hosted CI runs `verify:current` without `--base`, so it skips the range checks, and the rule has no effect there yet. It takes effect when the workflow fetches history and passes the pull request's base as `--base`.
+- The rule reads `GITHUB_EVENT_NAME`. A run without that value applies the author rule, so only the protected CI check can enforce review.
+- A push run on `main` checks no range. After a merge, the merge base of `main` and `origin/main` is the pushed commit, so the range is empty. `verify:current` lists the range checks under `notRun`, and `verify:commit` fails until it gets an earlier `--base`.
 - A receipt proves that the agent loaded the skill text. It does not prove the agent followed it. Review judges that.
 - Many principle skills have one heading and no numbered rules, so a citation of one names only the skill.
 
