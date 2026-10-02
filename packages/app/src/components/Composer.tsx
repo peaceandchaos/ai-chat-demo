@@ -17,6 +17,7 @@ import { AttachmentMenu } from './AttachmentMenu';
 import { Glass } from './Glass';
 import { Icon } from './Icon';
 import { useAttachments } from '../hooks/useAttachments';
+import { useDraft } from '../hooks/useDraft';
 import type { Attachment, SendResult } from '../state/chatStore';
 import { theme } from '../theme';
 
@@ -27,6 +28,7 @@ const INPUT_MAX_HEIGHT = 120;
 const THUMBS_ANIM_MS = 220;
 
 type ComposerProps = {
+  chatId: string;
   onSubmit: (text: string, attachments: Attachment[]) => SendResult;
   onStop: () => void;
   streaming: boolean;
@@ -35,6 +37,7 @@ type ComposerProps = {
 };
 
 export const Composer = React.memo(function ({
+  chatId,
   onSubmit,
   onStop,
   streaming,
@@ -42,9 +45,9 @@ export const Composer = React.memo(function ({
   onLayout,
 }: ComposerProps) {
   const insets = useSafeAreaInsets();
-  const [value, setValue] = useState('');
-  const { attachments, pickImages, removeAttachment, clearAttachments } =
-    useAttachments();
+  const [{ text: value, attachments }, changeDraft] = useDraft(chatId);
+  const setValue = (text: string) => changeDraft(draft => ({ ...draft, text }));
+  const { pickImages, removeAttachment } = useAttachments(changeDraft);
   const canSend = value.trim().length > 0 || attachments.length > 0;
 
   const onSend = () => {
@@ -54,8 +57,7 @@ export const Composer = React.memo(function ({
     if (onSubmit(value, attachments) === 'unsaved') {
       return;
     }
-    setValue('');
-    clearAttachments();
+    changeDraft(() => ({ text: '', attachments: [] }));
   };
 
   // The thumbnail strip lives in a height-clipped container so the pill can

@@ -3,6 +3,7 @@ import { launchImageLibrary, type Asset } from 'react-native-image-picker';
 import { act, create } from 'react-test-renderer';
 import { imageSchema } from '../../../shared/contracts';
 import { useAttachments } from '../src/hooks/useAttachments';
+import { useDraft, type Draft } from '../src/hooks/useDraft';
 
 jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(),
@@ -76,8 +77,11 @@ function decodeBase64(text: string): Uint8Array {
 async function pick(assets: Asset[]) {
   jest.mocked(launchImageLibrary).mockResolvedValue({ assets });
   let hook!: ReturnType<typeof useAttachments>;
+  let draft!: Draft;
   function Probe() {
-    hook = useAttachments();
+    const [current, changeDraft] = useDraft('chat');
+    draft = current;
+    hook = useAttachments(changeDraft);
     return null;
   }
   act(() => {
@@ -86,7 +90,7 @@ async function pick(assets: Asset[]) {
   await act(async () => {
     await hook.pickImages();
   });
-  return hook.attachments.map(attachment => attachment.dataUrl);
+  return draft.attachments.map(attachment => attachment.dataUrl);
 }
 
 // The app runs with React Native's URL, not Node's.

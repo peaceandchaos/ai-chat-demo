@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextInput, View } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { Composer } from '../src/components/Composer';
 import type { SendResult } from '../src/state/chatStore';
@@ -18,8 +19,12 @@ jest.mock('react-native-nitro-image', () => ({ NitroImage: () => null }));
 jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(),
 }));
+let mockPickPhotos: () => Promise<void>;
 jest.mock('../src/components/AttachmentMenu', () => ({
-  AttachmentMenu: () => null,
+  AttachmentMenu: ({ onPickPhotos }: { onPickPhotos: () => Promise<void> }) => {
+    mockPickPhotos = onPickPhotos;
+    return null;
+  },
 }));
 jest.mock('../src/components/Glass', () => ({
   Glass: ({ children }: { children: React.ReactNode }) => children,
@@ -32,6 +37,7 @@ function renderComposer(result: SendResult) {
   act(() => {
     renderer = create(
       <Composer
+        chatId="chat"
         onSubmit={onSubmit}
         onStop={() => undefined}
         streaming={false}
@@ -61,4 +67,59 @@ test('the composer keeps its text when the message was not saved', () => {
 
 test('the composer clears its text once the message is saved', () => {
   expect(renderComposer('saved').text).toBe('');
+});
+
+test('each chat keeps its own draft text and photos, and switching back restores them', async () => {
+  const onSubmit = jest.fn((): SendResult => 'saved');
+  const composer = (chatId: string) => (
+    <Composer
+      chatId={chatId}
+      onSubmit={onSubmit}
+      onStop={() => undefined}
+      streaming={false}
+      composerRef={React.createRef<View>()}
+      onLayout={() => undefined}
+    />
+  );
+  let renderer!: ReactTestRenderer;
+  act(() => {
+    renderer = create(composer('a'));
+  });
+  const input = () => renderer.root.findByType(TextInput);
+  const open = (chatId: string) => act(() => renderer.update(composer(chatId)));
+  const send = () =>
+    act(() => {
+      renderer.root
+        .find(node => node.props.hitSlop === 6 && node.props.disabled === false)
+        .props.onPress();
+    });
+  const photo = {
+    uri: 'file:///tmp/a.jpg',
+    dataUrl: 'data:image/jpeg;base64,AAAA',
+  };
+
+  act(() => {
+    input().props.onChangeText('Draft A');
+  });
+  jest.mocked(launchImageLibrary).mockResolvedValue({
+    assets: [{ uri: photo.uri, type: 'image/jpeg', base64: 'AAAA' }],
+  });
+  await act(() => mockPickPhotos());
+
+  open('b');
+  expect(input().props.value).toBe('');
+  act(() => {
+    input().props.onChangeText('Draft B');
+  });
+
+  open('a');
+  expect(input().props.value).toBe('Draft A');
+  send();
+  expect(onSubmit).toHaveBeenLastCalledWith('Draft A', [photo]);
+  expect(input().props.value).toBe('');
+
+  open('b');
+  expect(input().props.value).toBe('Draft B');
+  send();
+  expect(onSubmit).toHaveBeenLastCalledWith('Draft B', []);
 });

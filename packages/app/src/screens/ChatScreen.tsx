@@ -246,6 +246,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
 
       <KeyboardStickyView offset={keyboardOffset} style={styles.composer}>
         <Composer
+          chatId={chatId}
           composerRef={composerRef}
           onLayout={onComposerLayout}
           onSubmit={onSubmit}
