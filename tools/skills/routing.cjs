@@ -6,15 +6,21 @@ const { z } = require('zod');
 const routingPath = 'tools/skills/routing.json';
 const changeSubject = '<change>';
 
-const regexSource = z.string().refine(source => {
+const pattern = z.string().transform((source, context) => {
   try {
-    new RegExp(source, 'iu');
-    return true;
+    return new RegExp(source, 'iu');
   } catch {
-    return false;
+    context.addIssue({
+      code: 'custom',
+      message: 'must be a valid regular expression',
+    });
+    return z.NEVER;
   }
-}, 'must be a valid regular expression');
-const globs = z.array(z.string().min(1)).min(1);
+});
+const globs = z
+  .array(z.string().min(1))
+  .min(1)
+  .transform(list => list.map(globPattern));
 const ruleFields = {
   id: z.string().regex(/^[a-z0-9-]+$/u),
   why: z.string().min(1),
@@ -29,14 +35,14 @@ const fileRule = z.strictObject({
     .array(z.enum(['added', 'modified', 'deleted', 'renamed']))
     .min(1)
     .optional(),
-  addedLines: regexSource.optional(),
+  addedLines: pattern.optional(),
   removedExports: z.literal(true).optional(),
 });
 const changeRule = z.strictObject({
   ...ruleFields,
   scope: z.literal('change'),
   minChangedLines: z.int().positive().optional(),
-  commitSubject: regexSource.optional(),
+  commitSubject: pattern.optional(),
 });
 const routingSchema = z.strictObject({
   roots: z.record(
@@ -96,7 +102,7 @@ function globPattern(glob) {
 }
 
 function matchesAny(path, patterns) {
-  return patterns.some(glob => globPattern(glob).test(path));
+  return patterns.some(glob => glob.test(path));
 }
 
 function needsContent(rule) {
@@ -108,21 +114,25 @@ function needsContent(rule) {
   );
 }
 
+function filePaths(file) {
+  return file.status === 'renamed' ? [file.from, file.path] : [file.path];
+}
+
+function excluded(rule, file) {
+  return (
+    rule.excludePaths !== undefined &&
+    filePaths(file).every(path => matchesAny(path, rule.excludePaths))
+  );
+}
+
 function fileMatches(rule, file, change) {
-  const paths =
-    file.status === 'renamed' ? [file.from, file.path] : [file.path];
-  if (rule.paths && !paths.some(path => matchesAny(path, rule.paths)))
-    return null;
-  if (
-    rule.excludePaths &&
-    paths.every(path => matchesAny(path, rule.excludePaths))
-  )
+  if (excluded(rule, file)) return null;
+  if (rule.paths && !filePaths(file).some(path => matchesAny(path, rule.paths)))
     return null;
   if (rule.status && !rule.status.includes(file.status)) return null;
   if (rule.addedLines !== undefined) {
-    const pattern = new RegExp(rule.addedLines, 'iu');
     const lines = change.added.get(file.path) ?? [];
-    if (!lines.some(line => pattern.test(line))) return null;
+    if (!lines.some(line => rule.addedLines.test(line))) return null;
   }
   if (rule.removedExports) {
     const names = change.removedExports.get(file.path);
@@ -132,22 +142,24 @@ function fileMatches(rule, file, change) {
 }
 
 function changeMatch(rule, change) {
+  const files = change.files.filter(file => !excluded(rule, file));
+  if (!files.length) return null;
+  const details = [];
   if (rule.minChangedLines !== undefined) {
     let lines = 0;
-    for (const [path, count] of change.lines) {
-      if (!rule.excludePaths || !matchesAny(path, rule.excludePaths))
-        lines += count;
-    }
+    for (const file of files) lines += change.lines.get(file.path) ?? 0;
     if (lines < rule.minChangedLines) return null;
-    return { subject: changeSubject, detail: `${lines} changed lines` };
+    details.push(`${lines} changed lines`);
   }
   if (rule.commitSubject !== undefined) {
-    const pattern = new RegExp(rule.commitSubject, 'iu');
-    const subjects = change.subjects.filter(subject => pattern.test(subject));
+    const subjects = change.subjects.filter(subject =>
+      rule.commitSubject.test(subject),
+    );
     if (!subjects.length) return null;
-    return { subject: changeSubject, detail: subjects.join('; ') };
+    details.push(...subjects);
   }
-  return { subject: changeSubject };
+  if (!details.length) return { subject: changeSubject };
+  return { subject: changeSubject, detail: details.join('; ') };
 }
 
 function ruleMatches(rule, change) {
@@ -168,7 +180,6 @@ function byText(a, b) {
   return a > b ? 1 : 0;
 }
 
-// Returns each required skill once, with every rule and subject that requires it.
 function requiredSkills(routing, change) {
   const skipped = [];
   const required = new Map();
@@ -236,6 +247,7 @@ function resolveSkill(routing, skill, env, repository) {
 }
 
 module.exports = {
+  globs,
   routingPath,
   changeSubject,
   parseRouting,

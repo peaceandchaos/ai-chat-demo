@@ -36,7 +36,7 @@ function printRequired(root, routing, change) {
   for (const { skill, reasons } of required) {
     lines.push(
       '',
-      `${skill}`,
+      skill,
       `  read ${resolveSkill(routing, skill, process.env, root)}`,
     );
     for (const { rule, why, matches } of reasons) {

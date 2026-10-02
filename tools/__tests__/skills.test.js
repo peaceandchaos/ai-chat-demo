@@ -26,6 +26,7 @@ const fixtureRouting = {
     'big-review': 'main',
     'doc-style': 'local',
     'every-time': 'main',
+    'feature-review': 'main',
     'export-care': 'main',
     'fix-care': 'main',
     'move-care': 'main',
@@ -53,6 +54,14 @@ const fixtureRouting = {
       why: 'Fixes.',
       commitSubject: '^fix:',
       skills: ['fix-care'],
+    },
+    {
+      id: 'big-feature',
+      scope: 'change',
+      why: 'Big features.',
+      minChangedLines: 1,
+      commitSubject: '^feat:',
+      skills: ['feature-review'],
     },
     {
       id: 'source',
@@ -247,7 +256,7 @@ test('evaluates a planned file list by path and status only', () => {
   expect(result.stdout).toBe(
     [
       'Required skills for a planned change of 4 files.',
-      'A plan has no content, so these rules were not evaluated: fix-commits, large-change, network, removed-exports.',
+      'A plan has no content, so these rules were not evaluated: big-feature, fix-commits, large-change, network, removed-exports.',
       '',
       'api-care',
       read('roots', 'api-care'),
