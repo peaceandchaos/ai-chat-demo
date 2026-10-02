@@ -11,7 +11,7 @@ export SKILL_ROOT_PSTACK=<pstack checkout>/plugins/pstack/skills
 export SKILL_ROOT_GLOW_GUIDES=<glow-guides checkout>/skills
 ```
 
-`SKILL_ROOT_REPO` defaults to `.agents/skills`, and `SKILL_ROOT_USER` defaults to `~/.claude/skills`. The script fails and names the variable when a root is unset or missing, when a skill has no `<root>/<skill>/SKILL.md`, or when that file declares a different `name:`. `npm run skills:catalog` resolves every catalogued skill.
+`SKILL_ROOT_REPO` defaults to `.agents/skills`, and `SKILL_ROOT_USER` defaults to `~/.claude/skills`. The script fails and names the variable when a root is unset or missing, when a skill has no `<root>/<skill>/SKILL.md`, or when that file declares a different `name:`. `npm run skills:catalog` resolves every catalogued skill. `npm run skills:catalog -- --lock` rewrites `tools/skills/catalog.lock.json` from the skill files. The lock holds each skill's SHA-256, headings, and numbered rules. CI has no skill files and reads the lock instead. Review a lock change like a check change.
 
 ## List the skills for a change
 
@@ -46,7 +46,7 @@ Each change carries a record at `tools/skills/records/<change-id>.json`. Write o
 npm run skills:record -- skill-routing origin/main
 ```
 
-The command adds every required skill with the files that require it and keeps any findings already in the file, so running it again is safe. Fill in what each skill found:
+The command adds every required skill with the files that require it and keeps any findings already in the file. It also copies receipts for those skills from the receipts file, as [Prove each load with a signed receipt](#prove-each-load-with-a-signed-receipt) describes. Running it again changes nothing. Fill in what each skill found:
 
 ```json
 {
@@ -55,22 +55,33 @@ The command adds every required skill with the files that require it and keeps a
   "findings": [
     {
       "finding": "The handler trusted a parsed header.",
+      "cites": "Boundary Discipline",
       "commit": "2958652b9656",
       "patch": "5f0c3e1d9a7b2c4e6f8091a3b5c7d9e1f2a4b6c8"
     },
     {
       "finding": "Checked the new route.",
+      "cites": "Boundary Discipline",
       "none": "It already parses its input."
     }
+  ],
+  "receipts": [
+    { "v": 1, "skill": "principle-boundary-discipline", "sig": "..." }
   ]
 }
 ```
+
+Each finding cites the heading or numbered rule of the skill that produced it. A numbered rule is its heading and number, such as `Steps 2`. The check reads the allowed citations from the lock, and `catalog.lock.json` lists them for each skill. Never type a receipt. `skills:record` writes them.
 
 A finding names the commit that resolves it, or gives the reason under `none`. Write only `commit`. `skills:record` adds `patch`, the commit's `git patch-id --stable`. A cherry-picked or rebased copy of the commit keeps that patch-id when its diff applies unchanged, so the citation still resolves on a new branch. Run `skills:record` again on the new branch, and it rewrites `commit` to the copy in the range. A copy whose conflict you resolved by hand gets a new patch-id, and so does a squash of several commits, so a citation of the original no longer resolves. Cite the new commit instead. A skill that found nothing still records one `none` finding. A skill the routing did not require needs a `reason` field.
 
 `npm run skills:check -- origin/main` reads only the records that the range adds or changes, from the head commit. It fails when:
 
 - a required skill has no entry whose `files` globs cover each file that requires it
+- a required skill has no valid author receipt, or the record has a `review` section and the skill has no valid receipt from a reviewer session
+- a record holds an invalid receipt
+- a finding cites a heading or rule that the lock does not list for its skill
+- the head commit has no `tools/skills/catalog.lock.json` or no `tools/skills/receipt-public-key.pem`
 - a finding has no resolution, or has both
 - a cited commit has no `patch`, or no commit in the range has that SHA or patch-id
 - a cited commit is in the range but its patch-id differs from `patch`
@@ -79,7 +90,74 @@ A finding names the commit that resolves it, or gives the reason under `none`. W
 
 `verify:commit` and the pre-push hook run this check against the merge base with `origin/main`. Pass `--base <ref>` to use another base. They fail when the range from the base to the commit has no commits, because the range checks would check nothing. `verify:current` runs the range checks only when it gets `--base` and the range has commits, because CI checks out one commit without history. Otherwise it lists them under `notRun` in `result.json` and ends its summary with `PASS (range checks not run: <names>)`.
 
-The check proves that a change claimed each required skill and that every finding it recorded has a resolution. It does not prove the skill was applied well, or that the findings are complete. Review judges that.
+The check proves that an agent loaded each required skill while working on the change, and that every finding it recorded has a resolution. It does not prove the skill was applied well, or that the findings are complete. Review judges that.
+
+## Prove each load with a signed receipt
+
+A Claude Code `PostToolUse` hook signs a receipt each time an agent loads a skill. The hook lives in the owner's user settings, never on a branch. `tools/skills/receipt-hook.mjs` is its reviewed source.
+
+### Install the hook
+
+The owner installs the hook once per machine. Set the plugin roots first, so the installer can write the roots the hook resolves skills from:
+
+```sh
+export SKILL_ROOT_PSTACK=<pstack checkout>/plugins/pstack/skills
+export SKILL_ROOT_GLOW_GUIDES=<glow-guides checkout>/skills
+node tools/skills/install-receipt-hook.mjs
+node tools/skills/install-receipt-hook.mjs --apply
+```
+
+The first command prints every planned change and the settings diff, and writes nothing. `--apply` makes the changes:
+
+1. It copies the hook to `~/.claude/hooks/skill-receipt-hook.mjs` and writes `~/.claude/hooks/skill-receipt-roots.json`.
+2. It generates an Ed25519 keypair and writes the private key to `~/.claude/skill-receipts/private-key.pem` with mode 0600. It never replaces an existing key.
+3. It backs up `~/.claude/settings.json`, then adds the `PostToolUse` entry for `Skill|Read` and the deny rules.
+4. It prints the public key.
+
+Commit the printed public key as `tools/skills/receipt-public-key.pem`. Until that file exists, `skills:check` fails every change that needs a skill. Running the installer again changes nothing. It leaves other `Skill|Read` hook entries, such as a logging spike, in place. Pass `--remove-spike` to remove them. The hook command runs the `node` that ran the installer.
+
+The deny rules use the user-settings notation, where a path that starts with `/` is rooted at `~/.claude`. They stop the agent from reading or editing the hook and the key, from editing the receipts, and from running a shell command that names those paths.
+
+### What a receipt holds
+
+The hook appends one line to `~/.claude/skill-receipts/receipts.jsonl` for each Skill tool load and for each Read of a `SKILL.md`. A receipt holds the client (`claude-code` or `cursor`), the skill, the source tool, the SHA-256 of the `SKILL.md`, whether the read was partial, the session, the agent and its type, the tool use id, and the time. It also holds the SHA-256 of the working directory and of the git common dir, and the branch, `HEAD`, and patch-id of `HEAD`. The two paths are hashed, so committed records hold no machine paths. The hook signs the receipt with Ed25519 over JSON with sorted keys.
+
+The Skill tool reports only the skill name. The hook finds the `SKILL.md` through the roots file and hashes it. A Read counts only when it has no `offset` or `limit` and returned the whole file. Any other Read of a `SKILL.md` gets `partial: true`, and the check rejects it. The hook always exits 0 and prints nothing. It writes its errors to `~/.claude/skill-receipts/errors.log`. `SKILL_RECEIPTS_DIR` and `SKILL_RECEIPTS_KEY` move the state and the key, for tests only.
+
+### Pull receipts into the record
+
+`npm run skills:record -- <change-id> <base>` copies receipts into the record's `skills` entries. A reviewer loads the required skills in their own session and runs the same command with `--review`, which fills a `review` section:
+
+```json
+"review": {
+  "skills": [{ "skill": "unslop", "findings": [], "receipts": [] }]
+}
+```
+
+The command reads only receipts made in this clone, matched by the hash of the git common dir. It keeps each entry's valid receipts and adds the earliest valid receipt to an entry that has none. The author side skips receipts from reviewer sessions, and the review side skips receipts from author sessions. It names each required skill that still has no receipt.
+
+### Which receipts count
+
+The check verifies each receipt with the committed public key. A receipt is valid when:
+
+- the signature verifies
+- the skill is in the catalog, and the receipt sits in that skill's entry
+- its SHA-256 equals the lock's hash for the skill
+- it is not partial
+- it belongs to this change
+
+A receipt belongs to this change when its `head` is the base or a commit in the range, or when its `headPatch` equals the patch-id of a commit in the range. Reviewer receipts count only when their session and agent pair appears in no author receipt.
+
+This rule survives a cherry-pick and a rebase that keep the patches, because a copied commit keeps its patch-id. A time bound was the other candidate. It would reject every receipt after a rebase onto a newer `main`, and it would still accept a receipt from another change made after the same base. A receipt's `head` is always older than the commit that records it, so a receipt copied from a merged record can match this range only through a re-landed patch. The rule treats that patch as the same work.
+
+### Limits
+
+- A receipt made while `HEAD` was the base stops counting when the change moves to a newer base. Load the skill again on the branch.
+- Squashing commits makes a new patch-id. Receipts made on the squashed commits stop counting. Load the skills again after a squash.
+- A receipt made on the base by another change in the same clone also counts for this change. `skills:record` reads only this clone's receipts, but CI cannot check the clone, because the common-dir hash differs in CI.
+- The deny rules stop an agent that names the key, the hook, or the receipts. A program that opens those files without naming them can still read the key and sign a receipt. The receipts stop lazy and mistaken claims. They do not stop deliberate forgery by a process running as the same user.
+- A receipt proves that the agent loaded the skill text. It does not prove the agent followed it. Review judges that.
+- Many principle skills have one heading and no numbered rules, so a citation of one names only the skill.
 
 ### Where records live
 
@@ -112,4 +190,4 @@ The check confirms that the named enforcement exists. It does not prove that the
 
 ## Limits
 
-The routing lists skills. It cannot tell whether an agent read or applied one. `security-review` is a Claude Code command with no skill file, so the catalog leaves it out.
+The routing lists skills. Receipts show that an agent loaded one. Nothing shows that it applied the skill well. `security-review` is a Claude Code command with no skill file, so the catalog leaves it out.
