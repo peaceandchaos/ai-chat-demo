@@ -27,11 +27,12 @@ const startOfDay = (time: number): number => {
   ).getTime();
 };
 
-// The two shapes the Recents rows already show: calendar days for the last
-// week ("3d ago"), then the date ("Nov 22, 2025").
+// Counted in calendar days: "Today", then "3d ago" for the last week, then
+// the date ("Nov 22, 2025").
 export function recentTime(updatedAt: number, now: number): string {
   const days = Math.round((startOfDay(now) - startOfDay(updatedAt)) / dayMs);
-  if (days < 7) return `${Math.max(0, days)}d ago`;
+  if (days <= 0) return 'Today';
+  if (days < 7) return `${days}d ago`;
   const date = new Date(updatedAt);
   return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }

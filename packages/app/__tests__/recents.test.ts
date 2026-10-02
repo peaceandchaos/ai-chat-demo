@@ -1,18 +1,37 @@
 import type { ChatRecord } from '../src/state/archive';
 import { filterRecents, recentTime } from '../src/state/recents';
 
-const now = new Date(2026, 9, 1, 9, 30).getTime();
+const now = new Date(2026, 9, 1, 0, 0, 30).getTime();
 
 test.each([
-  ['earlier today', new Date(2026, 9, 1, 0, 5), '0d ago'],
-  ['late yesterday', new Date(2026, 8, 30, 23, 55), '1d ago'],
-  ['three days ago', new Date(2026, 8, 28, 12), '3d ago'],
-  ['six calendar days ago', new Date(2026, 8, 25, 0, 1), '6d ago'],
-  ['seven calendar days ago', new Date(2026, 8, 24, 23, 59), 'Sep 24, 2026'],
-  ['last year', new Date(2025, 10, 22, 18), 'Nov 22, 2025'],
-  ['ahead of this clock', new Date(2026, 9, 2, 8), '0d ago'],
-])('a chat updated %s shows "%s"', (_label, updated, shown) => {
+  ['at midnight today', 'Today', new Date(2026, 9, 1, 0, 0, 0)],
+  ['one second before midnight', '1d ago', new Date(2026, 8, 30, 23, 59, 59)],
+  ['early yesterday', '1d ago', new Date(2026, 8, 30, 0, 0, 0)],
+  ['three days ago', '3d ago', new Date(2026, 8, 28, 12)],
+  [
+    'at the start of the sixth day back',
+    '6d ago',
+    new Date(2026, 8, 25, 0, 0, 0),
+  ],
+  [
+    'at the end of the seventh day back',
+    'Sep 24, 2026',
+    new Date(2026, 8, 24, 23, 59, 59),
+  ],
+  ['last year', 'Nov 22, 2025', new Date(2025, 10, 22, 18)],
+  ['ahead of this clock', 'Today', new Date(2026, 9, 2, 8)],
+])('a chat updated %s shows "%s"', (_label, shown, updated) => {
   expect(recentTime(updated.getTime(), now)).toBe(shown);
+});
+
+test('a chat from late today still shows "Today" just before midnight', () => {
+  const late = new Date(2026, 9, 1, 23, 59, 59).getTime();
+  expect(recentTime(new Date(2026, 9, 1, 0, 0, 1).getTime(), late)).toBe(
+    'Today',
+  );
+  expect(recentTime(new Date(2026, 8, 30, 23, 59, 59).getTime(), late)).toBe(
+    '1d ago',
+  );
 });
 
 const titles = [
