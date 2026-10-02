@@ -63,6 +63,10 @@
         {
           "finding": "Root cause of the change-rule bug: changeMatch modeled its filters as early returns, so the first filter decided the result. The fix makes the filters a conjunction instead of adding a special case for commitSubject.",
           "commit": "2958652b9656"
+        },
+        {
+          "finding": "Found in independent review: added-line rules never matched a path with a space, because git diff ends that \"+++ b/\" path with a tab. The new test failed with the skill missing, and passes after the tab is stripped. Paths that git still C-quotes, such as those with a tab or a double quote, are not handled.",
+          "commit": "8113bfe"
         }
       ]
     },
