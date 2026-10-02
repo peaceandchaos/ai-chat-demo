@@ -40,7 +40,7 @@
     },
     {
       "id": "fetch-timeout",
-      "lesson": "Give every fetch a timeout or an abort signal.",
+      "lesson": "Give every fetch in app code a timeout or an abort signal. The security check scans the app, not the server.",
       "seen": [
         "54b3998 on work/ui-pr1-c: the native probe's report fetch had no timeout"
       ],
