@@ -1,21 +1,21 @@
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 import { launchImageLibrary, type Asset } from 'react-native-image-picker';
-import { Images, type Image } from 'react-native-nitro-image';
+import { loadImage, type Image } from 'react-native-nitro-image';
 import { type Attachment } from '../state/chatStore';
 import { fitImage } from '../state/images';
 
+// Resolves to null when the photo cannot be made small enough to send, and
+// rejects when it cannot be read.
 async function attach(asset: Asset): Promise<Attachment | null> {
   const { uri, base64 } = asset;
-  if (!uri || !base64) return null;
-  let image: Promise<Image> | null = null;
+  if (!uri || !base64) throw new Error('The picker returned no image data.');
+  let image: Promise<Image> | Image | null = null;
   const dataUrl = await fitImage(
     asset.type ?? 'image/jpeg',
     base64,
     async (scale, quality) => {
-      image ??= Images.loadFromFileAsync(
-        decodeURIComponent(new URL(uri).pathname),
-      );
+      image ??= loadImage({ filePath: uri });
       const full = await image;
       const sized =
         scale < 1
@@ -50,10 +50,21 @@ export function useAttachments(): {
     if (result.didCancel || !result.assets) {
       return;
     }
-    const fitted = await Promise.all(result.assets.map(attach));
-    const picked = fitted.filter(attachment => attachment !== null);
-    if (picked.length < fitted.length)
-      Alert.alert('Something went wrong', 'A photo is too large to send.');
+    const { assets } = result;
+    const outcomes = await Promise.allSettled(assets.map(attach));
+    const picked: Attachment[] = [];
+    const problems: string[] = [];
+    outcomes.forEach((outcome, index) => {
+      const { fileName } = assets[index];
+      const name = fileName ? `"${fileName}"` : `Photo ${index + 1}`;
+      if (outcome.status === 'rejected')
+        problems.push(`${name} could not be attached.`);
+      else if (outcome.value === null)
+        problems.push(`${name} is too large to send.`);
+      else picked.push(outcome.value);
+    });
+    if (problems.length > 0)
+      Alert.alert('Something went wrong', problems.join('\n'));
     setAttachments(prev => [...prev, ...picked]);
   }, []);
 

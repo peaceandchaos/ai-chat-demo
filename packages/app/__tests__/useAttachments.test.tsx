@@ -34,8 +34,24 @@ function mockImage(width: number, height: number) {
     },
   };
 }
+// The library's own Images and loadImage run, so its file uri handling is under
+// test. Only the native image factory is replaced, and it opens only the files a
+// test puts in mockFiles.
+const mockFiles = new Set<string>();
+async function mockLoadFromFile(path: string) {
+  if (!mockFiles.has(path)) throw new Error(`No file at ${path}`);
+  return mockImage(2048, 1536);
+}
+jest.mock('react-native-nitro-modules', () => ({
+  NitroModules: {
+    createHybridObject: () => ({
+      loadFromFileAsync: (path: string) => mockLoadFromFile(path),
+    }),
+  },
+}));
 jest.mock('react-native-nitro-image', () => ({
-  Images: { loadFromFileAsync: async () => mockImage(2048, 1536) },
+  ...jest.requireActual('react-native-nitro-image/lib/commonjs/Images'),
+  ...jest.requireActual('react-native-nitro-image/lib/commonjs/loadImage'),
 }));
 
 const prefix = 'data:image/jpeg;base64,';
@@ -73,7 +89,25 @@ async function pick(assets: Asset[]) {
   return hook.attachments.map(attachment => attachment.dataUrl);
 }
 
+// The app runs with React Native's URL, not Node's.
+const nodeUrl = globalThis.URL;
+beforeAll(() => {
+  Object.defineProperty(globalThis, 'URL', {
+    value: jest.requireActual('react-native/Libraries/Blob/URL').URL,
+    configurable: true,
+    writable: true,
+  });
+});
+afterAll(() => {
+  Object.defineProperty(globalThis, 'URL', {
+    value: nodeUrl,
+    configurable: true,
+    writable: true,
+  });
+});
+
 beforeEach(() => {
+  mockFiles.clear();
   mockEncoded.length = 0;
   mockBytesPerPixel = 0.85;
   jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
@@ -90,8 +124,9 @@ test('a picked JPEG that fits is sent as it is, under the type the contract name
 test('a photo one character over the limit is re-encoded as a JPEG that fits', async () => {
   const base64 = 'A'.repeat(3_000_001 - prefix.length);
   expect(`${prefix}${base64}`).toHaveLength(3_000_001);
+  mockFiles.add('/tmp/My Photos/big.jpg');
   const [dataUrl] = await pick([
-    { uri: 'file:///tmp/big.jpg', type: 'image/jpeg', base64 },
+    { uri: 'file:///tmp/My%20Photos/big.jpg', type: 'image/jpeg', base64 },
   ]);
   expect(imageSchema.safeParse(dataUrl).success).toBe(true);
   expect(dataUrl.startsWith(prefix)).toBe(true);
@@ -102,7 +137,8 @@ test('a photo one character over the limit is re-encoded as a JPEG that fits', a
   expect(Alert.alert).not.toHaveBeenCalled();
 });
 
-test('a HEIC photo is converted to JPEG', async () => {
+test('a photo of a type the contract does not accept is re-encoded as JPEG', async () => {
+  mockFiles.add('/tmp/b.heic');
   const [dataUrl] = await pick([
     { uri: 'file:///tmp/b.heic', type: 'image/heic', base64: 'AAAA' },
   ]);
@@ -110,15 +146,42 @@ test('a HEIC photo is converted to JPEG', async () => {
   expect(dataUrl.startsWith(prefix)).toBe(true);
 });
 
-test('a photo that cannot fit is left out with a plain message, and the others attach', async () => {
+test('a photo that cannot fit is left out with a message naming it, and the others attach', async () => {
   mockBytesPerPixel = 13;
+  mockFiles.add('/tmp/huge.heic');
   const attached = await pick([
     { uri: 'file:///tmp/fine.jpg', type: 'image/jpeg', base64: 'AAAA' },
-    { uri: 'file:///tmp/huge.heic', type: 'image/heic', base64: 'AAAA' },
+    {
+      uri: 'file:///tmp/huge.heic',
+      fileName: 'huge.heic',
+      type: 'image/heic',
+      base64: 'AAAA',
+    },
   ]);
   expect(attached).toEqual([`${prefix}AAAA`]);
   expect(Alert.alert).toHaveBeenCalledWith(
     'Something went wrong',
-    'A photo is too large to send.',
+    '"huge.heic" is too large to send.',
+  );
+});
+
+test('a photo that cannot be read is named in a message, and the others attach', async () => {
+  mockFiles.add('/tmp/second.heic');
+  const attached = await pick([
+    {
+      uri: 'file:///tmp/missing.heic',
+      fileName: 'missing.heic',
+      type: 'image/heic',
+      base64: 'AAAA',
+    },
+    { uri: 'file:///tmp/second.heic', type: 'image/heic', base64: 'AAAA' },
+    { uri: 'file:///tmp/third.jpg', type: 'image/jpg', base64: 'AAAA' },
+  ]);
+  expect(attached).toHaveLength(2);
+  expect(imageSchema.safeParse(attached[0]).success).toBe(true);
+  expect(attached[1]).toBe(`${prefix}AAAA`);
+  expect(Alert.alert).toHaveBeenCalledWith(
+    'Something went wrong',
+    '"missing.heic" could not be attached.',
   );
 });
