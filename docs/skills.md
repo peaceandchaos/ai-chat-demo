@@ -201,7 +201,8 @@ Records stay in the tree after merge, and git history keeps every version. The c
 When a finding recurs, add a line to its `seen` list, or add a lesson the first time. `npm run skills:ledger` runs in the verify suite as `quality-ledger`. It fails when:
 
 - a guidance lesson has been seen twice or more and has no `link`.
-- an enforcement names a check the suite does not run, a lint rule that `.oxlintrc.json` does not turn on, or a test title that its file does not pass as a string to a plain `test()` or `it()` call. A title in a comment, a `test.skip()`, or a `test.each()` table does not count.
+- an enforcement names a check the suite does not run, a lint rule that `.oxlintrc.json` does not turn on, or a test title that its file does not pass as a string to a plain `test()` or `it()` call. A title in a comment, a `test.skip()`, a `test.each()` table, or a `describe.skip()` or `xdescribe()` block does not count.
+- a test enforcement names a file that no tracked `jest.config.js`, `.cjs`, or `.mjs` discovers. The check runs `jest --listTests` once for each of those configs.
 - a `link` is neither an https URL nor a tracked file.
 - two lessons share an id.
 

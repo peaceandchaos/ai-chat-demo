@@ -1,5 +1,6 @@
+const { execFileSync } = require('node:child_process');
 const { existsSync, readFileSync } = require('node:fs');
-const { join } = require('node:path');
+const { join, relative } = require('node:path');
 const ts = require('typescript');
 const { z } = require('zod');
 const { git } = require('../verification/snapshot.cjs');
@@ -45,15 +46,48 @@ function isNamedTest(node, name) {
   );
 }
 
+// A `describe.skip` or `xdescribe` block disables every test inside it.
+function isDisabledBlock(node) {
+  if (!ts.isCallExpression(node)) return false;
+  const callee = node.expression;
+  if (ts.isIdentifier(callee)) return callee.text === 'xdescribe';
+  return (
+    ts.isPropertyAccessExpression(callee) &&
+    ts.isIdentifier(callee.expression) &&
+    callee.expression.text === 'describe' &&
+    callee.name.text === 'skip'
+  );
+}
+
 function definesTest(path, name) {
-  const visit = node => isNamedTest(node, name) || ts.forEachChild(node, visit);
+  const visit = node =>
+    !isDisabledBlock(node) &&
+    (isNamedTest(node, name) || ts.forEachChild(node, visit));
   const text = readFileSync(path, 'utf8');
   return Boolean(
     visit(ts.createSourceFile(path, text, ts.ScriptTarget.Latest)),
   );
 }
 
-function enforcementProblem(root, { enforcement: rule }) {
+// The test files that the tracked Jest configs discover, as repository paths.
+function discoveredTests(root) {
+  const jest = require.resolve('jest/bin/jest');
+  const configs = git(root, ['ls-files'])
+    .split('\n')
+    .filter(path => /(?:^|\/)jest\.config\.[cm]?js$/u.test(path));
+  const found = new Set();
+  for (const config of configs) {
+    const listed = execFileSync(
+      process.execPath,
+      [jest, '--listTests', '--json', '--config', join(root, config)],
+      { cwd: root, encoding: 'utf8' },
+    );
+    for (const path of JSON.parse(listed)) found.add(relative(root, path));
+  }
+  return found;
+}
+
+function enforcementProblem(root, { enforcement: rule }, discovered) {
   if (rule.kind === 'guidance') return null;
   if (rule.kind === 'check') {
     const { checks, rangeChecks } = require(
@@ -76,9 +110,11 @@ function enforcementProblem(root, { enforcement: rule }) {
       : `names lint rule ${rule.rule}, which .oxlintrc.json does not enable`;
   }
   const path = join(root, rule.file);
-  return existsSync(path) && definesTest(path, rule.name)
+  if (!existsSync(path) || !definesTest(path, rule.name))
+    return `names test '${rule.name}', which ${rule.file} does not contain`;
+  return discovered().has(rule.file)
     ? null
-    : `names test '${rule.name}', which ${rule.file} does not contain`;
+    : `names test '${rule.name}' in ${rule.file}, which no tracked Jest config discovers`;
 }
 
 function linkProblem(root, link) {
@@ -91,11 +127,13 @@ function linkProblem(root, link) {
 function ledgerProblems(root, ledger) {
   const problems = [];
   const ids = new Set();
+  let found;
+  const discovered = () => (found ??= discoveredTests(root));
   for (const entry of ledger.lessons) {
     if (ids.has(entry.id)) problems.push(`${entry.id} appears twice.`);
     ids.add(entry.id);
     for (const problem of [
-      enforcementProblem(root, entry),
+      enforcementProblem(root, entry, discovered),
       linkProblem(root, entry.link),
     ])
       if (problem) problems.push(`${entry.id} ${problem}.`);

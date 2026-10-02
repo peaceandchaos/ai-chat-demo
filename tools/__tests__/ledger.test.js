@@ -54,9 +54,26 @@ beforeAll(() => {
     }),
   );
   write(
-    'tests/sizes.test.ts',
-    "test('a named case', () => {});\nit('a type case', () => {});\n// test('a commented case', () => {});\ntest.skip('a skipped case', () => {});\nexport const label = 'a string case';\n",
+    'jest.config.cjs',
+    "module.exports = { testMatch: ['<rootDir>/tests/**/*.test.ts'] };\n",
   );
+  write(
+    'tests/sizes.test.ts',
+    [
+      "test('a named case', () => {});",
+      "it('a type case', () => {});",
+      "// test('a commented case', () => {});",
+      "test.skip('a skipped case', () => {});",
+      "export const label = 'a string case';",
+      "describe('a block', () => { test('a nested case', () => {}); });",
+      "describe.skip('a skipped block', () => { test('a case in a skipped block', () => {}); });",
+      "xdescribe('an x block', () => { it('a case in an x block', () => {}); });",
+      "xit('an x case', () => {});",
+      "xtest('another x case', () => {});",
+      '',
+    ].join('\n'),
+  );
+  write('notes/sizes.test.ts', "test('an undiscovered case', () => {});\n");
   write('docs/decision.md', '# Keep this as guidance\n');
   git(repository, ['add', '--all']);
   write('docs/draft.md', '# Not tracked\n');
@@ -83,6 +100,7 @@ test('passes when every enforcement exists and repeated guidance links a decisio
     lesson('ranged', { kind: 'check', check: 'commit-types' }),
     lesson('linted', { kind: 'lint', rule: 'project/rule' }),
     lesson('tested', { kind: 'test', ...sizes('a named case') }),
+    lesson('nested', { kind: 'test', ...sizes('a nested case') }),
     lesson('typed', { kind: 'type', ...sizes('a type case') }),
   ]);
   expect(result.stderr).toBe('');
@@ -107,6 +125,18 @@ test('fails on repeated unlinked guidance, stale enforcement, bad links, and dup
     lesson('gone-test', { kind: 'test', ...sizes('a renamed case') }),
     lesson('commented-test', { kind: 'test', ...sizes('a commented case') }),
     lesson('skipped-test', { kind: 'test', ...sizes('a skipped case') }),
+    lesson('skipped-block', {
+      kind: 'test',
+      ...sizes('a case in a skipped block'),
+    }),
+    lesson('x-block', { kind: 'test', ...sizes('a case in an x block') }),
+    lesson('x-it', { kind: 'test', ...sizes('an x case') }),
+    lesson('x-test', { kind: 'test', ...sizes('another x case') }),
+    lesson('undiscovered', {
+      kind: 'test',
+      file: 'notes/sizes.test.ts',
+      name: 'an undiscovered case',
+    }),
     lesson('string-type', { kind: 'type', ...sizes('a string case') }),
     lesson('gone-file', {
       kind: 'type',
@@ -130,6 +160,11 @@ test('fails on repeated unlinked guidance, stale enforcement, bad links, and dup
       "gone-test names test 'a renamed case', which tests/sizes.test.ts does not contain.",
       "commented-test names test 'a commented case', which tests/sizes.test.ts does not contain.",
       "skipped-test names test 'a skipped case', which tests/sizes.test.ts does not contain.",
+      "skipped-block names test 'a case in a skipped block', which tests/sizes.test.ts does not contain.",
+      "x-block names test 'a case in an x block', which tests/sizes.test.ts does not contain.",
+      "x-it names test 'an x case', which tests/sizes.test.ts does not contain.",
+      "x-test names test 'another x case', which tests/sizes.test.ts does not contain.",
+      "undiscovered names test 'an undiscovered case' in notes/sizes.test.ts, which no tracked Jest config discovers.",
       "string-type names test 'a string case', which tests/sizes.test.ts does not contain.",
       "gone-file names test 'x', which tests/gone.test.ts does not contain.",
       'draft links docs/draft.md, which is neither an https URL nor a tracked file.',
