@@ -1,4 +1,4 @@
-import { createChatView } from '../../app/src/state/chatView';
+import { createChatView, draftPauseMs } from '../../app/src/state/chatView';
 import {
   createChat,
   openPhone,
@@ -37,7 +37,7 @@ test('a sent turn streams into the view without storage reads and keeps settled 
     isStreaming: false,
   });
 
-  expect(state().send('Question')).toBe('saved');
+  expect(state().send('Question')).toBe(state().messages.at(-2)?.id);
   expect(state().messages).toMatchObject([
     { role: 'user', text: 'Question', status: 'done' },
     { role: 'assistant', text: '', status: 'streaming' },
@@ -272,16 +272,16 @@ test('background and resume, then a relaunch mid-reply, show the same reply with
   expect(server.providers.generations).toHaveLength(2);
 });
 
-test('a rejected send reports why, saves nothing, and returns false so the composer keeps its text', async () => {
+test('a rejected send reports why, saves nothing, and returns null so the composer keeps its text', async () => {
   const phone = openPhone(server);
   createChat(phone, 'kimi');
   const { errors, state } = openView(phone);
-  expect(state().send('   ')).toBe('unsaved');
+  expect(state().send('   ')).toBeNull();
   expect(errors).toEqual(['Write a message or choose an image.']);
   expect(state().messages).toEqual([]);
 
-  expect(state().send('One')).toBe('saved');
-  expect(state().send('Two')).toBe('unsaved');
+  expect(state().send('One')).toBe(state().messages.at(-2)?.id);
+  expect(state().send('Two')).toBeNull();
   expect(errors.at(-1)).toBe(
     'Wait for this reply or stop it before sending another message.',
   );
@@ -296,7 +296,7 @@ test('a send that saved shows its turn even when the chat path cannot be read ag
   jest.spyOn(phone.session, 'path').mockImplementation(() => {
     throw new Error('Saved chats are unavailable.');
   });
-  expect(state().send('Question')).toBe('saved');
+  expect(state().send('Question')).toBe(state().messages.at(-2)?.id);
   expect(errors).toEqual([]);
   expect(state().messages).toMatchObject([
     { role: 'user', text: 'Question', status: 'done' },
@@ -339,8 +339,80 @@ test('an image the contract rejects is reported in plain words and nothing is sa
     uri: 'file:///tmp/a.heic',
     dataUrl: 'data:image/heic;base64,AAAA',
   };
-  expect(state().send('Look', [heic])).toBe('unsaved');
+  expect(state().send('Look', [heic])).toBeNull();
   expect(errors).toEqual(['These images can’t be sent.']);
   expect(state().messages).toEqual([]);
   expect(phone.archive.metadata().jobIds).toEqual([]);
+});
+
+test('a typed draft is saved once typing pauses, comes back after a relaunch, and is deleted on send and when cleared', async () => {
+  const phone = openPhone(server);
+  const chat = createChat(phone, 'kimi');
+  const { state } = openView(phone);
+  const relaunch = () => openView(openPhone(server, phone.storage.snapshot()));
+  const onDisk = () => reopen(phone.storage).draft(chat.id);
+  const writes = phone.storage.writes.length;
+  for (const text of ['H', 'Ha', 'Hal', 'Half a thought'])
+    state().saveDraftAfterPause(chat.id, text);
+  expect(phone.storage.writes).toHaveLength(writes);
+  await until('the draft is on disk', () => onDisk() === 'Half a thought');
+  expect(phone.storage.writes).toHaveLength(writes + 1);
+  expect(relaunch().state().draftText(chat.id)).toBe('Half a thought');
+
+  state().saveDraftAfterPause(chat.id, '');
+  await until('the cleared draft is gone from disk', () => onDisk() === '');
+  expect(relaunch().state().draftText(chat.id)).toBe('');
+
+  state().saveDraftAfterPause(chat.id, 'Question');
+  await until('the new draft is on disk', () => onDisk() === 'Question');
+  state().saveDraftAfterPause(chat.id, 'Question?');
+  expect(state().send('Question?')).toBe(state().messages.at(-2)?.id);
+  expect(onDisk()).toBe('');
+  await new Promise(resolve => setTimeout(resolve, 2 * draftPauseMs));
+  expect(relaunch().state().draftText(chat.id)).toBe('');
+});
+
+test('leaving the app saves a draft at once, without waiting for typing to pause', () => {
+  const phone = openPhone(server);
+  const chat = createChat(phone, 'kimi');
+  const { state } = openView(phone);
+  state().saveDraftAfterPause(chat.id, 'Half a thought');
+  state().saveDraftsNow();
+  const relaunched = openView(openPhone(server, phone.storage.snapshot()));
+  expect(relaunched.state().draftText(chat.id)).toBe('Half a thought');
+});
+
+test('a draft that cannot be read or saved does not block typing or sending', () => {
+  const phone = openPhone(server);
+  const chat = createChat(phone, 'kimi');
+  const first = openView(phone);
+  const before = new Set(phone.storage.getAllKeys());
+  first.state().saveDraftAfterPause(chat.id, 'Saved');
+  first.state().saveDraftsNow();
+  const draftKeys = phone.storage.getAllKeys().filter(key => !before.has(key));
+  expect(draftKeys).toHaveLength(1);
+  const { getString, set, remove } = phone.storage;
+  const fail = (key: string) => {
+    if (draftKeys.includes(key)) throw new Error('Simulated storage failure');
+  };
+  jest.spyOn(phone.storage, 'getString').mockImplementation(key => {
+    fail(key);
+    return getString.call(phone.storage, key);
+  });
+  jest.spyOn(phone.storage, 'set').mockImplementation((key, value) => {
+    fail(key);
+    set.call(phone.storage, key, value);
+  });
+  jest.spyOn(phone.storage, 'remove').mockImplementation(key => {
+    fail(key);
+    remove.call(phone.storage, key);
+  });
+
+  const { errors, state } = openView(phone);
+  expect(state().draftText(chat.id)).toBe('');
+  state().saveDraftAfterPause(chat.id, 'Question');
+  state().saveDraftsNow();
+  expect(state().send('Question')).toBe(state().messages.at(-2)?.id);
+  expect(errors).toEqual([]);
+  expect(state().messages[0]).toMatchObject({ role: 'user', text: 'Question' });
 });

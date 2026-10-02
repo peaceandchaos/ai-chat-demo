@@ -6,14 +6,63 @@
 // - reply: from the user turn appearing to the first reply text, and the
 //   interval between text commits while the reply streams;
 // - frames: JS frame intervals, every two seconds.
-import { LogBox } from 'react-native';
+// The launch argument `-harnessSeed recents` saves chats that match the old
+// mocked Recents rows; `-harnessSeed long` saves one chat of 1,200 messages.
+import { LogBox, Settings } from 'react-native';
 import BootSplash from 'react-native-bootsplash';
 import performance from 'react-native-performance';
 import '../index';
 import { startAppSession } from '../src/state/appSession';
 import type { ChatStore } from '../src/state/chatView';
+import { openArchive } from '../src/state/nativeArchive';
+import { longTurns, seedChat } from './seed';
 
 LogBox.ignoreAllLogs();
+
+function mockedRecents(): [string, Date][] {
+  const today = new Date();
+  const daysAgo = (days: number, minute: number) =>
+    new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() - days,
+      12,
+      minute,
+    );
+  return [
+    ['Explaining the Fourier transform', daysAgo(3, 3)],
+    ['Debugging a Reanimated layout jump', daysAgo(3, 2)],
+    ['Weekend trip ideas near Lisbon', daysAgo(3, 1)],
+    ['Rewriting a cover letter', daysAgo(4, 2)],
+    ['Sourdough starter troubleshooting', daysAgo(4, 1)],
+    ['Who founded Margelo?', new Date(2025, 10, 22, 12)],
+    ['What does Margelo do?', new Date(2025, 10, 20, 12)],
+    ['Margelo open-source libraries', new Date(2025, 9, 26, 12)],
+    ['How the Nitro modules work', new Date(2025, 9, 24, 12)],
+  ];
+}
+
+type SeedKind = 'recents' | 'long';
+
+function seedKind(): SeedKind | undefined {
+  const value: unknown = Settings.get('harnessSeed');
+  return value === 'recents' || value === 'long' ? value : undefined;
+}
+
+function seed(kind: SeedKind | undefined) {
+  let clock = Date.now();
+  const archive = openArchive(() => clock);
+  if (archive.metadata().chatIds.length > 0) return;
+  if (kind === 'long') seedChat(archive, longTurns(600));
+  if (kind !== 'recents') return;
+  for (const [title, updated] of mockedRecents().reverse()) {
+    clock = updated.getTime();
+    seedChat(archive, [{ question: title, answer: 'Seeded reply.' }]);
+  }
+  clock = Date.now();
+  archive.createChat();
+}
+seed(seedKind());
 
 const reportUrl = 'http://localhost:8794/harness/report';
 type Quantiles = { count: number; p50: number; p95: number; max: number };

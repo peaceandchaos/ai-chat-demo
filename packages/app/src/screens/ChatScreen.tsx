@@ -1,4 +1,10 @@
-import React, { Suspense, useCallback, useRef, useState } from 'react';
+import React, {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   type LayoutChangeEvent,
   Platform,
@@ -41,14 +47,18 @@ const ReasoningSheet = React.lazy(() =>
 
 type ChatScreenProps = {
   onOpenRecents: () => void;
+  // Counts chats opened from Recents, including the one already shown.
+  openCount: number;
 };
 
-export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
+export function ChatScreen({ onOpenRecents, openCount }: ChatScreenProps) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const send = useChatStore(state => state.send);
   const stop = useChatStore(state => state.stop);
   const newChat = useChatStore(state => state.newChat);
+  const loadOlder = useChatStore(state => state.loadOlder);
+  const chatId = useChatStore(state => state.chatId);
   const messagesLength = useChatStore(state => state.messages.length);
   const isStreaming = useChatStore(state => state.isStreaming);
   const [composerHeight, setComposerHeight] = useState(0);
@@ -68,18 +78,29 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
     [openReasoning],
   );
 
-  const [anchorIndex, setAnchorIndex] = useState<number | undefined>(undefined);
+  // The anchor is the user turn sent last in this launch. A chat that does
+  // not show that turn has no anchor.
+  const [anchorId, setAnchorId] = useState<string | null>(null);
+  const anchorIndex = useChatStore(state => {
+    for (let index = state.messages.length - 1; index >= 0; index--)
+      if (state.messages[index].id === anchorId) return index;
+    return undefined;
+  });
   // A sent reply is followed once it overflows the reserved space. A reply
   // already streaming when the chat opened, as after a relaunch, has no
   // anchored turn and is followed from the start. A drag pauses either.
-  const [overflowed, setOverflowed] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [resumed, setResumed] = useState(false);
-  if (isStreaming && anchorIndex == null && !resumed) {
-    setResumed(true);
+  const [overflowedAnchorId, setOverflowedAnchorId] = useState<string | null>(
+    null,
+  );
+  const [resumedChatId, setResumedChatId] = useState<string | null>(null);
+  const [pausedChatId, setPausedChatId] = useState<string | null>(null);
+  if (isStreaming && anchorIndex == null && resumedChatId !== chatId) {
+    setResumedChatId(chatId);
   }
-  const tracking = overflowed || resumed;
-  const following = tracking && !paused;
+  const tracking =
+    (anchorIndex != null && overflowedAnchorId === anchorId) ||
+    resumedChatId === chatId;
+  const following = tracking && pausedChatId !== chatId;
 
   // Image messages are taller than the text cap; leave them uncapped so the top
   // of the image lands at the anchor offset instead of being clipped above it.
@@ -104,19 +125,24 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   const onSubmit = useCallback(
     (text: string, attachments: Attachment[]) => {
       const isFirstMessage = messagesLength === 0;
-      const result = send(text, attachments);
-      if (result === 'unsaved') {
-        return result;
+      const userId = send(text, attachments);
+      if (userId === null) {
+        return 'unsaved';
       }
-      setOverflowed(false);
-      setResumed(false);
-      setPaused(false);
-      setAnchorIndex(messagesLength);
+      setResumedChatId(null);
+      setPausedChatId(null);
+      setAnchorId(userId);
       scrollMessageToEnd({ animated: !isFirstMessage, closeKeyboard: true });
-      return result;
+      return 'saved';
     },
     [messagesLength, send, scrollMessageToEnd],
   );
+
+  // A chat starts at its newest message when it opens and when Recents opens
+  // it again while it is shown.
+  useEffect(() => {
+    listRef.current?.scrollToEnd({ animated: false });
+  }, [chatId, openCount]);
 
   const keyboardOffset = { opened: insets.bottom };
 
@@ -126,7 +152,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
       setShowScrollDown(!visible);
       // Back at the bottom after a manual scroll-up: re-arm tail-follow
       if (visible && tracking) {
-        setPaused(false);
+        setPausedChatId(null);
       }
     },
     [tracking],
@@ -136,9 +162,9 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   // scroll up (e.g. to read a table)
   const onScrollBeginDrag = useCallback(() => {
     if (tracking) {
-      setPaused(true);
+      setPausedChatId(chatId);
     }
-  }, [tracking]);
+  }, [chatId, tracking]);
 
   const scrollToBottom = () => {
     scrollMessageToEnd({ animated: true, closeKeyboard: false });
@@ -148,7 +174,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
     <View style={styles.container}>
       <BootSplash.HideOnDraw fade />
       <ChatMessages>
-        {messages => (
+        {(messages, addedOlder) => (
           <KeyboardAwareLegendList
             ref={listRef}
             style={styles.fill}
@@ -158,9 +184,12 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
             // Let the bottom contentInset / anchored end-space area still catch scroll touches (RN 0.81+ hit-test bug, facebook/react-native#54123).
             applyWorkaroundForContentInsetHitTestBug
             initialScrollAtEnd
+            onStartReached={loadOlder}
             maintainVisibleContentPosition={
               Platform.OS !== 'android'
-                ? undefined
+                ? // Holding rows in place on every data change fights the
+                  // anchored send, so only an older page uses it.
+                  { data: addedOlder }
                 : anchorIndex != null && !following
             }
             keyboardLiftBehavior="whenAtEnd"
@@ -176,7 +205,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
                     anchorOffset: insets.top + 56,
                     onSizeChanged: size => {
                       if (size <= 0) {
-                        setOverflowed(true);
+                        setOverflowedAnchorId(anchorId);
                       }
                     },
                   }
@@ -220,6 +249,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
 
       <KeyboardStickyView offset={keyboardOffset} style={styles.composer}>
         <Composer
+          chatId={chatId}
           composerRef={composerRef}
           onLayout={onComposerLayout}
           onSubmit={onSubmit}

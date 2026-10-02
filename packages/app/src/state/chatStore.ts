@@ -7,7 +7,6 @@ export type {
   Message,
   MessageRole,
   MessageStatus,
-  SendResult,
 } from './chatView';
 
 export const ChatStoreContext = createContext<ChatStore | null>(null);

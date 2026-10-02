@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import { launchImageLibrary, type Asset } from 'react-native-image-picker';
 import { loadImage, type Image } from 'react-native-nitro-image';
 import { type Attachment } from '../state/chatStore';
 import { fitImage } from '../state/images';
+import { type ChangeDraft } from './useDraft';
 
 // Resolves to null when the photo cannot be made small enough to send, and
 // rejects when it cannot be read.
@@ -30,14 +31,10 @@ async function attach(asset: Asset): Promise<Attachment | null> {
   return dataUrl ? { uri, dataUrl } : null;
 }
 
-export function useAttachments(): {
-  attachments: Attachment[];
+export function useAttachments(changeDraft: ChangeDraft): {
   pickImages: () => Promise<void>;
   removeAttachment: (index: number) => void;
-  clearAttachments: () => void;
 } {
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
-
   const pickImages = useCallback(async () => {
     const result = await launchImageLibrary({
       mediaType: 'photo',
@@ -65,16 +62,21 @@ export function useAttachments(): {
     });
     if (problems.length > 0)
       Alert.alert('Something went wrong', problems.join('\n'));
-    setAttachments(prev => [...prev, ...picked]);
-  }, []);
+    changeDraft(draft => ({
+      ...draft,
+      attachments: [...draft.attachments, ...picked],
+    }));
+  }, [changeDraft]);
 
-  const removeAttachment = useCallback((index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index));
-  }, []);
+  const removeAttachment = useCallback(
+    (index: number) => {
+      changeDraft(draft => ({
+        ...draft,
+        attachments: draft.attachments.filter((_, i) => i !== index),
+      }));
+    },
+    [changeDraft],
+  );
 
-  const clearAttachments = useCallback(() => {
-    setAttachments([]);
-  }, []);
-
-  return { attachments, pickImages, removeAttachment, clearAttachments };
+  return { pickImages, removeAttachment };
 }

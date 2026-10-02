@@ -79,6 +79,7 @@ const childrenKey = (chatId: string, parentId: string | null) =>
   `archive/children/${chatId}/${parentId ?? 'root'}`;
 const selectedKey = (chatId: string, parentId: string | null) =>
   `archive/selected/${chatId}/${parentId ?? 'root'}`;
+const draftKey = (chatId: string) => `archive/draft/${chatId}`;
 const write = (
   key: string,
   value: ChatRecord | SavedMessage | ArchiveMetadata | string[] | string,
@@ -482,9 +483,25 @@ export class ChatArchive {
     ]);
   }
 
+  draft(chatId: string): string {
+    const raw = this.readAfterJournal(draftKey(chatId));
+    return raw === undefined ? '' : decodeJson(z.string(), raw);
+  }
+
+  saveDraft(chatId: string, text: string): void {
+    this.writeOneKey(
+      text === ''
+        ? { key: draftKey(chatId), value: null }
+        : write(draftKey(chatId), text),
+    );
+  }
+
   deleteChat(id: string): void {
     this.chat(id);
-    const writes: Write[] = [{ key: chatKey(id), value: null }];
+    const writes: Write[] = [
+      { key: chatKey(id), value: null },
+      { key: draftKey(id), value: null },
+    ];
     const pending = [...this.children(id, null)];
     const messageIds = new Set<string>();
     while (pending.length) {

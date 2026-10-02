@@ -1,3 +1,4 @@
+import { createRef } from 'react';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { MessageBubble } from '../src/components/MessageBubble';
 import type { Message } from '../src/state/chatStore';
@@ -25,9 +26,9 @@ jest.mock('../src/components/ShimmerText', () => ({
 }));
 
 function waitingRow(statusLabel?: Message['statusLabel']) {
-  let renderer!: ReactTestRenderer;
+  const rendered = createRef<ReactTestRenderer>();
   act(() => {
-    renderer = create(
+    rendered.current = create(
       <MessageBubble
         message={{
           id: 'reply',
@@ -40,6 +41,8 @@ function waitingRow(statusLabel?: Message['statusLabel']) {
       />,
     );
   });
+  const renderer = rendered.current;
+  if (!renderer) throw new Error('The test renderer was not created.');
   return renderer.toJSON();
 }
 

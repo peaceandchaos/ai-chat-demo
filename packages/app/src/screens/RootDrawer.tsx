@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import PagerView, {
   type PagerViewOnPageSelectedEvent,
@@ -25,9 +25,17 @@ export function RootDrawer() {
   }, []);
 
   const startNewChat = useChatStore(state => state.newChat);
+  const showChat = useChatStore(state => state.openChat);
 
   const newChat = () => {
     startNewChat();
+    goToChat();
+  };
+
+  const [openCount, setOpenCount] = useState(0);
+  const openChat = (chatId: string) => {
+    showChat(chatId);
+    setOpenCount(count => count + 1);
     goToChat();
   };
 
@@ -40,10 +48,10 @@ export function RootDrawer() {
         onPageSelected={onPageSelected}
       >
         <View key="recents" style={styles.page}>
-          <RecentsScreen onNewChat={newChat} />
+          <RecentsScreen onNewChat={newChat} onOpenChat={openChat} />
         </View>
         <View key="chat" style={styles.page}>
-          <ChatScreen onOpenRecents={goToRecents} />
+          <ChatScreen onOpenRecents={goToRecents} openCount={openCount} />
         </View>
       </PagerView>
     </View>

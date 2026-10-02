@@ -51,10 +51,12 @@ function shownTestIDs(
 }
 
 test('showing Recents keeps the chat page rendered', async () => {
-  let renderer!: ReactTestRenderer;
+  const rendered = React.createRef<ReactTestRenderer>();
   await act(async () => {
-    renderer = create(<RootDrawer />);
+    rendered.current = create(<RootDrawer />);
   });
+  const renderer = rendered.current;
+  if (!renderer) throw new Error('The test renderer was not created.');
   const pager = renderer.root.findByProps({ testID: 'pager' });
 
   await act(async () => {
