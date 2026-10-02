@@ -11,14 +11,14 @@ test('each Responses model compacts before its context window fills', () => {
     );
 });
 
+// npm run typecheck enforces this test through @ts-expect-error; Jest only runs it.
 test('a Responses model without compactThreshold is not a model config', () => {
   // @ts-expect-error A Responses model must set compactThreshold.
-  const config: ModelConfig = {
+  const missing: ModelConfig = {
     id: 'fixture',
     wire: 'responses',
     window: 1,
     maxOutput: 1,
     threshold: 1,
   };
-  expect(config.wire).toBe('responses');
 });
