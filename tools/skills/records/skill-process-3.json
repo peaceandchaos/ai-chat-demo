@@ -54,6 +54,10 @@
         {
           "finding": "No tracked file disables project/no-type-assertion inline, so rejecting those comments breaks nothing (git grep finds none).",
           "none": "Evidence."
+        },
+        {
+          "finding": "Second author pass, proving the lint exemption fact: an oxlint probe with the committed config showed that disables written as no-type-assertion without the plugin prefix, as a /** */ block comment, or in mixed case do not suppress project/no-type-assertion. Only the prefixed form suppresses it, and require-disable-reason rejects that form.",
+          "none": "The rule holds. The probe ran on a scratch fixture that was then removed."
         }
       ]
     },
@@ -151,6 +155,10 @@
         {
           "finding": "skills:record now rewrites a cited SHA to its in-range copy; running it twice over the same range writes the same record.",
           "none": "Checked by running it twice."
+        },
+        {
+          "finding": "Second author pass: typecheck:range shares an install by symlinking node_modules from HEAD, and npm's workspace links inside it point at HEAD's packages/app and packages/server. No source imports MargeloChat or @personal-chat/server by name today, so each commit still typechecks its own source.",
+          "none": "No current import resolves through a workspace link. A future name import would typecheck against HEAD's copy."
         }
       ]
     },
@@ -181,6 +189,11 @@
           "finding": "ResponsesModelKey and isResponsesModel had callers in providers.ts, responses.ts, and adapters.test.ts. All three now use the config narrowed on wire, and both names are deleted.",
           "commit": "644b792",
           "patch": "a7c0517e3e889aef6de3aff110283ebac63df963"
+        },
+        {
+          "finding": "Second author pass: the generate narrowing left compact on the old ModelKey lookup, so ResponsesClient had two ways to name a model. compact, its service type, and its caller moved to the narrowed config in one commit, and the models import left responses.ts.",
+          "commit": "250b2a5a27b6",
+          "patch": "4eb37c655482ea6f765565a66ad383b7ffe2332e"
         }
       ]
     },
@@ -323,6 +336,11 @@
           "finding": "isResponsesModel is a type predicate, which the compiler does not verify. Narrowing models[model] on wire replaces it.",
           "commit": "644b792",
           "patch": "a7c0517e3e889aef6de3aff110283ebac63df963"
+        },
+        {
+          "finding": "Second author pass: 644b792 narrowed ResponsesClient.generate to a Responses config, but compact and ContextServices.compactOpenAI still took any ModelKey, so a compaction call with a gateway model compiled. Both now take ResponsesModel. A probe call with models.kimi fails typecheck with TS2345.",
+          "commit": "250b2a5a27b6",
+          "patch": "4eb37c655482ea6f765565a66ad383b7ffe2332e"
         }
       ]
     },
@@ -342,6 +360,10 @@
         {
           "finding": "archive.ts loses the isActive export; the function and its two callers are unchanged.",
           "none": "No runtime change."
+        },
+        {
+          "finding": "Second author pass: the app changes in this range only stop exporting types and helpers from src/state and src/network. No render, list, startup, or bundle path changes.",
+          "none": "Nothing in this range touches the performance areas the skill covers."
         }
       ]
     },
@@ -361,6 +383,10 @@
         {
           "finding": "archive.ts loses the isActive export; the function and its two callers are unchanged.",
           "none": "No runtime change."
+        },
+        {
+          "finding": "Second author pass: no Reanimated, Gesture Handler, worklet, or other Software Mansion library code changes in this range.",
+          "none": "Nothing in scope for the skill."
         }
       ]
     },
@@ -377,6 +403,11 @@
           "finding": "README.md did not say that the allow list is the only exemption from project/no-type-assertion or that it defaults to empty.",
           "commit": "cfe7441",
           "patch": "ed18de52653be787ad1269997bf675310a3f332b"
+        },
+        {
+          "finding": "Second author pass: exports:check now has its own README paragraph instead of sharing the anti-slop lint paragraph.",
+          "commit": "ef58bf0a1ead",
+          "patch": "7a032f89ef2ac06b2198fd60e0e668c0004fdf0f"
         }
       ]
     },
@@ -399,6 +430,11 @@
         {
           "finding": "adapters.test.ts now passes models[...] configs to ResponsesClient.generate. The assertions on the sent model id and compact_threshold are unchanged, so they still check the real table.",
           "none": "Kept."
+        },
+        {
+          "finding": "Second author pass: the standalone compaction test ignored the request, so it could not catch a wrong model id. It now checks the request body, and changing the sent id to gpt-6-astra fails it with the body diff.",
+          "commit": "250b2a5a27b6",
+          "patch": "4eb37c655482ea6f765565a66ad383b7ffe2332e"
         }
       ]
     },
@@ -462,6 +498,11 @@
           "finding": "providers.ts narrowed through a user-defined guard where a discriminant check works.",
           "commit": "644b792",
           "patch": "a7c0517e3e889aef6de3aff110283ebac63df963"
+        },
+        {
+          "finding": "Second author pass: Extract<ModelConfig, { wire: 'responses' }> was spelled inline. It is now the ResponsesModel alias in models.ts, used by responses.ts and compaction/context.ts.",
+          "commit": "250b2a5a27b6",
+          "patch": "4eb37c655482ea6f765565a66ad383b7ffe2332e"
         }
       ]
     },
@@ -476,6 +517,11 @@
         {
           "finding": "Checked the PR3b README sentences and commit messages for filler and long dashes.",
           "none": "None found."
+        },
+        {
+          "finding": "Second author pass: the README lint paragraph carried the type-assertion rule and exports:check together, with two semicolons and a mid-sentence colon.",
+          "commit": "ef58bf0a1ead",
+          "patch": "7a032f89ef2ac06b2198fd60e0e668c0004fdf0f"
         }
       ]
     },
@@ -486,6 +532,10 @@
         {
           "finding": "jobs.ts and worker.ts only lose export keywords on option and update types.",
           "none": "No workflow step changed."
+        },
+        {
+          "finding": "Second author pass: jobs.ts and worker.ts only stop exporting JobUpdate and WorkerOptions. The server does not use the Workflow DevKit.",
+          "none": "No durable workflow code changes."
         }
       ]
     }
