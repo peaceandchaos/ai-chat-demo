@@ -49,7 +49,8 @@
       "findings": [
         {
           "finding": "The fetch-timeout lesson claimed the security check enforces every fetch. A server fetch without a timeout passes npm run security, because the scan covers packages/app and shared.",
-          "commit": "a90295a"
+          "commit": "7bce5fe68941",
+          "patch": "11d3b7e672aeab6e289ecdab59bbc2d2fe032c10"
         }
       ]
     },
@@ -63,7 +64,8 @@
       "findings": [
         {
           "finding": "lessonsFor recomputed the change's paths for every lesson.",
-          "commit": "b7171d2"
+          "commit": "a0a0e91bf39b",
+          "patch": "84a6cb56dd9f6d9fd3849be6328d527903f9e612"
         }
       ]
     },
@@ -78,6 +80,10 @@
         {
           "finding": "The first lint enforcement test accepted a rule set to off, because it checked only that the key exists.",
           "none": "Fixed before the first commit. A rule set to off now fails, and a mutation that drops that test survives no longer."
+        },
+        {
+          "finding": "b55bc34 and its copy 4f47790 have different patch-ids, because the S9 wording changed the context of its AGENTS.md hunk. skills:check failed on both citations until they named 4f47790.",
+          "none": "Evidence of the documented limit: a copy whose diff changed needs a new citation."
         }
       ]
     },
@@ -129,7 +135,18 @@
       "findings": [
         {
           "finding": "The ledger section used semicolons between list items and in one sentence.",
-          "commit": "b55bc34"
+          "commit": "4f47790",
+          "patch": "aa547c9eda70237ce5d297af7255545239fe9b1d"
+        },
+        {
+          "finding": "The cherry-picked README sentence about the ledger still said a record fails when it \"leaves a finding unresolved\".",
+          "commit": "7a36416",
+          "patch": "8314ed9b4c4c67fb4de11937a0458c61fad3d113"
+        },
+        {
+          "finding": "docs/skills.md said a type lesson names a test, but not that typecheck, not Jest, enforces it. After 5e5e0fb that test has no Jest assertion.",
+          "commit": "2a75137",
+          "patch": "94ae0553ce9b6bac2b557cd02ca31b2b9ff5dbf8"
         }
       ]
     },
@@ -176,7 +193,8 @@
       "findings": [
         {
           "finding": "The first AGENTS.md line restated the promotion rule that the verify suite already prints.",
-          "commit": "b55bc34"
+          "commit": "4f47790",
+          "patch": "aa547c9eda70237ce5d297af7255545239fe9b1d"
         }
       ]
     }
