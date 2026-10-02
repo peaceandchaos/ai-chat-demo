@@ -3,12 +3,11 @@ import { z } from 'zod';
 import {
   decodeJson,
   responseInputItemSchema,
-  type ModelKey,
   type ResponseInputItem,
 } from '../../../shared/contracts';
 import { parseResponsesEvent } from '../../../shared/provider-events';
 import { ProviderFailure } from './errors';
-import { models, type ModelConfig } from './models';
+import type { ResponsesModel } from './models';
 import type { BeforePaidCall, ProviderChunk } from './provider';
 
 // Strip API-only fields (annotations, item status) while preserving every replay item.
@@ -79,7 +78,7 @@ export class ResponsesClient {
   constructor(private readonly options: ResponsesOptions) {}
 
   async compact(
-    model: ModelKey,
+    config: ResponsesModel,
     items: ResponseInputItem[],
     signal: AbortSignal,
     beforeCall: BeforePaidCall,
@@ -95,7 +94,7 @@ export class ResponsesClient {
           Authorization: `Bearer ${this.options.apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ model: models[model].id, input: items }),
+        body: JSON.stringify({ model: config.id, input: items }),
       },
     );
     if (!response.ok) {
@@ -114,7 +113,7 @@ export class ResponsesClient {
   }
 
   async generate(
-    config: Extract<ModelConfig, { wire: 'responses' }>,
+    config: ResponsesModel,
     input: ResponseInputItem[],
     signal: AbortSignal,
     beforeCall: BeforePaidCall,

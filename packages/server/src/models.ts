@@ -15,6 +15,7 @@ export type ModelConfig =
       // The token count sent as compact_threshold.
       compactThreshold: number;
     });
+export type ResponsesModel = Extract<ModelConfig, { wire: 'responses' }>;
 
 // Source links and the selected output budget are recorded in docs/providers.md.
 export const models = {

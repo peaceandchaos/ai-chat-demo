@@ -51,7 +51,7 @@ function services(calls: ResponseInputItem[][]): ContextServices {
       calls.push(items);
       return Promise.resolve('A valid earlier context summary.');
     },
-    compactOpenAI: (_model, items) => {
+    compactOpenAI: (_config, items) => {
       calls.push(items);
       return Promise.resolve([
         { type: 'compaction', encrypted_content: 'opaque-checkpoint' },
@@ -218,7 +218,7 @@ test('an empty or ineffective compaction fails without silently truncating histo
       before,
       {
         ...services(calls),
-        compactOpenAI: (_model, items) => Promise.resolve(items),
+        compactOpenAI: (_config, items) => Promise.resolve(items),
       },
       responsesConfig,
     ),

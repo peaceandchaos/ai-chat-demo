@@ -207,13 +207,19 @@ test('standalone compaction keeps its entire canonical replacement window', asyn
     { type: 'compaction', encrypted_content: 'opaque' },
     textItem('user', 'tail'),
   ];
+  const requests: RequestInit[] = [];
   const client = new ResponsesClient({
     apiKey: 'example-key',
-    fetcher: () => Promise.resolve(Response.json({ output })),
+    fetcher: (_url, init) => {
+      if (init) requests.push(init);
+      return Promise.resolve(Response.json({ output }));
+    },
   });
-  expect(await client.compact('gpt-6.1-sol', input, signal, before)).toEqual(
-    output,
-  );
+  const config = models['gpt-6.1-sol'];
+  expect(await client.compact(config, input, signal, before)).toEqual(output);
+  expect(requests.map(request => request.body)).toEqual([
+    JSON.stringify({ model: config.id, input }),
+  ]);
   expect(trimCompacted([...input, ...output])).toEqual(output.slice(1));
 });
 

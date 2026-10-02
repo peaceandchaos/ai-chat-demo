@@ -6,7 +6,12 @@ import type {
   Submission,
 } from '../../../../shared/contracts';
 import { ProviderFailure } from '../errors';
-import { checkpointMethod, models, type ModelConfig } from '../models';
+import {
+  checkpointMethod,
+  models,
+  type ModelConfig,
+  type ResponsesModel,
+} from '../models';
 import type { BeforePaidCall, PreparedContext } from '../provider';
 import {
   kimiInstruction,
@@ -16,7 +21,7 @@ import {
 
 export type ContextServices = {
   compactOpenAI: (
-    model: ModelKey,
+    config: ResponsesModel,
     items: ResponseInputItem[],
     signal: AbortSignal,
     beforeCall: BeforePaidCall,
@@ -122,7 +127,7 @@ async function compact(
   services: ContextServices,
 ): Promise<ResponseInputItem[]> {
   if (config.wire === 'responses')
-    return services.compactOpenAI(model, items, signal, beforeCall);
+    return services.compactOpenAI(config, items, signal, beforeCall);
   const start = retainedStart(items, model, config);
   if (start === 0)
     throw new ProviderFailure(
