@@ -27,12 +27,12 @@ const startOfDay = (time: number): number => {
   ).getTime();
 };
 
-// Counted in calendar days: "Today", then "3d ago" for the last week, then
-// the date ("Nov 22, 2025").
+// Counted in calendar days: "Today", then "1d ago" through "7d ago", then the
+// date ("Nov 22, 2025") from 8 days on.
 export function recentTime(updatedAt: number, now: number): string {
   const days = Math.round((startOfDay(now) - startOfDay(updatedAt)) / dayMs);
   if (days <= 0) return 'Today';
-  if (days < 7) return `${days}d ago`;
+  if (days <= 7) return `${days}d ago`;
   const date = new Date(updatedAt);
   return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }

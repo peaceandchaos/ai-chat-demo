@@ -15,8 +15,18 @@ test.each([
   ],
   [
     'at the end of the seventh day back',
-    'Sep 24, 2026',
+    '7d ago',
     new Date(2026, 8, 24, 23, 59, 59),
+  ],
+  [
+    'at the start of the seventh day back',
+    '7d ago',
+    new Date(2026, 8, 24, 0, 0, 0),
+  ],
+  [
+    'at the end of the eighth day back',
+    'Sep 23, 2026',
+    new Date(2026, 8, 23, 23, 59, 59),
   ],
   ['last year', 'Nov 22, 2025', new Date(2025, 10, 22, 18)],
   ['ahead of this clock', 'Today', new Date(2026, 9, 2, 8)],
