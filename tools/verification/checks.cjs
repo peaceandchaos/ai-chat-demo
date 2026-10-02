@@ -4,6 +4,7 @@ const checks = {
   format: ['run', 'format:check'],
   types: ['run', 'typecheck'],
   'unused-exports': ['run', 'exports:check'],
+  'quality-ledger': ['run', 'skills:ledger'],
   tests: ['run', 'test:verified'],
   credentials: ['run', 'secrets'],
   security: ['run', 'security'],

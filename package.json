@@ -29,6 +29,7 @@
     "skills:catalog": "node tools/skills/cli.cjs catalog",
     "skills:record": "node tools/skills/cli.cjs record",
     "skills:check": "node tools/skills/cli.cjs check",
+    "skills:ledger": "node tools/skills/cli.cjs ledger",
     "react-compiler-check": "npm run react-compiler-check --workspace packages/app",
     "start": "npm run start --workspace packages/app",
     "ios": "npm run ios --workspace packages/app",

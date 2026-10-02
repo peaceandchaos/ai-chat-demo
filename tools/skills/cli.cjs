@@ -3,6 +3,7 @@ const { readFileSync } = require('node:fs');
 const { join, relative, resolve } = require('node:path');
 const { git } = require('../verification/snapshot.cjs');
 const { readPlan, readRange } = require('./change.cjs');
+const { ledgerPath, ledgerProblems, readLedger } = require('./ledger.cjs');
 const { checkRecords, writeRecord } = require('./records.cjs');
 const {
   parseRouting,
@@ -17,7 +18,8 @@ const usage = `Usage:
   npm run skills:required -- --plan <path>|A:<path>|D:<path>|R:<old>:<new> ...
   npm run skills:catalog
   npm run skills:record -- <change-id> <base> [<head>]
-  npm run skills:check -- <base> [<head>]`;
+  npm run skills:check -- <base> [<head>]
+  npm run skills:ledger`;
 
 function readRouting(root) {
   return parseRouting(readFileSync(join(root, routingPath), 'utf8'));
@@ -51,6 +53,18 @@ function printRequired(root, routing, change) {
     }
   }
   console.log(lines.join('\n'));
+}
+
+function checkLedger(root) {
+  const problems = ledgerProblems(root, readLedger(root));
+  if (problems.length) {
+    console.error([`${ledgerPath} fails:`, ...problems].join('\n'));
+    process.exitCode = 1;
+    return;
+  }
+  console.log(
+    `${ledgerPath} has no guidance-only lesson that needs promotion.`,
+  );
 }
 
 function record(root, [id, base, head = 'HEAD']) {
@@ -102,6 +116,8 @@ function main(args) {
       );
   } else if (command === 'record' && rest.length >= 2 && rest.length <= 3) {
     record(root, rest);
+  } else if (command === 'ledger' && !rest.length) {
+    checkLedger(root);
   } else if (command === 'check' && rest.length && rest.length <= 2) {
     check(root, rest);
   } else {
