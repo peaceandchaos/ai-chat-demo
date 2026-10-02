@@ -85,7 +85,7 @@ const write = (
   value: ChatRecord | SavedMessage | ArchiveMetadata | string[] | string,
 ): Write => ({ key, value: JSON.stringify(value) });
 
-export function isActive(message: SavedMessage): boolean {
+function isActive(message: SavedMessage): boolean {
   return (
     message.role === 'assistant' &&
     (message.status === 'pending' || !isTerminal(message.status))
