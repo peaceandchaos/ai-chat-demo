@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
   LegendList,
@@ -21,14 +21,16 @@ export function RecentsScreen({ onNewChat, onOpenChat }: RecentsScreenProps) {
   const insets = useSafeAreaInsets();
   const chats = useChatStore(state => state.recents);
   const [query, setQuery] = useState('');
+  // Typing stays responsive while a long list filters.
+  const deferredQuery = useDeferredValue(query);
   const recents = useMemo(() => {
     const now = Date.now();
-    return filterRecents(chats, query).map((chat): Recent => ({
+    return filterRecents(chats, deferredQuery).map((chat): Recent => ({
       id: chat.id,
       title: chat.title,
       time: recentTime(chat.updatedAt, now),
     }));
-  }, [chats, query]);
+  }, [chats, deferredQuery]);
 
   const renderRecent = useCallback(
     ({ item }: LegendListRenderItemProps<Recent>) => (
