@@ -1,0 +1,188 @@
+{
+  "change": "skill-process-2",
+  "skills": [
+    {
+      "skill": "blast-radius",
+      "files": [
+        "package.json",
+        "tools/__tests__/skill-records.test.js",
+        "tools/__tests__/verification.test.js",
+        "tools/skills/cli.cjs",
+        "tools/skills/records.cjs",
+        "tools/skills/routing.cjs",
+        "tools/verification/checks.cjs",
+        "tools/verify.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "checks.cjs now exports { checks, rangeChecks }. Its two importers, verify.cjs and verification.test.js, moved in the same commit. Each snapshot runs its own verify.cjs, so older commits keep their own shape. The UI branches do not edit these files, so they rebase without conflict.",
+          "none": "No breakage found."
+        },
+        {
+          "finding": "After this merges, every branch that rebases onto main needs a skill record before verify:commit or the pre-push hook passes.",
+          "none": "Reported to the owner as a rollout decision."
+        },
+        {
+          "finding": "CI checks out one commit without history, so verify:current cannot find a merge base.",
+          "none": "verify:current skips range checks without --base and prints that it did; the workflow change is a separate patch because the bot cannot push workflows."
+        }
+      ]
+    },
+    {
+      "skill": "deslop",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "An earlier draft of writeRecord deleted records already merged at the base, which added a deletion to every later change.",
+          "none": "Removed before the first commit; records stay, as docs/skills.md explains."
+        }
+      ]
+    },
+    {
+      "skill": "no-comments",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Three comments remain: the range-check argument contract in checks.cjs, why verify.cjs resolves the base in the source repository, and why the fixture base holds a merged record.",
+          "none": "Each states a constraint the code cannot show."
+        }
+      ]
+    },
+    {
+      "skill": "principle-migrate-callers-then-delete-legacy-apis",
+      "files": ["tools/verification/checks.cjs"],
+      "findings": [
+        {
+          "finding": "The default export of checks.cjs became a named pair.",
+          "none": "Both callers moved in the same commit, and nothing else imports it on any local branch."
+        }
+      ]
+    },
+    {
+      "skill": "principle-minimize-reader-load",
+      "files": [
+        "tools/__tests__/skill-records.test.js",
+        "tools/skills/records.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "records.cjs is a new file next to routing.cjs.",
+          "none": "The record format and check are a separate concern from routing; merging them would make routing.cjs 450 lines."
+        }
+      ]
+    },
+    {
+      "skill": "principle-prove-it-works",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Eight mutations each failed a test: coverage off, any commit counts, unknown skill allowed, unresolved finding allowed, deleted record read, unchanged records counted, duplicates allowed, and no range checks in verify:commit.",
+          "none": "Evidence, not a defect."
+        },
+        {
+          "finding": "The first commit attempt of 685401e failed because the shell PATH lacked Node 22.23.3; the hook reported Use Node 22.23.3.",
+          "none": "Environment, not code; the retry used the pinned Node."
+        }
+      ]
+    },
+    {
+      "skill": "principle-sequence-verifiable-units",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Commits between the verify wiring and the record fail the range check by design.",
+          "none": "The pre-push hook and verify:commit check branch tips, and the tip carries the record."
+        }
+      ]
+    },
+    {
+      "skill": "principle-subtract-before-you-add",
+      "files": [
+        "tools/__tests__/skill-records.test.js",
+        "tools/skills/records.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "The resolution transform needed an inverse serialize step to write records back.",
+          "commit": "685401e"
+        }
+      ]
+    },
+    {
+      "skill": "principle-test-behavior-not-implementation",
+      "files": [
+        "package.json",
+        "tools/__tests__/skill-records.test.js",
+        "tools/__tests__/verification.test.js",
+        "tools/skills/cli.cjs",
+        "tools/skills/records.cjs",
+        "tools/skills/routing.cjs",
+        "tools/verification/checks.cjs",
+        "tools/verify.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "The first mutation for unchanged records only removed the deleted-file filter, which no test covered; the clean case now deletes the merged record and a separate mutation reads every record in the tree.",
+          "commit": "58d548503a04"
+        }
+      ]
+    },
+    {
+      "skill": "technical-writing",
+      "files": ["<change>", "AGENTS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "docs/skills.md lists each failure the check reports and states what a pass does not prove.",
+          "none": "No change needed."
+        }
+      ]
+    },
+    {
+      "skill": "test-prune",
+      "files": [
+        "tools/__tests__/skill-records.test.js",
+        "tools/__tests__/verification.test.js"
+      ],
+      "findings": [
+        {
+          "finding": "The verify test asserts the recorded command and base in result.json rather than the check output.",
+          "none": "The recorded command is the contract between verify and the checks."
+        }
+      ]
+    },
+    {
+      "skill": "thermo-nuclear-code-quality-review",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Parsed records had a different shape from stored records, so every write had to translate back.",
+          "commit": "685401e"
+        },
+        {
+          "finding": "The change-id pattern was repeated in the CLI and the records module.",
+          "commit": "685401e"
+        }
+      ]
+    },
+    {
+      "skill": "unslop",
+      "files": ["<change>", "AGENTS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "Checked the new AGENTS.md, README.md, and docs/skills.md text for filler, long dashes, and mid-sentence colons.",
+          "none": "None found."
+        }
+      ]
+    },
+    {
+      "skill": "writing-for-agents",
+      "files": ["AGENTS.md"],
+      "findings": [
+        {
+          "finding": "The AGENTS.md line names the trigger (before you push), the command, and the limit of the check.",
+          "none": "No change needed."
+        }
+      ]
+    }
+  ]
+}
