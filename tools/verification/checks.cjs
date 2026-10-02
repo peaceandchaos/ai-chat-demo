@@ -14,6 +14,7 @@ const checks = {
 
 // Each range check also receives the merge base and the verified commit.
 const rangeChecks = {
+  'commit-types': ['run', 'typecheck:range', '--'],
   'skill-records': ['run', 'skills:check', '--'],
 };
 

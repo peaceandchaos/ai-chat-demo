@@ -26,6 +26,7 @@ npm run lint                 # selected Oxlint rules; warnings fail
 npm run format               # format without import/package-field sorting
 npm run format:check
 npm run typecheck
+npm run typecheck:range -- origin/main # each commit before HEAD
 npm test                     # ordinary local test feedback
 npm run test:verified        # also reject empty/skipped/unfinished suites
 npm run secrets
@@ -43,7 +44,7 @@ npm run verify:commit -- HEAD
 
 The pre-commit hook checks lint, formatting, and credentials in a snapshot of the Git index. It performs a fresh locked install there. It cannot use unstaged fixes or your local `node_modules`. The pre-push hook runs the full implemented suite on the tip commit of each pushed branch. Hosted CI checks each PR head, its proposed merge result, and each push.
 
-`verify:commit` runs the selected commit's own checking code in a fresh checkout. It records the commit, tree, commands, results, and source integrity in ignored `.quality-results/`. A commit that tracks files under `.quality-results/` fails, so a candidate cannot supply its own result records. Only committed example configuration enters that checkout. Checks cannot silently change source while running. Logs and results remain available after the temporary checkout is removed. It also runs range checks, such as the skill-record check, from the merge base with `origin/main` or with `--base <ref>`. Hosted CI checks out one commit without history, so it skips range checks and says so until its workflow passes `--base`.
+`verify:commit` runs the selected commit's own checking code in a fresh checkout. It records the commit, tree, commands, results, and source integrity in ignored `.quality-results/`. A commit that tracks files under `.quality-results/` fails, so a candidate cannot supply its own result records. Only committed example configuration enters that checkout. Checks cannot silently change source while running. Logs and results remain available after the temporary checkout is removed. It also runs range checks, such as the skill-record check, from the merge base with `origin/main` or with `--base <ref>`. Hosted CI checks out one commit without history, so it skips range checks and says so until its workflow passes `--base`. `typecheck:range` typechecks each commit before the head, because a cherry-pick or bisect can land on any of them. Commits whose `npm ci` inputs match an earlier install reuse it, so the cost is about 3 seconds per commit plus one `npm ci` for each new set of install inputs. The five commits before the head of `work/image-context-2` took 13 seconds.
 
 Local hooks are feedback controls and remain bypassable by the machine owner. Git runs the hooks only after `npm ci` has installed them in that checkout. A new worktree without an install skips them without warning. Acceptance also requires protected GitHub checks and owner review. CI checks both the PR head and proposed merge result, then checks the exact resulting commit after a push. Only PR runs publish the required `quality-gate` check; push runs publish `post-push-gate`. Every implemented check must finish successfully. The compiler report fails only if the tool crashes, so it is a report, not a gate. Dependency and scanner failures remain failures.
 

@@ -15,6 +15,7 @@
     "secrets:staged": "node tools/check-credentials.cjs --staged",
     "security": "node tools/security-check.cjs",
     "typecheck": "npm run typecheck --workspaces",
+    "typecheck:range": "node tools/range-typecheck.cjs",
     "test": "jest --config tools/jest.config.cjs --runInBand && npm run test --workspaces --if-present -- --runInBand",
     "test:verified": "node tools/test-verified.cjs",
     "audit:check": "node tools/audit-check.cjs",
