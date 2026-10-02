@@ -70,12 +70,12 @@ function record(root, [id, base, head = 'HEAD']) {
 
 function check(root, [base, head = 'HEAD']) {
   const change = readRange(root, base, head);
-  const { problems, records, required } = checkRecords(
+  const { commits, problems, records, required } = checkRecords(
     root,
     readRouting(root),
     change,
   );
-  const range = `${change.base.slice(0, 12)}..${change.head.slice(0, 12)}`;
+  const range = `${change.base.slice(0, 12)}..${change.head.slice(0, 12)} (${commits} ${commits === 1 ? 'commit' : 'commits'})`;
   if (problems.length) {
     console.error([`Skill records for ${range} fail:`, ...problems].join('\n'));
     process.exitCode = 1;

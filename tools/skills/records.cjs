@@ -1,3 +1,4 @@
+const { execFileSync } = require('node:child_process');
 const {
   existsSync,
   mkdirSync,
@@ -6,7 +7,7 @@ const {
 } = require('node:fs');
 const { join } = require('node:path');
 const { z } = require('zod');
-const { git } = require('../verification/snapshot.cjs');
+const { cleanEnvironment, git } = require('../verification/snapshot.cjs');
 const { globPattern, requiredSkills } = require('./routing.cjs');
 
 const recordsDirectory = 'tools/skills/records';
@@ -20,11 +21,19 @@ const findingSchema = z
       .string()
       .regex(/^[0-9a-f]{7,40}$/u)
       .optional(),
+    patch: z
+      .string()
+      .regex(/^[0-9a-f]{40}$/u)
+      .optional(),
     none: z.string().min(1).optional(),
   })
   .refine(
     finding => (finding.commit === undefined) !== (finding.none === undefined),
     'needs exactly one resolution: "commit" with the fixing commit, or "none" with the reason',
+  )
+  .refine(
+    finding => finding.patch === undefined || finding.commit !== undefined,
+    'has a "patch" without the "commit" it identifies',
   );
 const recordSchema = z.strictObject({
   change: z.string().regex(changeId),
@@ -39,6 +48,47 @@ const recordSchema = z.strictObject({
     )
     .min(1),
 });
+
+// A cherry-picked or rebased copy of a commit keeps its patch-id.
+function patchIds(root, revisions) {
+  const run = (args, input) =>
+    execFileSync('git', args, {
+      cwd: root,
+      env: cleanEnvironment(),
+      encoding: 'utf8',
+      input,
+      maxBuffer: 256 * 1024 * 1024,
+    });
+  const log = run([
+    'log',
+    '--patch',
+    '--no-color',
+    '--no-ext-diff',
+    '--find-renames',
+    '--format=commit %H',
+    ...revisions,
+  ]);
+  const ids = new Map();
+  for (const line of run(['patch-id', '--stable'], log).split('\n')) {
+    const [patch, commit] = line.split(' ');
+    if (commit) ids.set(commit, patch);
+  }
+  return ids;
+}
+
+function rangeCommits(root, change) {
+  const commits = new Map(
+    git(root, ['rev-list', `${change.base}..${change.head}`])
+      .split('\n')
+      .filter(Boolean)
+      .map(commit => [commit, undefined]),
+  );
+  for (const [commit, patch] of patchIds(root, [
+    `${change.base}..${change.head}`,
+  ]))
+    commits.set(commit, patch);
+  return commits;
+}
 
 function describeIssues(path, error) {
   return error.issues.map(
@@ -89,12 +139,21 @@ function entryProblems(path, entry, routing, required) {
 
 function findingProblems(path, entry, commits) {
   const problems = [];
-  for (const { finding, commit: cited } of entry.findings) {
+  for (const { finding, commit: cited, patch } of entry.findings) {
     if (cited === undefined) continue;
-    const matches = commits.filter(commit => commit.startsWith(cited));
-    if (matches.length !== 1)
+    const citation = `${path}: ${entry.skill} finding "${finding}" cites ${cited}`;
+    const bySha = [...commits.keys()].filter(commit =>
+      commit.startsWith(cited),
+    );
+    if (!patch)
       problems.push(
-        `${path}: ${entry.skill} finding "${finding}" cites ${cited}, which is ${matches.length ? 'ambiguous' : 'not a commit'} in this range.`,
+        `${citation} without its patch-id. Run npm run skills:record -- <change-id> <base> to add it.`,
+      );
+    else if (bySha.length === 1 && commits.get(bySha[0]) !== patch)
+      problems.push(`${citation}, whose patch-id is not ${patch}.`);
+    else if (bySha.length !== 1 && ![...commits.values()].includes(patch))
+      problems.push(
+        `${citation}, which matches no commit in this range by SHA or patch-id.`,
       );
   }
   return problems;
@@ -131,9 +190,7 @@ function checkRecords(root, routing, change) {
     problems.push(
       `No skill record changed in this range. Run npm run skills:record -- <change-id> <base>.`,
     );
-  const commits = git(root, ['rev-list', `${change.base}..${change.head}`])
-    .split('\n')
-    .filter(Boolean);
+  const commits = rangeCommits(root, change);
   const entries = [];
   for (const { path, record } of records) {
     const seen = new Set();
@@ -151,9 +208,32 @@ function checkRecords(root, routing, change) {
   problems.push(...coverageProblems(required, entries));
   return {
     problems,
+    commits: commits.size,
     records: records.map(({ path }) => path),
     required: required.size,
   };
+}
+
+function citePatch(root, commits, finding) {
+  if (finding.commit === undefined) return;
+  if (!finding.patch) {
+    let commit;
+    try {
+      commit = git(root, [
+        'rev-parse',
+        '--verify',
+        `${finding.commit}^{commit}`,
+      ]);
+    } catch {
+      return;
+    }
+    finding.patch = patchIds(root, ['-1', commit]).get(commit);
+  }
+  const inRange = [...commits.keys()].some(commit =>
+    commit.startsWith(finding.commit),
+  );
+  const copy = [...commits].find(([, patch]) => patch === finding.patch);
+  if (!inRange && copy) finding.commit = copy[0].slice(0, 12);
 }
 
 function writeRecord(root, routing, change, id) {
@@ -177,6 +257,9 @@ function writeRecord(root, routing, change, id) {
     }
     entry.files.sort();
   }
+  const commits = rangeCommits(root, change);
+  for (const finding of record.skills.flatMap(entry => entry.findings))
+    citePatch(root, commits, finding);
   record.skills.sort((a, b) => (a.skill < b.skill ? -1 : 1));
   mkdirSync(join(root, recordsDirectory), { recursive: true });
   writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);

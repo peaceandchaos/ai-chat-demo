@@ -45,6 +45,7 @@ function commit(message) {
 
 function recordOn(branch, records, remove = []) {
   git(repository, ['checkout', '--quiet', '-B', branch, work]);
+  git(repository, ['clean', '--force', '-d', '--quiet']);
   for (const path of remove) rmSync(join(repository, path));
   for (const record of records)
     write(`tools/skills/records/${record.change}.json`, JSON.stringify(record));
@@ -58,7 +59,23 @@ function skills(args) {
   });
 }
 
-const range = head => `${base.slice(0, 12)}..${head.slice(0, 12)}`;
+const range = (head, commits) =>
+  `${base.slice(0, 12)}..${head.slice(0, 12)} (${commits} commits)`;
+
+function patchOf(commit) {
+  const shown = git(repository, ['show', commit]);
+  return spawnSync('git', ['patch-id', '--stable'], {
+    cwd: repository,
+    input: `${shown}\n`,
+    encoding: 'utf8',
+  }).stdout.split(' ')[0];
+}
+
+const cite = (finding, commit) => ({
+  finding,
+  commit: commit.slice(0, 12),
+  patch: patchOf(commit),
+});
 
 beforeAll(() => {
   repository = realpathSync(mkdtempSync(join(tmpdir(), 'records-fixture-')));
@@ -97,7 +114,7 @@ test('passes when the records in the range cover every required skill and resolv
           {
             skill: 'always',
             files: ['<change>'],
-            findings: [{ finding: 'A loose name.', commit: work.slice(0, 12) }],
+            findings: [cite('A loose name.', work)],
           },
         ],
       },
@@ -124,7 +141,7 @@ test('passes when the records in the range cover every required skill and resolv
   expect(result.stderr).toBe('');
   expect(result.status).toBe(0);
   expect(result.stdout).toBe(
-    `Skill records for ${range(head)} cover all 2 required skills (tools/skills/records/lower.json, tools/skills/records/upper.json).\n`,
+    `Skill records for ${range(head, 2)} cover all 2 required skills (tools/skills/records/lower.json, tools/skills/records/upper.json).\n`,
   );
 });
 
@@ -136,7 +153,10 @@ test('reports each missing skill, outside commit, unknown skill, and unexplained
         {
           skill: 'source-care',
           files: ['docs/**'],
-          findings: [{ finding: 'Fixed before.', commit: base.slice(0, 12) }],
+          findings: [
+            cite('Fixed before.', base),
+            { ...cite('Mislabelled.', work), patch: '0'.repeat(40) },
+          ],
         },
         {
           skill: 'source-care',
@@ -159,10 +179,11 @@ test('reports each missing skill, outside commit, unknown skill, and unexplained
   const path = 'tools/skills/records/broken.json';
   expect(result.stderr).toBe(
     [
-      `Skill records for ${range(head)} fail:`,
-      `${path}: source-care finding "Fixed before." cites ${base.slice(0, 12)}, which is not a commit in this range.`,
+      `Skill records for ${range(head, 2)} fail:`,
+      `${path}: source-care finding "Fixed before." cites ${base.slice(0, 12)}, which matches no commit in this range by SHA or patch-id.`,
+      `${path}: source-care finding "Mislabelled." cites ${work.slice(0, 12)}, whose patch-id is not ${'0'.repeat(40)}.`,
       `${path}: source-care appears twice.`,
-      `${path}: source-care finding "Fixed nowhere." cites abcdef1, which is not a commit in this range.`,
+      `${path}: source-care finding "Fixed nowhere." cites abcdef1 without its patch-id. Run npm run skills:record -- <change-id> <base> to add it.`,
       `${path}: ghost is not a catalogued skill in tools/skills/routing.json.`,
       `${path}: extra is not required for this change; give a reason for applying it.`,
       `${path}: extra has no findings. When the skill found nothing, record that with "none" and the reason.`,
@@ -206,7 +227,7 @@ test('rejects a finding without exactly one resolution and a record named for an
     'needs exactly one resolution: "commit" with the fixing commit, or "none" with the reason';
   expect(result.stderr).toBe(
     [
-      `Skill records for ${range(head)} fail:`,
+      `Skill records for ${range(head, 3)} fail:`,
       'tools/skills/records/renamed.json: change must be renamed.',
       `tools/skills/records/unresolved.json: skills.0.findings.0 ${resolution}`,
       `tools/skills/records/unresolved.json: skills.0.findings.1 ${resolution}`,
@@ -223,7 +244,7 @@ test('fails a range that changes no record', () => {
   expect(result.status).toBe(1);
   expect(result.stderr).toBe(
     [
-      `Skill records for ${range(work)} fail:`,
+      `Skill records for ${base.slice(0, 12)}..${work.slice(0, 12)} (1 commit) fail:`,
       'No skill record changed in this range. Run npm run skills:record -- <change-id> <base>.',
       'always is required by every-change for <change>, but no skill record covers it.',
       'source-care is required by source for src/a.ts, but no skill record covers it.',
@@ -255,4 +276,47 @@ test('scaffolds a record once and keeps its findings when run again', () => {
   expect(JSON.parse(again)).toEqual(scaffold);
   expect(skills(['record', 'scaffold', base]).status).toBe(0);
   expect(readFileSync(path, 'utf8')).toBe(again);
+});
+
+test('accepts a citation whose commit was cherry-picked onto a new base, and the scaffold cites the copy', () => {
+  const head = recordOn('original', [
+    {
+      change: 'original',
+      skills: [
+        {
+          skill: 'always',
+          files: ['<change>'],
+          findings: [{ finding: 'Named a fix.', commit: work.slice(0, 12) }],
+        },
+        {
+          skill: 'source-care',
+          files: ['src/**'],
+          findings: [{ finding: 'Checked a.ts.', none: 'Fine.' }],
+        },
+      ],
+    },
+  ]);
+  expect(skills(['record', 'original', base]).status).toBe(0);
+  const path = join(repository, 'tools/skills/records/original.json');
+  const filled = JSON.parse(readFileSync(path, 'utf8'));
+  expect(filled.skills[0].findings[0]).toEqual(cite('Named a fix.', work));
+  commit('chore: add the patch-id');
+  git(repository, ['checkout', '--quiet', '-B', 'picked', base]);
+  write('README.md', '# Fixture moved on\n');
+  const moved = commit('docs: move the base');
+  git(repository, ['cherry-pick', `${base}..original`]);
+  const picked = git(repository, ['rev-parse', 'HEAD']);
+  const copy = git(repository, ['rev-parse', 'HEAD~2']);
+  expect(copy).not.toBe(work);
+  const result = skills(['check', moved]);
+  expect(result.stderr).toBe('');
+  expect(result.status).toBe(0);
+  expect(result.stdout).toBe(
+    `Skill records for ${moved.slice(0, 12)}..${picked.slice(0, 12)} (3 commits) cover all 2 required skills (tools/skills/records/original.json).\n`,
+  );
+  expect(head).not.toBe(picked);
+  expect(skills(['record', 'original', moved]).status).toBe(0);
+  expect(JSON.parse(readFileSync(path, 'utf8')).skills[0].findings[0]).toEqual(
+    cite('Named a fix.', copy),
+  );
 });

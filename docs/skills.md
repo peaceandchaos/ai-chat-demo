@@ -55,7 +55,8 @@ The command adds every required skill with the files that require it and keeps a
   "findings": [
     {
       "finding": "The handler trusted a parsed header.",
-      "commit": "2958652b9656"
+      "commit": "2958652b9656",
+      "patch": "5f0c3e1d9a7b2c4e6f8091a3b5c7d9e1f2a4b6c8"
     },
     {
       "finding": "Checked the new route.",
@@ -65,13 +66,14 @@ The command adds every required skill with the files that require it and keeps a
 }
 ```
 
-A finding names the commit that resolves it, or gives the reason under `none`. A skill that found nothing still records one `none` finding. A skill the routing did not require needs a `reason` field.
+A finding names the commit that resolves it, or gives the reason under `none`. Write only `commit`. `skills:record` adds `patch`, the commit's `git patch-id --stable`. A cherry-picked or rebased copy of the commit keeps that patch-id, so the citation still resolves on a new branch. Run `skills:record` again on the new branch, and it rewrites `commit` to the copy in the range. Squashing several commits makes a new patch-id, so a citation of one of them no longer resolves. A skill that found nothing still records one `none` finding. A skill the routing did not require needs a `reason` field.
 
 `npm run skills:check -- origin/main` reads only the records that the range adds or changes, from the head commit. It fails when:
 
 - a required skill has no entry whose `files` globs cover each file that requires it
 - a finding has no resolution, or has both
-- a cited commit is not in the range
+- a cited commit has no `patch`, or no commit in the range has that SHA or patch-id
+- a cited commit is in the range but its patch-id differs from `patch`
 - an entry names a skill outside the catalog, appears twice in one record, has no findings, or is not required and has no `reason`
 - the range changes no record
 
