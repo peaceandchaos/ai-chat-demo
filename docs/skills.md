@@ -83,7 +83,7 @@ The check proves that a change claimed each required skill and that every findin
 
 ### Where records live
 
-Records live in the repository, so `verify:commit` checks the same commit offline in a fresh clone, and review sees the record in the diff next to the code. Each change has its own file, so stacked branches do not conflict: a range that spans two stacked changes reads both records.
+Records live in the repository, so `verify:commit` checks the same commit offline in a fresh clone, and review sees the record in the diff next to the code. Each change has its own file, and a range that spans two stacked changes reads both records. A range that edits an earlier change's record checks that record against the range's commits and required skills. Check such a range from a base below the earlier change, or its citations and entries fail.
 
 Records stay in the tree after merge, and git history keeps every version. The check ignores records that a range does not change, so old records cost one small file per change and never affect later checks. Remove old records only by owner decision.
 
