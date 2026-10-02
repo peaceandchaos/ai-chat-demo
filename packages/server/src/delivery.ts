@@ -10,7 +10,7 @@ export async function deliverJob(
   attemptId: string,
   signal: AbortSignal,
   emit: (message: ServerMessage) => Promise<void>,
-  intervalMs = 150,
+  intervalMs = 40,
 ): Promise<void> {
   const job = await jobs.reconcile(owner, attemptId, staleAfterMs);
   await emit({ kind: 'accepted', snapshot: job.snapshot });
