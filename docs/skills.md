@@ -81,7 +81,7 @@ The base starts the record's own range. The range ends at the nearest later base
 
 Each finding cites the heading or numbered rule of the skill that produced it. A numbered rule is its heading and number, such as `Steps 2`. The check reads the allowed citations from the lock, and `catalog.lock.json` lists them for each skill. Never type a receipt. `skills:record` writes them.
 
-A finding names the commit that resolves it, or gives the reason under `none`. Write only `commit`. `skills:record` adds `patch`, the commit's `git patch-id --stable`. A cherry-picked or rebased copy of the commit keeps that patch-id when its diff applies unchanged, so the citation still resolves on a new branch. Run `skills:record` again on the new branch, and it rewrites `commit` to the copy in the range. A copy whose conflict you resolved by hand gets a new patch-id, and so does a squash of several commits, so a citation of the original no longer resolves. Cite the new commit instead. A skill that found nothing still records one `none` finding. A skill the routing did not require needs a `reason` field.
+A finding has exactly one status. It names the commit that fixes it under `commit`, gives the reason no fix was needed under `none`, or says what is left to do under `open`. Write only `commit`. `skills:record` adds `patch`, the commit's `git patch-id --stable`. A cherry-picked or rebased copy of the commit keeps that patch-id when its diff applies unchanged, so the citation still resolves on a new branch. Run `skills:record` again on the new branch, and it rewrites `commit` to the copy in the range. A copy whose conflict you resolved by hand gets a new patch-id, and so does a squash of several commits, so a citation of the original no longer resolves. Cite the new commit instead. A skill that found nothing still records one `none` finding. A skill the routing did not require needs a `reason` field.
 
 `npm run skills:check -- origin/main` reads only the records that the range adds or changes, from the head commit. It fails when:
 
@@ -94,7 +94,8 @@ A finding names the commit that resolves it, or gives the reason under `none`. W
 - a record holds an invalid receipt
 - a finding cites a heading or rule that the lock does not list for its skill
 - the head commit has no `tools/skills/catalog.lock.json` or no `tools/skills/receipt-public-key.pem`
-- a finding has no resolution, or has both
+- a finding has no status, or more than one
+- a pull request run finds an `open` finding
 - a cited commit has no `patch`, or no commit in the range has that SHA or patch-id
 - a cited commit is in the range but its patch-id differs from `patch`
 - an entry names a skill outside the catalog, appears twice in one record, has no findings, or is not required and has no `reason`
@@ -104,7 +105,7 @@ A run is a pull request run when `GITHUB_EVENT_NAME` is `pull_request`. GitHub A
 
 `verify:commit` and the pre-push hook run this check against the merge base with `origin/main`. Pass `--base <ref>` to use another base. They fail when the range from the base to the commit has no commits, because the range checks would check nothing. `verify:current` runs the range checks only when it gets `--base` and the range has commits, because CI checks out one commit without history. Otherwise it lists them under `notRun` in `result.json` and ends its summary with `PASS (range checks not run: <names>)`.
 
-The check proves that an agent loaded each required skill while working on the change, and that every finding it recorded has a resolution. It does not prove the skill was applied well, or that the findings are complete. Review judges that.
+For each skill that a record's own range requires, a passing check proves that the record holds a signed receipt for a Skill tool call or a full Read made on a commit of that range while the locked `SKILL.md` text was on disk. It also proves that every recorded finding has a status, and in a pull request run that none is open. It does not prove a fresh read, because the hook signs every Skill tool call, including one that answers that the skill is already loaded. It does not prove the skill was applied well, or that the findings are complete. Review judges that.
 
 ## Prove each load with a signed receipt
 
@@ -177,7 +178,7 @@ This rule survives a cherry-pick and a rebase that keep the patches, because a c
 - The pull request rule applies only where the skill-record check runs. Hosted CI runs `verify:current` without `--base`, so it skips the range checks, and the rule has no effect there yet. It takes effect when the workflow fetches history and passes the pull request's base as `--base`.
 - The rule reads `GITHUB_EVENT_NAME`. A run without that value applies the author rule, so only the protected CI check can enforce review.
 - A push run on `main` checks no range. After a merge, the merge base of `main` and `origin/main` is the pushed commit, so the range is empty. `verify:current` lists the range checks under `notRun`, and `verify:commit` fails until it gets an earlier `--base`.
-- A receipt proves that the agent loaded the skill text. It does not prove the agent followed it. Review judges that.
+- A receipt proves a signed Skill tool call, or a full Read, while the locked `SKILL.md` text was on disk. It does not prove a fresh read. The hook never reads the Skill tool's reply, so a call that answers that the skill is already loaded also makes a receipt. It does not prove the agent followed the skill. Review judges that.
 - Many principle skills have one heading and no numbered rules, so a citation of one names only the skill.
 
 ### Where records live
