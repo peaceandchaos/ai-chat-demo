@@ -1,5 +1,7 @@
 const { spawnSync } = require('node:child_process');
-const { readFileSync } = require('node:fs');
+const { createHash } = require('node:crypto');
+const { existsSync, readFileSync, writeFileSync } = require('node:fs');
+const { homedir } = require('node:os');
 const { join, relative, resolve } = require('node:path');
 const { git } = require('../verification/snapshot.cjs');
 const { readPlan, readRange } = require('./change.cjs');
@@ -9,7 +11,9 @@ const {
   lessonsFor,
   readLedger,
 } = require('./ledger.cjs');
-const { checkRecords, writeRecord } = require('./records.cjs');
+const { buildLock, lockPath, readLock } = require('./catalog.cjs');
+const { parseReceipts, readPublicKey } = require('./receipts.cjs');
+const { checkRecords, workingReader, writeRecord } = require('./records.cjs');
 const {
   parseRouting,
   requiredSkills,
@@ -21,8 +25,8 @@ const oxfmt = resolve(__dirname, '../../node_modules/.bin/oxfmt');
 const usage = `Usage:
   npm run skills:required -- <base> [<head>]
   npm run skills:required -- --plan <path>|A:<path>|D:<path>|R:<old>:<new> ...
-  npm run skills:catalog
-  npm run skills:record -- <change-id> <base> [<head>]
+  npm run skills:catalog [-- --lock]
+  npm run skills:record -- <change-id> <base> [<head>] [--review]
   npm run skills:check -- <base> [<head>]
   npm run skills:ledger`;
 
@@ -82,19 +86,81 @@ function checkLedger(root) {
   );
 }
 
-function record(root, [id, base, head = 'HEAD']) {
-  const path = writeRecord(
-    root,
-    readRouting(root),
-    readRange(root, base, head),
-    id,
-  );
+function format(path) {
   const formatted = spawnSync(oxfmt, ['--write', path], { encoding: 'utf8' });
   if (formatted.status !== 0)
     throw new Error(`oxfmt could not format ${path}.`);
-  console.log(
-    `Wrote ${relative(root, path)}. Add each skill's findings and their resolutions.`,
+}
+
+// The hook keeps receipts outside every repository. Only receipts made in this
+// clone, matched by the hash of its git common dir, are candidates.
+function readCandidates(root) {
+  const file = join(
+    process.env.SKILL_RECEIPTS_DIR ?? join(homedir(), '.claude/skill-receipts'),
+    'receipts.jsonl',
   );
+  if (!existsSync(file)) return { file, candidates: [] };
+  const commonDir = git(root, [
+    'rev-parse',
+    '--path-format=absolute',
+    '--git-common-dir',
+  ]);
+  return {
+    file,
+    candidates: parseReceipts(
+      readFileSync(file, 'utf8'),
+      createHash('sha256').update(commonDir).digest('hex'),
+    ),
+  };
+}
+
+function record(root, args) {
+  const review = args.includes('--review');
+  const [id, base, head = 'HEAD'] = args.filter(arg => arg !== '--review');
+  const routing = readRouting(root);
+  const read = workingReader(root);
+  const { lock, problems } = readLock(read, routing);
+  const key = readPublicKey(read);
+  const { file, candidates } = readCandidates(root);
+  const { path, missing } = writeRecord(root, readRange(root, base, head), id, {
+    review,
+    candidates,
+    key,
+    lock,
+    routing,
+  });
+  format(path);
+  const lines = [
+    `Wrote ${relative(root, path)}. Add each skill's findings, the heading or rule each cites, and their resolutions.`,
+  ];
+  if (!lock) lines.push(...problems, 'Receipts were not pulled.');
+  if (lock && !key)
+    lines.push(
+      'No public key is committed, so receipt signatures were not checked.',
+    );
+  if (missing.length)
+    lines.push(
+      `${file} has no receipt from this change for ${missing.join(', ')}. Load each with the Skill tool, then run this again.`,
+    );
+  console.log(lines.join('\n'));
+}
+
+function catalog(root, lock) {
+  const routing = readRouting(root);
+  if (!lock) {
+    for (const skill of Object.keys(routing.skills).sort())
+      console.log(
+        `${skill} ${resolveSkill(routing, skill, process.env, root)}`,
+      );
+    return;
+  }
+  const path = join(root, lockPath);
+  writeFileSync(
+    path,
+    `${JSON.stringify(buildLock(routing, process.env, root), null, 2)}\n`,
+  );
+  format(path);
+  console.log(`Wrote ${lockPath}. Review a change to it like a check change.`);
 }
 
 function check(root, [base, head = 'HEAD']) {
@@ -123,13 +189,16 @@ function main(args) {
   } else if (command === 'required' && rest.length && rest.length <= 2) {
     const change = readRange(root, rest[0], rest[1] ?? 'HEAD');
     printRequired(root, readRouting(root), change);
-  } else if (command === 'catalog' && !rest.length) {
-    const routing = readRouting(root);
-    for (const skill of Object.keys(routing.skills).sort())
-      console.log(
-        `${skill} ${resolveSkill(routing, skill, process.env, root)}`,
-      );
-  } else if (command === 'record' && rest.length >= 2 && rest.length <= 3) {
+  } else if (
+    command === 'catalog' &&
+    (!rest.length || (rest.length === 1 && rest[0] === '--lock'))
+  ) {
+    catalog(root, rest.length === 1);
+  } else if (
+    command === 'record' &&
+    rest.filter(arg => arg !== '--review').length >= 2 &&
+    rest.filter(arg => arg !== '--review').length <= 3
+  ) {
     record(root, rest);
   } else if (command === 'ledger' && !rest.length) {
     checkLedger(root);

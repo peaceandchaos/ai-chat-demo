@@ -8,6 +8,15 @@ const {
 const { join } = require('node:path');
 const { z } = require('zod');
 const { cleanEnvironment, git } = require('../verification/snapshot.cjs');
+const { readLock } = require('./catalog.cjs');
+const {
+  actor,
+  missingKey,
+  pullReceipts,
+  readPublicKey,
+  receiptProblems,
+  receiptSchema,
+} = require('./receipts.cjs');
 const { globPattern, requiredSkills } = require('./routing.cjs');
 
 const recordsDirectory = 'tools/skills/records';
@@ -17,6 +26,7 @@ const changeId = /^[a-z0-9-]+$/u;
 const findingSchema = z
   .strictObject({
     finding: z.string().min(1),
+    cites: z.string().min(1),
     commit: z
       .string()
       .regex(/^[0-9a-f]{7,40}$/u)
@@ -44,9 +54,23 @@ const recordSchema = z.strictObject({
         files: z.array(z.string().min(1)).min(1),
         reason: z.string().min(1).optional(),
         findings: z.array(findingSchema),
+        receipts: z.array(receiptSchema),
       }),
     )
     .min(1),
+  review: z
+    .strictObject({
+      skills: z
+        .array(
+          z.strictObject({
+            skill: z.string().min(1),
+            findings: z.array(findingSchema),
+            receipts: z.array(receiptSchema),
+          }),
+        )
+        .min(1),
+    })
+    .optional(),
 });
 
 // A copy keeps its patch-id unless a conflict changed its diff.
@@ -90,6 +114,34 @@ function rangeCommits(root, change) {
   return commits;
 }
 
+function headReader(root, head) {
+  return path => {
+    try {
+      return git(root, ['show', `${head}:${path}`]);
+    } catch {
+      return null;
+    }
+  };
+}
+
+function workingReader(root) {
+  return path =>
+    existsSync(join(root, path))
+      ? readFileSync(join(root, path), 'utf8')
+      : null;
+}
+
+function sectionsOf(path, record) {
+  return [
+    ...record.skills.map(entry => ({ path, role: 'author', entry })),
+    ...(record.review?.skills ?? []).map(entry => ({
+      path,
+      role: 'review',
+      entry,
+    })),
+  ];
+}
+
 function describeIssues(path, error) {
   return error.issues.map(
     issue => `${path}: ${issue.path.join('.') || 'record'} ${issue.message}`,
@@ -120,28 +172,46 @@ function readRecords(root, change) {
   return { records, problems };
 }
 
-function entryProblems(path, entry, routing, required) {
+const labelOf = ({ path, role, entry }) =>
+  `${path}: ${role === 'review' ? 'review of ' : ''}${entry.skill}`;
+
+function entryProblems(section, routing, required) {
+  const { role, entry } = section;
   const problems = [];
   if (!routing.skills[entry.skill])
     problems.push(
-      `${path}: ${entry.skill} is not a catalogued skill in tools/skills/routing.json.`,
+      `${labelOf(section)} is not a catalogued skill in tools/skills/routing.json.`,
     );
-  else if (!required.has(entry.skill) && !entry.reason)
+  else if (role === 'author' && !required.has(entry.skill) && !entry.reason)
     problems.push(
-      `${path}: ${entry.skill} is not required for this change; give a reason for applying it.`,
+      `${labelOf(section)} is not required for this change; give a reason for applying it.`,
     );
   if (!entry.findings.length)
     problems.push(
-      `${path}: ${entry.skill} has no findings. When the skill found nothing, record that with "none" and the reason.`,
+      `${labelOf(section)} has no findings. When the skill found nothing, record that with "none" and the reason.`,
     );
   return problems;
 }
 
-function findingProblems(path, entry, commits) {
+function citationProblems(section, lock) {
+  const sections = lock.skills[section.entry.skill];
+  if (!sections) return [];
+  return section.entry.findings
+    .filter(
+      ({ cites }) =>
+        !sections.headings.includes(cites) && !sections.rules.includes(cites),
+    )
+    .map(
+      ({ finding, cites }) =>
+        `${labelOf(section)} finding "${finding}" cites "${cites}", which is not a heading or numbered rule of ${section.entry.skill} in tools/skills/catalog.lock.json.`,
+    );
+}
+
+function findingProblems(section, commits) {
   const problems = [];
-  for (const { finding, commit: cited, patch } of entry.findings) {
+  for (const { finding, commit: cited, patch } of section.entry.findings) {
     if (cited === undefined) continue;
-    const citation = `${path}: ${entry.skill} finding "${finding}" cites ${cited}`;
+    const citation = `${labelOf(section)} finding "${finding}" cites ${cited}`;
     const bySha = [...commits.keys()].filter(commit =>
       commit.startsWith(cited),
     );
@@ -191,21 +261,44 @@ function checkRecords(root, routing, change) {
       `No skill record changed in this range. Run npm run skills:record -- <change-id> <base>.`,
     );
   const commits = rangeCommits(root, change);
-  const entries = [];
-  for (const { path, record } of records) {
-    const seen = new Set();
-    for (const entry of record.skills) {
-      if (seen.has(entry.skill))
-        problems.push(`${path}: ${entry.skill} appears twice.`);
-      seen.add(entry.skill);
-      problems.push(
-        ...entryProblems(path, entry, routing, required),
-        ...findingProblems(path, entry, commits),
-      );
-      entries.push(entry);
-    }
+  const read = headReader(root, change.head);
+  const checked = required.size > 0 || records.length > 0;
+  const { lock, problems: lockProblems } = readLock(read, routing);
+  if (checked) problems.push(...lockProblems);
+  const sections = records.flatMap(({ path, record }) =>
+    sectionsOf(path, record),
+  );
+  const seen = new Set();
+  for (const section of sections) {
+    const id = `${section.path} ${section.role} ${section.entry.skill}`;
+    if (seen.has(id)) problems.push(`${labelOf(section)} appears twice.`);
+    seen.add(id);
+    problems.push(
+      ...entryProblems(section, routing, required),
+      ...findingProblems(section, commits),
+      ...(lock ? citationProblems(section, lock) : []),
+    );
   }
-  problems.push(...coverageProblems(required, entries));
+  problems.push(
+    ...coverageProblems(
+      required,
+      sections
+        .filter(({ role }) => role === 'author')
+        .map(({ entry }) => entry),
+    ),
+  );
+  const key = readPublicKey(read);
+  if (checked && lock && !key) problems.push(missingKey());
+  if (checked && lock && key)
+    problems.push(
+      ...receiptProblems(sections, [...required.keys()], {
+        key,
+        lock,
+        routing,
+        change,
+        commits,
+      }),
+    );
   return {
     problems,
     commits: commits.size,
@@ -236,17 +329,11 @@ function citePatch(root, commits, finding) {
   if (!inRange && copy) finding.commit = copy[0].slice(0, 12);
 }
 
-function writeRecord(root, routing, change, id) {
-  if (!changeId.test(id))
-    throw new Error('Name the change in lowercase-with-dashes.');
-  const path = join(root, recordsDirectory, `${id}.json`);
-  const record = existsSync(path)
-    ? recordSchema.parse(JSON.parse(readFileSync(path, 'utf8')))
-    : { change: id, skills: [] };
-  for (const { skill, reasons } of requiredSkills(routing, change).required) {
+function scaffold(record, required, review) {
+  for (const { skill, reasons } of required) {
     let entry = record.skills.find(candidate => candidate.skill === skill);
     if (!entry) {
-      entry = { skill, files: [], findings: [] };
+      entry = { skill, files: [], findings: [], receipts: [] };
       record.skills.push(entry);
     }
     for (const { matches } of reasons) {
@@ -257,13 +344,64 @@ function writeRecord(root, routing, change, id) {
     }
     entry.files.sort();
   }
-  const commits = rangeCommits(root, change);
-  for (const finding of record.skills.flatMap(entry => entry.findings))
-    citePatch(root, commits, finding);
   record.skills.sort((a, b) => (a.skill < b.skill ? -1 : 1));
-  mkdirSync(join(root, recordsDirectory), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);
-  return path;
+  if (!review) return;
+  record.review ??= { skills: [] };
+  for (const { skill } of required) {
+    if (!record.review.skills.some(entry => entry.skill === skill))
+      record.review.skills.push({ skill, findings: [], receipts: [] });
+  }
+  record.review.skills.sort((a, b) => (a.skill < b.skill ? -1 : 1));
 }
 
-module.exports = { checkRecords, writeRecord };
+// Pulls receipts for one side of the record. The other side's sessions are
+// excluded, so an author's receipt never stands in for a reviewer's.
+function pullSection(record, change, commits, pull) {
+  const own = record.review ? record.review.skills : [];
+  const [entries, others] = pull.review
+    ? [own, record.skills]
+    : [record.skills, own];
+  const excluded = new Set(others.flatMap(entry => entry.receipts).map(actor));
+  const context = {
+    key: pull.key,
+    lock: pull.lock,
+    routing: pull.routing,
+    change,
+    commits,
+  };
+  const required = new Set(
+    requiredSkills(pull.routing, change).required.map(({ skill }) => skill),
+  );
+  const missing = [];
+  for (const entry of entries) {
+    if (!pull.routing.skills[entry.skill]) continue;
+    const pulled = pullReceipts(entry, pull.candidates, context, excluded);
+    if (!pulled && required.has(entry.skill)) missing.push(entry.skill);
+  }
+  return missing;
+}
+
+// `pull` holds { review, candidates, key, lock, routing }, read from the
+// working tree and the receipts file. Returns the path and the skills that
+// still have no receipt.
+function writeRecord(root, change, id, pull) {
+  if (!changeId.test(id))
+    throw new Error('Name the change in lowercase-with-dashes.');
+  const path = join(root, recordsDirectory, `${id}.json`);
+  const record = existsSync(path)
+    ? recordSchema.parse(JSON.parse(readFileSync(path, 'utf8')))
+    : { change: id, skills: [] };
+  scaffold(record, requiredSkills(pull.routing, change).required, pull.review);
+  const commits = rangeCommits(root, change);
+  for (const finding of [
+    ...record.skills,
+    ...(record.review?.skills ?? []),
+  ].flatMap(entry => entry.findings))
+    citePatch(root, commits, finding);
+  const missing = pull.lock ? pullSection(record, change, commits, pull) : [];
+  mkdirSync(join(root, recordsDirectory), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);
+  return { path, missing };
+}
+
+module.exports = { checkRecords, workingReader, writeRecord };

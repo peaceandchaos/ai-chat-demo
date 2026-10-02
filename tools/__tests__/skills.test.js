@@ -1,4 +1,5 @@
 const { spawnSync } = require('node:child_process');
+const { createHash } = require('node:crypto');
 const {
   mkdirSync,
   mkdtempSync,
@@ -362,6 +363,57 @@ test('fails clearly when a skill root is missing or a skill file is wrong', () =
   } finally {
     writeFileSync(file, '---\nname: fix-care\n---\n');
   }
+});
+
+test('locks each skill hash with its headings and numbered rules outside code fences', () => {
+  const file = join(fixture, 'roots/fix-care/SKILL.md');
+  const text = [
+    '---',
+    'name: fix-care',
+    '---',
+    '# Fix care',
+    '1. Read first.',
+    '## Steps',
+    '1. Reproduce.',
+    '2. Fix.',
+    '```sh',
+    '# not a heading',
+    '3. not a rule',
+    '```',
+    '## Limits',
+    '',
+  ].join('\n');
+  const lock = join(fixture, 'repository/tools/skills/catalog.lock.json');
+  writeFileSync(file, text);
+  try {
+    const result = skills(['catalog', '--lock']);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toBe(
+      'Wrote tools/skills/catalog.lock.json. Review a change to it like a check change.\n',
+    );
+    const locked = JSON.parse(readFileSync(lock, 'utf8')).skills;
+    expect(Object.keys(locked)).toEqual(
+      Object.keys(fixtureRouting.skills).sort(),
+    );
+    expect(locked['fix-care']).toEqual({
+      sha256: createHash('sha256').update(text).digest('hex'),
+      headings: ['Fix care', 'Steps', 'Limits'],
+      rules: ['Fix care 1', 'Steps 1', 'Steps 2'],
+    });
+  } finally {
+    writeFileSync(file, '---\nname: fix-care\n---\n');
+    rmSync(lock, { force: true });
+  }
+});
+
+test('the committed lock lists every catalogued skill', () => {
+  const routing = parseRouting(
+    readFileSync(resolve(__dirname, '../skills/routing.json'), 'utf8'),
+  );
+  const lock = JSON.parse(
+    readFileSync(resolve(__dirname, '../skills/catalog.lock.json'), 'utf8'),
+  );
+  expect(Object.keys(lock.skills)).toEqual(Object.keys(routing.skills).sort());
 });
 
 test('rejects routing that names a skill outside the catalog', () => {
