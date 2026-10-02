@@ -19,7 +19,7 @@ import {
 } from './attempt';
 
 // Mirrors React Native's AppStateStatus without importing React Native.
-export type LifecycleState =
+type LifecycleState =
   | 'active'
   | 'inactive'
   | 'background'
@@ -32,7 +32,7 @@ export type AttemptActivity =
   | { kind: 'waiting'; error: string }
   | { kind: 'halted'; error: string };
 
-export type SessionOptions = {
+type SessionOptions = {
   archive: ChatArchive;
   transport: ChatTransport;
   scheduleFrame: (callback: () => void) => void;
