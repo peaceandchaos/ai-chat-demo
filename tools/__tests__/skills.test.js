@@ -403,6 +403,11 @@ test.each([
     'tools/skills/routing.json',
     JSON.stringify({ ...fixtureRouting, rules: [network] }),
   );
+  write(
+    repository,
+    'tools/skills/ledger.json',
+    JSON.stringify({ lessons: [] }),
+  );
   const start = commit(repository, 'Base');
   write(repository, path, `${before}export const load = () => fetch('/');\n`);
   commit(repository, 'feat: load the page');
