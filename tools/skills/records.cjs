@@ -49,7 +49,7 @@ const recordSchema = z.strictObject({
     .min(1),
 });
 
-// A cherry-picked or rebased copy of a commit keeps its patch-id.
+// A copy keeps its patch-id unless a conflict changed its diff.
 function patchIds(root, revisions) {
   const run = (args, input) =>
     execFileSync('git', args, {

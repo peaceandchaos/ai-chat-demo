@@ -66,7 +66,7 @@ The command adds every required skill with the files that require it and keeps a
 }
 ```
 
-A finding names the commit that resolves it, or gives the reason under `none`. Write only `commit`. `skills:record` adds `patch`, the commit's `git patch-id --stable`. A cherry-picked or rebased copy of the commit keeps that patch-id, so the citation still resolves on a new branch. Run `skills:record` again on the new branch, and it rewrites `commit` to the copy in the range. Squashing several commits makes a new patch-id, so a citation of one of them no longer resolves. A skill that found nothing still records one `none` finding. A skill the routing did not require needs a `reason` field.
+A finding names the commit that resolves it, or gives the reason under `none`. Write only `commit`. `skills:record` adds `patch`, the commit's `git patch-id --stable`. A cherry-picked or rebased copy of the commit keeps that patch-id when its diff applies unchanged, so the citation still resolves on a new branch. Run `skills:record` again on the new branch, and it rewrites `commit` to the copy in the range. A copy whose conflict you resolved by hand gets a new patch-id, and so does a squash of several commits, so a citation of the original no longer resolves. Cite the new commit instead. A skill that found nothing still records one `none` finding. A skill the routing did not require needs a `reason` field.
 
 `npm run skills:check -- origin/main` reads only the records that the range adds or changes, from the head commit. It fails when:
 
