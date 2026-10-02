@@ -171,6 +171,25 @@ test('oversized original text is processed in bounded windows without deleting i
   expect(input.history[0].text).toBe(original);
 });
 
+test('text that JSON escapes heavily is still split into pieces below the threshold', async () => {
+  const input = submission();
+  input.history[0].text = '\u0001'.repeat(12_000);
+  const calls: ResponseInputItem[][] = [];
+  const prepared = await prepareContext(
+    input,
+    'gpt-6',
+    signal,
+    before,
+    services(calls),
+    { ...config, wire: 'responses' },
+  );
+  expect(calls.length).toBeGreaterThan(0);
+  expect(calls.every(items => contextSize(items) < config.threshold)).toBe(
+    true,
+  );
+  expect(prepared.checkpoint?.method).toBe('openai-compaction');
+});
+
 test('an empty or ineffective compaction fails without silently truncating history', async () => {
   const input = submission();
   input.history = history(Array.from({ length: 5 }, () => 'C'.repeat(9000)));

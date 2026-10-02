@@ -73,11 +73,12 @@ function* messagePieces(
   maxBytes: number,
 ): Generator<ResponseInputItem> {
   if (entry.role === 'assistant' && !entry.complete) return;
-  // Split only working input, never the visible record. UTF-8 code points stay intact.
+  // Split only working input, never the visible record. UTF-8 code points stay
+  // intact. Each point is measured as itemSize counts it, after JSON escaping.
   let text = '';
   let bytes = 0;
   for (const point of entry.text) {
-    const length = Buffer.byteLength(point, 'utf8');
+    const length = Buffer.byteLength(JSON.stringify(point), 'utf8') - 2;
     if (bytes + length > maxBytes && text) {
       yield textItem(entry.role, text);
       text = '';
