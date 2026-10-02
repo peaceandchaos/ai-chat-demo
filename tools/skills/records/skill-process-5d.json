@@ -1,0 +1,375 @@
+{
+  "change": "skill-process-5d",
+  "skills": [
+    {
+      "skill": "blast-radius",
+      "files": [
+        "tools/__tests__/skill-records.test.js",
+        "tools/skills/cli.cjs",
+        "tools/skills/receipts.cjs",
+        "tools/skills/records.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "GITHUB_EVENT_NAME survives cleanEnvironment, so in a CI pull request job jest runs the existing skill-record fixtures in pull request mode. With the fixture helper inheriting process.env, 10 of 12 tests failed (pr5d/ci-env-without-isolation.log). The helper now unsets it.",
+          "cites": "Steps 3",
+          "commit": "053ae2b",
+          "patch": "2ec6ecc48bad2ea246c3206d3228d5e2d627e987"
+        },
+        {
+          "finding": "The fact the change depends on: hosted CI runs verify:current without --base, so the skill-records range check never runs there, and the new rule has no effect in CI until the workflow fetches history and passes --base.",
+          "cites": "Steps 2",
+          "none": "Workflow edits are out of scope for 5d. docs/skills.md Limits says so, and work/skill-process-evidence/ci-range-checks.patch is the pending activation."
+        },
+        {
+          "finding": "A rebase merge rewrites every SHA. A replay of the stack onto e22c06d shared no SHA with the branch, and skills:check e22c06d HEAD still passed outside pull request mode, through patch-ids and the base binding.",
+          "cites": "Steps 5",
+          "none": "Proved in pr5d/rebase-merge-simulation-8ac891b.log. No change needed."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "blast-radius",
+          "source": "Skill",
+          "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a42657a13c0275804",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_012GUyCjvHQ6Q6FHPc7uvS4s",
+          "time": "2026-10-02T13:21:55.183Z",
+          "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5d",
+          "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+          "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+          "sig": "IDsGpHBL+a0oK5V0veidhjjtwoxzOnMkpaH3QLFptzwd/t+B36XGTCEimIii7e1VnNlzhKwNqTZ4X0G6DPawAA=="
+        }
+      ]
+    },
+    {
+      "skill": "deslop",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The comment above checkRecords restated the review rule instead of naming it in code.",
+          "cites": "Focus Areas",
+          "commit": "8ac891b",
+          "patch": "a6410e7599ee650673724973b014834144c8e5a4"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "deslop",
+          "source": "Skill",
+          "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a42657a13c0275804",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01XsfBGuiAU1uibVCS8xX8F3",
+          "time": "2026-10-02T13:21:55.799Z",
+          "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5d",
+          "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+          "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+          "sig": "+l/U82KUbk1e+GFvfN3YN/rzyORspjtWjH3oBHmqtQXcHJq5fZrzg09EElBxHcjAC6HEFE7r0926O49BzU0aBg=="
+        }
+      ]
+    },
+    {
+      "skill": "no-comments",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "comment-sicko flagged the checkRecords comment and the unnamed boolean argument that carried the same rule. The value is now bound to reviewRequired and the comment is gone.",
+          "cites": "Steps 3",
+          "commit": "8ac891b",
+          "patch": "a6410e7599ee650673724973b014834144c8e5a4"
+        },
+        {
+          "finding": "comment-sicko also suggested moving reviewRequired into the receipt context object.",
+          "cites": "Steps 2",
+          "none": "The context object holds what receiptFault reads for each receipt. The named argument already makes the call site readable."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "no-comments",
+          "source": "Skill",
+          "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a42657a13c0275804",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01RxtQ1UKnG24yQmPagi4FzY",
+          "time": "2026-10-02T13:21:55.873Z",
+          "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5d",
+          "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+          "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+          "sig": "diJv8cBvnnq9lZOMtjnLuUMGkrDE8azlEoF89Wc/oR1Ywn+as2uxiRH+3pUwT8xArTz3gwSYbkxcoxvu7XxhCQ=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-prove-it-works",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The first before-fix run passed because the harness refused the source revert, so it ran the new code. The pass did not match the predicted failure, which exposed the bad observation.",
+          "cites": "Prove It Works",
+          "none": "The log was rerun with the dffee9a sources. pr5d/before-fix.log shows Expected: 1, Received: 0 for the pull request case."
+        },
+        {
+          "finding": "Before, after, and mutation runs are kept as logs a reviewer can rerun.",
+          "cites": "Script the check when you can",
+          "none": "Logs are in work/skill-process-evidence/pr5d/."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-prove-it-works",
+          "source": "Skill",
+          "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a42657a13c0275804",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01MVXZPonKncLJLheZxPdiJZ",
+          "time": "2026-10-02T13:21:56.327Z",
+          "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5d",
+          "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+          "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+          "sig": "+78XZGrLnuHeKajjvlQu0dv+O/XHhs0oqgPN3loPH2ZhcM3igmWVI5lHAWEyjYwzOYqGgHJSTvZxWEWAQXIsDQ=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-sequence-verifiable-units",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The change lands as the check with its test, then the docs, then the review refactor. Each commit passed the pre-commit hook, and the skill-record suite passed after each code commit.",
+          "cites": "Sequence work into verifiable units",
+          "none": "The order already proves itself."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-sequence-verifiable-units",
+          "source": "Skill",
+          "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a42657a13c0275804",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01MaETrkNWSDahoEzmFm2YiX",
+          "time": "2026-10-02T13:21:56.400Z",
+          "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5d",
+          "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+          "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+          "sig": "Y9LxYuHej3/tocxg938PU1HEepyZ1cVgNruNu+xjhNC6td1MUDAlUpGvoXxIj5AkpNx1AP8c0tr8JpojdnPYBA=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-test-behavior-not-implementation",
+      "files": [
+        "tools/__tests__/skill-records.test.js",
+        "tools/skills/cli.cjs",
+        "tools/skills/receipts.cjs",
+        "tools/skills/records.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "The new test names two defects. A pull request run that never requires review fails it (mutation 1). A run that requires review in only some record fails the half-reviewed case (mutation 2).",
+          "cites": "Test behavior, not implementation",
+          "none": "pr5d/mutation-requirement-off.log and pr5d/mutation-each-record-off.log show each failure with the predicted diff."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-test-behavior-not-implementation",
+          "source": "Skill",
+          "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a42657a13c0275804",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01779KzQc5iusCZvyRqC4igB",
+          "time": "2026-10-02T13:21:59.030Z",
+          "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5d",
+          "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+          "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+          "sig": "vAKfKDHYBw5gVHCoMIsPd4nlmOdtzvA0Ofus0+HT4WnkvDrnmukAvGZZ/Ib/WJmjaUmsC6hZWNMZ3F/cR+haDg=="
+        }
+      ]
+    },
+    {
+      "skill": "technical-writing",
+      "files": ["<change>", "AGENTS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "The AGENTS.md sentence 'A pull request fails the check' could be read as hosted enforcement. It now says a pull request run of the check fails.",
+          "cites": "Leave no sentence open to two readings (Global English)",
+          "commit": "9e55391",
+          "patch": "3275327607fc73372ea2829609a458094ccb3bb4"
+        },
+        {
+          "finding": "The docs/skills.md additions are reference: the failure list, one paragraph that defines a pull request run, and three Limits facts.",
+          "cites": "Pick the mode first (Diátaxis)",
+          "none": "No instruction or argument entered the reference sections."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "technical-writing",
+          "source": "Skill",
+          "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a42657a13c0275804",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01HYgN5zt4U69WFfzJRJoMgJ",
+          "time": "2026-10-02T13:21:59.643Z",
+          "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5d",
+          "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+          "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+          "sig": "2tE7NAiHU8lTmJKE3CGPKknYApYhLsJtuxZhB38q/5wOLYD2WMoS6r6gkNZZu8hRJvlM9Jw5XHt8OYgWRtWpDw=="
+        }
+      ]
+    },
+    {
+      "skill": "test-prune",
+      "files": ["tools/__tests__/skill-records.test.js"],
+      "findings": [
+        {
+          "finding": "The fixtures inherited process.env, so a CI variable could fail them for a reason unrelated to the behavior each test names.",
+          "cites": "Review questions",
+          "commit": "053ae2b",
+          "patch": "2ec6ecc48bad2ea246c3206d3228d5e2d627e987"
+        },
+        {
+          "finding": "The self-review test changed only its expected message, to the new full skills:record command. No case was removed and no assertion was loosened.",
+          "cites": "Decisions and repairs",
+          "none": "The assertion is still an exact stderr match."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "test-prune",
+          "source": "Skill",
+          "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a42657a13c0275804",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01DnyGcNVMBdpkh8Un3zZBt6",
+          "time": "2026-10-02T13:21:59.716Z",
+          "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5d",
+          "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+          "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+          "sig": "ho7/h1B+SnmjJ+g+drCQLc4dVaFQ5Yacc/aEmK1l+8s5PC2L98AJB+8PhMLUVYU0zBnfm5NoQA6JQfXiDspHAA=="
+        }
+      ]
+    },
+    {
+      "skill": "unslop",
+      "files": ["<change>", "AGENTS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "Checked the new doc sentences for mid-sentence colons. The one colon in the new text introduces the JSON example.",
+          "cites": "Style 14",
+          "none": "A colon before an example is allowed."
+        },
+        {
+          "finding": "The new failure message is one long sentence pair.",
+          "cites": "Plain speech 28",
+          "none": "It matches the shape of the existing receipt messages: the problem, then the command that fixes it."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "unslop",
+          "source": "Skill",
+          "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a42657a13c0275804",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_016C9PL4k7zaQ4xDqYbnuRJZ",
+          "time": "2026-10-02T13:22:00.162Z",
+          "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5d",
+          "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+          "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+          "sig": "I/5VrXX3GjkzCHMOEDv7iqhXVyIO2opFmtq8BRFs5jEAsoK0wDJzy6O6q1kCWdVvsIF7y1XyhBpPB6j1BokPBA=="
+        }
+      ]
+    },
+    {
+      "skill": "writing-for-agents",
+      "files": ["AGENTS.md"],
+      "findings": [
+        {
+          "finding": "AGENTS.md gained one sentence. The rule's details and limits live in docs/skills.md, so the always-loaded file carries only what an author must know before a pull request.",
+          "cites": "Pruning",
+          "none": "No duplicate of docs/skills.md entered AGENTS.md."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "writing-for-agents",
+          "source": "Skill",
+          "sha256": "a842323e664e5af104eac5c97ad22fda929ebeb62d81c501161ac1f6f482db58",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a42657a13c0275804",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01M6smn2MGyuiisQMTB5WQKS",
+          "time": "2026-10-02T13:22:00.237Z",
+          "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5d",
+          "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+          "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+          "sig": "y8BsurNE6ZxFqi4vSOY8ldZ88zPxKP3rxplf4EgDXmR+E3TDz9WAprYzC0aiq0EC4jrFe6Kp8vqB+Ek9A3YDCA=="
+        }
+      ]
+    }
+  ]
+}
