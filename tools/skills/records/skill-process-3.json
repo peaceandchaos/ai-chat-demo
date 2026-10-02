@@ -1,0 +1,373 @@
+{
+  "change": "skill-process-3",
+  "skills": [
+    {
+      "skill": "blast-radius",
+      "files": [
+        ".oxlintrc.json",
+        "package.json",
+        "packages/app/src/network/client.ts",
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts",
+        "packages/server/src/api.ts",
+        "packages/server/src/compaction/context.ts",
+        "packages/server/src/database.ts",
+        "packages/server/src/gateway.ts",
+        "packages/server/src/jobs.ts",
+        "packages/server/src/responses.ts",
+        "packages/server/src/worker.ts",
+        "packages/server/tests/session-harness.ts",
+        "shared/contracts.ts",
+        "tools/__tests__/exports-check.test.js",
+        "tools/__tests__/lint-policy.test.js",
+        "tools/__tests__/range-typecheck.test.js",
+        "tools/exports-check.cjs",
+        "tools/lint-policy.mjs",
+        "tools/range-typecheck.cjs",
+        "tools/verification/checks.cjs",
+        "tools/verification/export-entries.json"
+      ],
+      "findings": [
+        {
+          "finding": "Measured before the type and lint changes: ModelConfig has five consumers in packages/server, and no UI branch edits them. All 6 assertions are in legacy override files, and the UI branches add none. Of 45 unused exports, 11 are imported on work/ui-pr3-c, so they became entries instead of removals.",
+          "none": "Recorded in the PR evidence; no breakage found."
+        },
+        {
+          "finding": "typecheck:range adds about 3 seconds per commit to verify:commit, plus one npm ci for each new set of install inputs.",
+          "none": "Documented in README.md."
+        },
+        {
+          "finding": "After rebasing, work/ui-pr3-c imports loadDeviceId, openArchive, followAppState, isActive, ChatRecord, AttemptActivity, MemoryStorage, and uuid, so their entries fail and must be removed there.",
+          "none": "Intended; each entry names the branch."
+        }
+      ]
+    },
+    {
+      "skill": "deslop",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Checked the new tools for wrappers, defensive branches, and names that restate types.",
+          "none": "None found."
+        }
+      ]
+    },
+    {
+      "skill": "no-comments",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Three comments were added: the install-input rule and the HEAD rule in range-typecheck.cjs, and the compact_threshold meaning in models.ts, which moved from the old type.",
+          "none": "Each states a constraint the code cannot show."
+        }
+      ]
+    },
+    {
+      "skill": "principle-boundary-discipline",
+      "files": [
+        "packages/app/src/network/client.ts",
+        "packages/server/src/api.ts",
+        "shared/contracts.ts"
+      ],
+      "findings": [
+        {
+          "finding": "The changes to client.ts, api.ts, and contracts.ts only remove export keywords; parsing at those boundaries is unchanged.",
+          "none": "No boundary changed."
+        }
+      ]
+    },
+    {
+      "skill": "principle-fix-root-causes",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Root cause: ModelConfig made compactThreshold optional for every model, so a Responses entry without it typechecked and sent compact_threshold: undefined. The compaction tests built exactly that config. The fix makes the field required by the union on wire. With the field optional again, the @ts-expect-error fixture fails the typecheck.",
+          "commit": "bca97be"
+        }
+      ]
+    },
+    {
+      "skill": "principle-make-operations-idempotent",
+      "files": [
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts",
+        "packages/server/src/database.ts",
+        "packages/server/src/jobs.ts",
+        "packages/server/src/worker.ts"
+      ],
+      "findings": [
+        {
+          "finding": "archive.ts, attempt.ts, session.ts, database.ts, jobs.ts, and worker.ts changed only by losing export keywords.",
+          "none": "No write path changed."
+        },
+        {
+          "finding": "typecheck:range writes only into a fresh temporary directory, which it removes.",
+          "none": "Reruns start clean."
+        }
+      ]
+    },
+    {
+      "skill": "principle-migrate-callers-then-delete-legacy-apis",
+      "files": [
+        "packages/app/src/network/client.ts",
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts",
+        "packages/server/src/api.ts",
+        "packages/server/src/compaction/context.ts",
+        "packages/server/src/database.ts",
+        "packages/server/src/gateway.ts",
+        "packages/server/src/jobs.ts",
+        "packages/server/src/responses.ts",
+        "packages/server/src/worker.ts",
+        "packages/server/tests/session-harness.ts",
+        "shared/contracts.ts"
+      ],
+      "findings": [
+        {
+          "finding": "Every un-exported name has no importer on main or on any local work/ui-* branch, which the measurement checked.",
+          "none": "No callers to migrate."
+        }
+      ]
+    },
+    {
+      "skill": "principle-minimize-reader-load",
+      "files": [
+        "packages/server/tests/models.test.ts",
+        "tools/__tests__/exports-check.test.js",
+        "tools/__tests__/range-typecheck.test.js",
+        "tools/exports-check.cjs",
+        "tools/range-typecheck.cjs",
+        "tools/verification/export-entries.json"
+      ],
+      "findings": [
+        {
+          "finding": "range-typecheck.cjs and exports-check.cjs sit beside audit-check.cjs and security-check.cjs, and each has one npm script and one checks.cjs entry.",
+          "none": "Follows the existing layout."
+        }
+      ]
+    },
+    {
+      "skill": "principle-prove-it-works",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Mutations that failed a test: range ignores failures, never shares an install, includes HEAD; assertion allowlist ignored, as const reported, non-null allowed, definite allowed, legacy override removed (lint fails on the 6 legacy assertions); export check ignores namespace imports, counts untracked files, ignores import types, dynamic imports, or re-exports, allows stale entries. One survived: removing commit-types from checks.cjs, because the suite list is owner-reviewed, not tested.",
+          "none": "Evidence; the survivor is the documented owner-review control."
+        },
+        {
+          "finding": "typecheck:range on work/image-context-2 fails 91d9451, dd3430e, and 08dab07; 08dab07 still called a removed model id in compaction.test.ts.",
+          "none": "Evidence."
+        }
+      ]
+    },
+    {
+      "skill": "principle-sequence-verifiable-units",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The un-export commits come before the export check, so each commit passes lint and typecheck; typecheck:range over this range passes every commit.",
+          "none": "Evidence."
+        }
+      ]
+    },
+    {
+      "skill": "principle-subtract-before-you-add",
+      "files": [
+        "packages/server/tests/models.test.ts",
+        "tools/__tests__/exports-check.test.js",
+        "tools/__tests__/range-typecheck.test.js",
+        "tools/exports-check.cjs",
+        "tools/range-typecheck.cjs",
+        "tools/verification/export-entries.json"
+      ],
+      "findings": [
+        {
+          "finding": "A deletion of modelLabels was considered because nothing reads it.",
+          "none": "Kept as an entry: it holds the display names, and the UI owner decides."
+        }
+      ]
+    },
+    {
+      "skill": "principle-test-behavior-not-implementation",
+      "files": [
+        ".oxlintrc.json",
+        "package.json",
+        "packages/server/tests/compaction.test.ts",
+        "packages/server/tests/models.test.ts",
+        "packages/server/tests/session-harness.ts",
+        "tools/__tests__/exports-check.test.js",
+        "tools/__tests__/lint-policy.test.js",
+        "tools/__tests__/range-typecheck.test.js",
+        "tools/exports-check.cjs",
+        "tools/lint-policy.mjs",
+        "tools/range-typecheck.cjs",
+        "tools/verification/checks.cjs",
+        "tools/verification/export-entries.json"
+      ],
+      "findings": [
+        {
+          "finding": "typecheck:range keyed the shared install to the named head, but the root holds HEAD; a test now names a head that is not HEAD.",
+          "commit": "5a0a3d0"
+        }
+      ]
+    },
+    {
+      "skill": "principle-type-system-discipline",
+      "files": [
+        "packages/app/src/network/client.ts",
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts",
+        "packages/server/src/api.ts",
+        "packages/server/src/compaction/context.ts",
+        "packages/server/src/database.ts",
+        "packages/server/src/gateway.ts",
+        "packages/server/src/jobs.ts",
+        "packages/server/src/models.ts",
+        "packages/server/src/providers.ts",
+        "packages/server/src/responses.ts",
+        "packages/server/src/worker.ts",
+        "packages/server/tests/compaction.test.ts",
+        "packages/server/tests/models.test.ts",
+        "packages/server/tests/session-harness.ts",
+        "shared/contracts.ts"
+      ],
+      "findings": [
+        {
+          "finding": "ModelConfig allowed a Responses model without its threshold.",
+          "commit": "bca97be"
+        },
+        {
+          "finding": "isResponsesModel is a type predicate, which the compiler does not verify.",
+          "none": "Its body is the discriminant test itself, so it cannot drift from the table."
+        }
+      ]
+    },
+    {
+      "skill": "react-native-best-practices",
+      "files": [
+        "packages/app/src/network/client.ts",
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts"
+      ],
+      "findings": [
+        {
+          "finding": "client.ts, archive.ts, attempt.ts, and session.ts only lose export keywords on types.",
+          "none": "No runtime change."
+        }
+      ]
+    },
+    {
+      "skill": "react-native-best-practices-sm",
+      "files": [
+        "packages/app/src/network/client.ts",
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts"
+      ],
+      "findings": [
+        {
+          "finding": "client.ts, archive.ts, attempt.ts, and session.ts only lose export keywords on types.",
+          "none": "No runtime change."
+        }
+      ]
+    },
+    {
+      "skill": "technical-writing",
+      "files": ["<change>", "README.md"],
+      "findings": [
+        {
+          "finding": "README.md states each new check, its entry or allow list, and the measured cost.",
+          "none": "No change needed."
+        }
+      ]
+    },
+    {
+      "skill": "test-prune",
+      "files": [
+        "packages/server/tests/compaction.test.ts",
+        "packages/server/tests/models.test.ts",
+        "packages/server/tests/session-harness.ts",
+        "tools/__tests__/exports-check.test.js",
+        "tools/__tests__/lint-policy.test.js",
+        "tools/__tests__/range-typecheck.test.js"
+      ],
+      "findings": [
+        {
+          "finding": "Each lint fixture covers a distinct assertion syntax, and each export fixture covers a distinct import form; removing any one let a mutation survive.",
+          "none": "Kept all."
+        }
+      ]
+    },
+    {
+      "skill": "thermo-nuclear-code-quality-review",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The shared install for range commits was keyed to the wrong commit.",
+          "commit": "5a0a3d0"
+        },
+        {
+          "finding": "Export problems came out in checker order, which made the output unstable.",
+          "none": "Sorted before the first commit."
+        },
+        {
+          "finding": "A package.json script edit changes the install key and costs one npm ci.",
+          "none": "Kept conservative: a narrower key could reuse an install that npm ci would build differently."
+        }
+      ]
+    },
+    {
+      "skill": "typescript-best-practices",
+      "files": [
+        "packages/app/src/network/client.ts",
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts",
+        "packages/server/src/api.ts",
+        "packages/server/src/compaction/context.ts",
+        "packages/server/src/database.ts",
+        "packages/server/src/gateway.ts",
+        "packages/server/src/jobs.ts",
+        "packages/server/src/models.ts",
+        "packages/server/src/providers.ts",
+        "packages/server/src/responses.ts",
+        "packages/server/src/worker.ts",
+        "packages/server/tests/compaction.test.ts",
+        "packages/server/tests/models.test.ts",
+        "packages/server/tests/session-harness.ts",
+        "shared/contracts.ts"
+      ],
+      "findings": [
+        {
+          "finding": "responses.ts read an optional field and sent it unchecked.",
+          "commit": "bca97be"
+        }
+      ]
+    },
+    {
+      "skill": "unslop",
+      "files": ["<change>", "README.md"],
+      "findings": [
+        {
+          "finding": "Checked the README.md additions for filler and long dashes.",
+          "none": "None found."
+        }
+      ]
+    },
+    {
+      "skill": "workflow",
+      "files": ["packages/server/src/jobs.ts", "packages/server/src/worker.ts"],
+      "findings": [
+        {
+          "finding": "jobs.ts and worker.ts only lose export keywords on option and update types.",
+          "none": "No workflow step changed."
+        }
+      ]
+    }
+  ]
+}
