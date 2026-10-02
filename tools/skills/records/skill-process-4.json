@@ -1,0 +1,184 @@
+{
+  "change": "skill-process-4",
+  "skills": [
+    {
+      "skill": "blast-radius",
+      "files": [
+        "package.json",
+        "tools/__tests__/ledger.test.js",
+        "tools/__tests__/skills.test.js",
+        "tools/skills/cli.cjs",
+        "tools/skills/ledger.cjs",
+        "tools/skills/ledger.json",
+        "tools/verification/checks.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "The safety fact is that the ledger check reads only the ledger, checks.cjs, .oxlintrc.json, named test files, and git ls-files, and changes nothing. Running it on the real tree with commit-types switched back to guidance, the commit-types check removed, a test title renamed, and the assertion rule set to off fails each time, and the unchanged tree passes.",
+          "none": "Evidence in skill-process-evidence/pr4."
+        },
+        {
+          "finding": "skills:required now reads tools/skills/ledger.json, so a checkout without the ledger cannot list required skills.",
+          "none": "The ledger is committed with the reader in 0d381c2, and every later branch inherits it."
+        }
+      ]
+    },
+    {
+      "skill": "deslop",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Checked the ledger reader, the check, and the lesson output for wrappers, defensive branches, and comments.",
+          "none": "None found."
+        }
+      ]
+    },
+    {
+      "skill": "no-comments",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The comment-sicko subagent was not spawned, because this task runs without subagents. A search of the added JavaScript lines finds no comments.",
+          "none": "No comments added."
+        }
+      ]
+    },
+    {
+      "skill": "principle-fix-root-causes",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The fetch-timeout lesson claimed the security check enforces every fetch. A server fetch without a timeout passes npm run security, because the scan covers packages/app and shared.",
+          "commit": "a90295a"
+        }
+      ]
+    },
+    {
+      "skill": "principle-minimize-reader-load",
+      "files": [
+        "tools/__tests__/ledger.test.js",
+        "tools/skills/ledger.cjs",
+        "tools/skills/ledger.json"
+      ],
+      "findings": [
+        {
+          "finding": "lessonsFor recomputed the change's paths for every lesson.",
+          "commit": "b7171d2"
+        }
+      ]
+    },
+    {
+      "skill": "principle-prove-it-works",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Each ledger failure was shown on a fixture and on a real historical state: commit-types as guidance with two sightings, as it was before PR3, fails the promotion rule.",
+          "none": "Logs in skill-process-evidence/pr4."
+        },
+        {
+          "finding": "The first lint enforcement test accepted a rule set to off, because it checked only that the key exists.",
+          "none": "Fixed before the first commit. A rule set to off now fails, and a mutation that drops that test survives no longer."
+        }
+      ]
+    },
+    {
+      "skill": "principle-sequence-verifiable-units",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The check and its seed land first, the lesson output second, and the docs third. Each commit passed verify:staged.",
+          "none": "No reordering needed."
+        }
+      ]
+    },
+    {
+      "skill": "principle-subtract-before-you-add",
+      "files": [
+        "tools/__tests__/ledger.test.js",
+        "tools/skills/ledger.cjs",
+        "tools/skills/ledger.json"
+      ],
+      "findings": [
+        {
+          "finding": "The task named docs/quality-ledger.md. A Markdown table cannot be checked without a parser, so the ledger is JSON beside routing.json, and docs/skills.md explains it instead of a second doc.",
+          "none": "Kept as one data file and one doc section."
+        }
+      ]
+    },
+    {
+      "skill": "principle-test-behavior-not-implementation",
+      "files": [
+        "package.json",
+        "tools/__tests__/ledger.test.js",
+        "tools/__tests__/skills.test.js",
+        "tools/skills/cli.cjs",
+        "tools/skills/ledger.cjs",
+        "tools/skills/ledger.json",
+        "tools/verification/checks.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "Ten mutations of ledger.cjs fail the tests. Removing quality-ledger from checks.cjs survives, as the commit-types wiring did in PR3, because the checks list is owner-reviewed and not tested.",
+          "none": "Reported as a limit in the PR body."
+        }
+      ]
+    },
+    {
+      "skill": "technical-writing",
+      "files": ["<change>", "AGENTS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "The ledger section used semicolons between list items and in one sentence.",
+          "commit": "b55bc34"
+        }
+      ]
+    },
+    {
+      "skill": "test-prune",
+      "files": [
+        "tools/__tests__/ledger.test.js",
+        "tools/__tests__/skills.test.js"
+      ],
+      "findings": [
+        {
+          "finding": "A test that ran the ledger check on the committed ledger repeated the quality-ledger check in the verify suite.",
+          "none": "Removed before the first commit."
+        }
+      ]
+    },
+    {
+      "skill": "thermo-nuclear-code-quality-review",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "type and test enforcement share one schema and one check. They stay separate kinds because the ledger reports which tool enforces a lesson.",
+          "none": "Kept."
+        },
+        {
+          "finding": "A check enforcement proves only that the named check runs, not that it catches the finding.",
+          "none": "Documented in docs/skills.md. The promotion commit's failing fixture carries that proof."
+        }
+      ]
+    },
+    {
+      "skill": "unslop",
+      "files": ["<change>", "AGENTS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "Checked AGENTS.md, README.md, docs/skills.md, and the commit messages for filler and long dashes.",
+          "none": "None found beyond the semicolons fixed in b55bc34."
+        }
+      ]
+    },
+    {
+      "skill": "writing-for-agents",
+      "files": ["AGENTS.md"],
+      "findings": [
+        {
+          "finding": "The first AGENTS.md line restated the promotion rule that the verify suite already prints.",
+          "commit": "b55bc34"
+        }
+      ]
+    }
+  ]
+}
