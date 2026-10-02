@@ -78,7 +78,7 @@ A finding names the commit that resolves it, or gives the reason under `none`. W
 `npm run skills:check -- origin/main` reads only the records that the range adds or changes, from the head commit. It fails when:
 
 - a required skill has no entry whose `files` globs cover each file that requires it
-- a required skill has no valid author receipt, or the record has a `review` section and the skill has no valid receipt from a reviewer session
+- a required skill has no valid author receipt, or the record has a `review` section and the skill has no valid receipt from a reviewer
 - a record holds an invalid receipt
 - a finding cites a heading or rule that the lock does not list for its skill
 - the head commit has no `tools/skills/catalog.lock.json` or no `tools/skills/receipt-public-key.pem`
@@ -126,7 +126,7 @@ The Skill tool reports only the skill name. The hook finds the `SKILL.md` throug
 
 ### Pull receipts into the record
 
-`npm run skills:record -- <change-id> <base>` copies receipts into the record's `skills` entries. A reviewer loads the required skills in their own session and runs the same command with `--review`, which fills a `review` section:
+`npm run skills:record -- <change-id> <base>` copies receipts into the record's `skills` entries. A reviewer loads the required skills as another session or another agent and runs the same command with `--review`, which fills a `review` section:
 
 ```json
 "review": {
@@ -134,7 +134,7 @@ The Skill tool reports only the skill name. The hook finds the `SKILL.md` throug
 }
 ```
 
-The command reads only receipts made in this clone, matched by the hash of the git common dir. It keeps each entry's valid receipts and adds the earliest valid receipt to an entry that has none. The author side skips receipts from reviewer sessions, and the review side skips receipts from author sessions. It names each required skill that still has no receipt.
+The command reads only receipts made in this clone, matched by the hash of the git common dir. It keeps each entry's valid receipts and adds the earliest valid receipt to an entry that has none. The author side skips the reviewer's receipts, and the review side skips the author's. It names each required skill that still has no receipt.
 
 ### Which receipts count
 
@@ -156,6 +156,7 @@ This rule survives a cherry-pick and a rebase that keep the patches, because a c
 - Squashing commits makes a new patch-id. Receipts made on the squashed commits stop counting. Load the skills again after a squash.
 - A receipt made on the base by another change in the same clone also counts for this change. `skills:record` reads only this clone's receipts, but CI cannot check the clone, because the common-dir hash differs in CI.
 - The deny rules stop an agent that names the key, the hook, or the receipts. A program that opens those files without naming them can still read the key and sign a receipt. The receipts stop lazy and mistaken claims. They do not stop deliberate forgery by a process running as the same user.
+- A subagent that the author's session starts has its own agent id, so its receipts count as a reviewer's. The check cannot tell an independent reviewer from the author's helper. Review policy decides who may review.
 - A receipt proves that the agent loaded the skill text. It does not prove the agent followed it. Review judges that.
 - Many principle skills have one heading and no numbered rules, so a citation of one names only the skill.
 
