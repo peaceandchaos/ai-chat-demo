@@ -84,7 +84,7 @@ function receiptFault(receipt, skill, context) {
 
 const actor = receipt => `${receipt.session} ${receipt.agent}`;
 
-function receiptProblems(sections, required, context) {
+function receiptProblems(sections, required, context, reviewRequired) {
   const problems = [];
   const valid = { author: [], review: [] };
   for (const { path, role, entry } of sections) {
@@ -98,20 +98,19 @@ function receiptProblems(sections, required, context) {
     }
   }
   const authors = new Set(valid.author.map(actor));
-  const reviewed = sections.some(({ role }) => role === 'review');
   for (const skill of required) {
     if (!valid.author.some(receipt => receipt.skill === skill))
       problems.push(
         `${skill} is required, but no record holds a valid author receipt for it. Load it with the Skill tool, then run npm run skills:record.`,
       );
     if (
-      reviewed &&
+      reviewRequired &&
       !valid.review.some(
         receipt => receipt.skill === skill && !authors.has(actor(receipt)),
       )
     )
       problems.push(
-        `${skill} is required, but no record holds a valid receipt for it from a reviewer who is not an author. The reviewer loads it with the Skill tool, then runs npm run skills:record -- --review.`,
+        `${skill} is required, but no record holds a valid receipt for it from a reviewer who is not an author. The reviewer loads it with the Skill tool, then runs npm run skills:record -- <change-id> <base> --review.`,
       );
   }
   return problems;

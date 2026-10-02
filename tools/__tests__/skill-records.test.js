@@ -72,6 +72,7 @@ function skills(args, env = {}) {
       ...process.env,
       SKILL_ROOT_MAIN: skillsRoot,
       SKILL_RECEIPTS_DIR: join(scratch, 'no-receipts'),
+      GITHUB_EVENT_NAME: undefined,
       ...env,
     },
   });
@@ -111,6 +112,10 @@ const looked = (finding = 'Looked.', none = 'Fine.') => ({
 });
 const noAuthorReceipt = skill =>
   `${skill} is required, but no record holds a valid author receipt for it. Load it with the Skill tool, then run npm run skills:record.`;
+const noReviewerReceipt = skill =>
+  `${skill} is required, but no record holds a valid receipt for it from a reviewer who is not an author. The reviewer loads it with the Skill tool, then runs npm run skills:record -- <change-id> <base> --review.`;
+const noReview = change =>
+  `tools/skills/records/${change}.json has no review section, and a pull request needs an independent review of every record. The reviewer loads each required skill with the Skill tool, then runs npm run skills:record -- ${change} <base> --review.`;
 
 beforeAll(() => {
   scratch = realpathSync(mkdtempSync(join(tmpdir(), 'records-fixture-')));
@@ -361,7 +366,7 @@ test('a review section needs receipts from a session and agent pair that wrote n
   expect(skills(['check', base]).stderr).toBe(
     [
       `Skill records for ${range(selfReviewed, 2)} fail:`,
-      'always is required, but no record holds a valid receipt for it from a reviewer who is not an author. The reviewer loads it with the Skill tool, then runs npm run skills:record -- --review.',
+      noReviewerReceipt('always'),
       '',
     ].join('\n'),
   );
@@ -379,6 +384,66 @@ test('a review section needs receipts from a session and agent pair that wrote n
     const result = skills(['check', base]);
     expect([branch, result.stderr, result.status]).toEqual([branch, '', 0]);
   }
+});
+
+test('a pull request run needs a review section in every record and a reviewer receipt for every required skill', () => {
+  const pullRequest = { GITHUB_EVENT_NAME: 'pull_request' };
+  const authored = (change, skill, files, author) => ({
+    change,
+    skills: [{ skill, files, findings: [looked()], receipts: [author] }],
+  });
+  const reviewedBy = (record, reviewer) => ({
+    ...record,
+    review: {
+      skills: [
+        {
+          skill: record.skills[0].skill,
+          findings: [looked()],
+          receipts: [reviewer],
+        },
+      ],
+    },
+  });
+  const lower = authored('lower', 'always', ['<change>'], receipt.always);
+  const upper = authored('upper', 'source-care', ['src/**'], receipt.source);
+  const unreviewed = recordOn('pr-unreviewed', [lower, upper]);
+  const local = skills(['check', base]);
+  expect([local.stderr, local.status]).toEqual(['', 0]);
+  const failed = skills(['check', base], pullRequest);
+  expect(failed.status).toBe(1);
+  expect(failed.stderr).toBe(
+    [
+      `Skill records for ${range(unreviewed, 2)} fail:`,
+      noReview('lower'),
+      noReview('upper'),
+      noReviewerReceipt('always'),
+      noReviewerReceipt('source-care'),
+      '',
+    ].join('\n'),
+  );
+
+  const half = recordOn('pr-half-reviewed', [
+    reviewedBy(lower, receipt.reviewAlways),
+    upper,
+  ]);
+  expect(skills(['check', base], pullRequest).stderr).toBe(
+    [
+      `Skill records for ${range(half, 2)} fail:`,
+      noReview('upper'),
+      noReviewerReceipt('source-care'),
+      '',
+    ].join('\n'),
+  );
+
+  const reviewed = recordOn('pr-reviewed', [
+    reviewedBy(lower, receipt.reviewAlways),
+    reviewedBy(upper, receipt.reviewSource),
+  ]);
+  const passed = skills(['check', base], pullRequest);
+  expect(passed.stderr).toBe('');
+  expect(passed.stdout).toBe(
+    `Skill records for ${range(reviewed, 2)} cover all 2 required skills with independent review (tools/skills/records/lower.json, tools/skills/records/upper.json).\n`,
+  );
 });
 
 test('fails closed without a committed public key or lock, and still checks citations', () => {

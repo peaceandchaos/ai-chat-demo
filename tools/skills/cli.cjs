@@ -165,10 +165,12 @@ function catalog(root, lock) {
 
 function check(root, [base, head = 'HEAD']) {
   const change = readRange(root, base, head);
+  const pullRequest = process.env.GITHUB_EVENT_NAME === 'pull_request';
   const { commits, problems, records, required } = checkRecords(
     root,
     readRouting(root),
     change,
+    { pullRequest },
   );
   const range = `${change.base.slice(0, 12)}..${change.head.slice(0, 12)} (${commits} ${commits === 1 ? 'commit' : 'commits'})`;
   if (problems.length) {
@@ -177,7 +179,7 @@ function check(root, [base, head = 'HEAD']) {
     return;
   }
   console.log(
-    `Skill records for ${range} cover all ${required} required skills (${records.join(', ') || 'no records needed'}).`,
+    `Skill records for ${range} cover all ${required} required skills${pullRequest ? ' with independent review' : ''} (${records.join(', ') || 'no records needed'}).`,
   );
 }
 

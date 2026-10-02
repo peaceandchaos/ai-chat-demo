@@ -248,7 +248,9 @@ function coverageProblems(required, entries) {
   return problems;
 }
 
-function checkRecords(root, routing, change) {
+// A pull request needs an independent review of every record. Elsewhere, a
+// review is checked only when a record has one, so an author's own run passes.
+function checkRecords(root, routing, change, { pullRequest }) {
   const required = new Map(
     requiredSkills(routing, change).required.map(({ skill, reasons }) => [
       skill,
@@ -279,6 +281,12 @@ function checkRecords(root, routing, change) {
       ...(lock ? citationProblems(section, lock) : []),
     );
   }
+  if (pullRequest)
+    for (const { path, record } of records)
+      if (!record.review)
+        problems.push(
+          `${path} has no review section, and a pull request needs an independent review of every record. The reviewer loads each required skill with the Skill tool, then runs npm run skills:record -- ${record.change} <base> --review.`,
+        );
   problems.push(
     ...coverageProblems(
       required,
@@ -291,13 +299,12 @@ function checkRecords(root, routing, change) {
   if (checked && lock && !key) problems.push(missingKey());
   if (checked && lock && key)
     problems.push(
-      ...receiptProblems(sections, [...required.keys()], {
-        key,
-        lock,
-        routing,
-        change,
-        commits,
-      }),
+      ...receiptProblems(
+        sections,
+        [...required.keys()],
+        { key, lock, routing, change, commits },
+        pullRequest || sections.some(({ role }) => role === 'review'),
+      ),
     );
   return {
     problems,
