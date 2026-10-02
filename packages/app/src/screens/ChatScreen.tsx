@@ -1,4 +1,10 @@
-import React, { Suspense, useCallback, useRef, useState } from 'react';
+import React, {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   type LayoutChangeEvent,
   Platform,
@@ -49,6 +55,9 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   const send = useChatStore(state => state.send);
   const stop = useChatStore(state => state.stop);
   const newChat = useChatStore(state => state.newChat);
+  const loadOlder = useChatStore(state => state.loadOlder);
+  const chatId = useChatStore(state => state.chatId);
+  const addedOlder = useChatStore(state => state.addedOlder);
   const messagesLength = useChatStore(state => state.messages.length);
   const isStreaming = useChatStore(state => state.isStreaming);
   const [composerHeight, setComposerHeight] = useState(0);
@@ -68,18 +77,23 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
     [openReasoning],
   );
 
-  const [anchorIndex, setAnchorIndex] = useState<number | undefined>(undefined);
+  // The anchor is the last sent user turn, which stays second from the end
+  // while its reply streams and older pages load above it.
+  const [anchoredChat, setAnchoredChat] = useState<string | null>(null);
+  const anchorIndex = anchoredChat === chatId ? messagesLength - 2 : undefined;
   // A sent reply is followed once it overflows the reserved space. A reply
   // already streaming when the chat opened, as after a relaunch, has no
-  // anchored turn and is followed from the start. A drag pauses either.
-  const [overflowed, setOverflowed] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [resumed, setResumed] = useState(false);
-  if (isStreaming && anchorIndex == null && !resumed) {
-    setResumed(true);
+  // anchored turn and is followed from the start. A drag pauses either. Each
+  // state names the chat it belongs to, so opening another chat starts
+  // without it.
+  const [overflowedChat, setOverflowedChat] = useState<string | null>(null);
+  const [resumedChat, setResumedChat] = useState<string | null>(null);
+  const [pausedChat, setPausedChat] = useState<string | null>(null);
+  if (isStreaming && anchorIndex == null && resumedChat !== chatId) {
+    setResumedChat(chatId);
   }
-  const tracking = overflowed || resumed;
-  const following = tracking && !paused;
+  const tracking = overflowedChat === chatId || resumedChat === chatId;
+  const following = tracking && pausedChat !== chatId;
 
   // Image messages are taller than the text cap; leave them uncapped so the top
   // of the image lands at the anchor offset instead of being clipped above it.
@@ -108,15 +122,22 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
       if (result === 'unsaved') {
         return result;
       }
-      setOverflowed(false);
-      setResumed(false);
-      setPaused(false);
-      setAnchorIndex(messagesLength);
+      setOverflowedChat(null);
+      setResumedChat(null);
+      setPausedChat(null);
+      setAnchoredChat(chatId);
       scrollMessageToEnd({ animated: !isFirstMessage, closeKeyboard: true });
       return result;
     },
-    [messagesLength, send, scrollMessageToEnd],
+    [chatId, messagesLength, send, scrollMessageToEnd],
   );
+
+  // A chat opened from Recents starts at its newest message. The list stays
+  // mounted across chats: remounting it while Recents freezes this page left
+  // the header and composer showing the wrong SF Symbols.
+  useEffect(() => {
+    listRef.current?.scrollToEnd({ animated: false });
+  }, [chatId]);
 
   const keyboardOffset = { opened: insets.bottom };
 
@@ -126,7 +147,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
       setShowScrollDown(!visible);
       // Back at the bottom after a manual scroll-up: re-arm tail-follow
       if (visible && tracking) {
-        setPaused(false);
+        setPausedChat(null);
       }
     },
     [tracking],
@@ -136,9 +157,9 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   // scroll up (e.g. to read a table)
   const onScrollBeginDrag = useCallback(() => {
     if (tracking) {
-      setPaused(true);
+      setPausedChat(chatId);
     }
-  }, [tracking]);
+  }, [chatId, tracking]);
 
   const scrollToBottom = () => {
     scrollMessageToEnd({ animated: true, closeKeyboard: false });
@@ -157,10 +178,15 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
             renderItem={renderMessage}
             // Let the bottom contentInset / anchored end-space area still catch scroll touches (RN 0.81+ hit-test bug, facebook/react-native#54123).
             applyWorkaroundForContentInsetHitTestBug
+            // The saved chat starts at its newest message; scrolling to the top
+            // loads the page before it without moving what is on screen.
             initialScrollAtEnd
+            onStartReached={loadOlder}
             maintainVisibleContentPosition={
               Platform.OS !== 'android'
-                ? undefined
+                ? // Holding rows in place on every data change fights the
+                  // anchored send, so only an older page uses it.
+                  { data: addedOlder }
                 : anchorIndex != null && !following
             }
             keyboardLiftBehavior="whenAtEnd"
@@ -176,7 +202,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
                     anchorOffset: insets.top + 56,
                     onSizeChanged: size => {
                       if (size <= 0) {
-                        setOverflowed(true);
+                        setOverflowedChat(chatId);
                       }
                     },
                   }

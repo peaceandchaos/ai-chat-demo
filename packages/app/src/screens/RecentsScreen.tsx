@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
   LegendList,
@@ -8,36 +8,31 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Glass } from '../components/Glass';
 import { Icon } from '../components/Icon';
 import { showNotImplemented } from '../notImplemented';
+import { useChatStore } from '../state/chatStore';
+import { filterRecents, recentTime, type Recent } from '../state/recents';
 import { theme } from '../theme';
-
-type Recent = { id: string; title: string; time: string };
-
-// Mocked recents for the UI; real multi-conversation history is a later
-// change to useChat + storage.
-const RECENTS: Recent[] = [
-  { id: '1', title: 'Explaining the Fourier transform', time: '3d ago' },
-  { id: '2', title: 'Debugging a Reanimated layout jump', time: '3d ago' },
-  { id: '3', title: 'Weekend trip ideas near Lisbon', time: '3d ago' },
-  { id: '4', title: 'Rewriting a cover letter', time: '4d ago' },
-  { id: '5', title: 'Sourdough starter troubleshooting', time: '4d ago' },
-  { id: '6', title: 'Who founded Margelo?', time: 'Nov 22, 2025' },
-  { id: '7', title: 'What does Margelo do?', time: 'Nov 20, 2025' },
-  { id: '8', title: 'Margelo open-source libraries', time: 'Oct 26, 2025' },
-  { id: '9', title: 'How the Nitro modules work', time: 'Oct 24, 2025' },
-];
 
 type RecentsScreenProps = {
   onNewChat: () => void;
+  onOpenChat: (chatId: string) => void;
 };
 
-export function RecentsScreen({ onNewChat }: RecentsScreenProps) {
+export function RecentsScreen({ onNewChat, onOpenChat }: RecentsScreenProps) {
   const insets = useSafeAreaInsets();
+  const chats = useChatStore(state => state.recents);
+  const [query, setQuery] = useState('');
+  const recents = useMemo(() => {
+    const now = Date.now();
+    return filterRecents(chats, query).map((chat): Recent => ({
+      id: chat.id,
+      title: chat.title,
+      time: recentTime(chat.updatedAt, now),
+    }));
+  }, [chats, query]);
 
-  // Loading a past conversation isn't built for this demo, so tapping a row
-  // surfaces the not-implemented notice rather than opening a fake chat.
   const renderRecent = useCallback(
     ({ item }: LegendListRenderItemProps<Recent>) => (
-      <Pressable style={styles.row} onPress={showNotImplemented}>
+      <Pressable style={styles.row} onPress={() => onOpenChat(item.id)}>
         <View style={styles.rowText}>
           <Text style={styles.title} numberOfLines={1}>
             {item.title}
@@ -46,7 +41,7 @@ export function RecentsScreen({ onNewChat }: RecentsScreenProps) {
         </View>
       </Pressable>
     ),
-    [],
+    [onOpenChat],
   );
 
   return (
@@ -58,12 +53,14 @@ export function RecentsScreen({ onNewChat }: RecentsScreenProps) {
             style={styles.searchInput}
             placeholder="Search..."
             placeholderTextColor={theme.textSecondary}
+            value={query}
+            onChangeText={setQuery}
           />
         </View>
       </View>
 
       <LegendList
-        data={RECENTS}
+        data={recents}
         keyExtractor={item => item.id}
         estimatedItemSize={66}
         recycleItems
