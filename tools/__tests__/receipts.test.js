@@ -269,7 +269,7 @@ describe('installer', () => {
     );
   });
 
-  test('changes nothing without --apply, and prints the plan with a settings diff', () => {
+  test('changes nothing without --apply, and prints the plan with each settings change', () => {
     const before = listing();
     const settings = readFileSync(join(home, '.claude/settings.json'), 'utf8');
     const result = install();
@@ -283,7 +283,33 @@ describe('installer', () => {
       `- Create ${join(home, '.claude/hooks/skill-receipt-hook.mjs')}.`,
     );
     expect(result.stdout).toContain('Generate an Ed25519 keypair.');
-    expect(result.stdout).toContain('+       "Edit(/skill-receipts/**)",');
+    const entry = {
+      matcher: 'Skill|Read',
+      hooks: [
+        {
+          type: 'command',
+          command: `"${process.execPath}" "${join(home, '.claude/hooks/skill-receipt-hook.mjs')}"`,
+          timeout: 5,
+        },
+      ],
+    };
+    expect(result.stdout).toContain(
+      [
+        `- Update ${join(home, '.claude/settings.json')}:`,
+        `  + hooks.PostToolUse ${JSON.stringify(entry)}`,
+        ...[
+          'Read(/hooks/**)',
+          'Edit(/hooks/**)',
+          'Read(/skill-receipts/private-key.pem)',
+          'Edit(/skill-receipts/**)',
+          'Bash(*.claude/hooks*)',
+          'Bash(*skill-receipt-hook*)',
+          'Bash(*skill-receipts*)',
+          'Bash(*private-key.pem*)',
+        ].map(rule => `  + permissions.deny ${JSON.stringify(rule)}`),
+        'Note:',
+      ].join('\n'),
+    );
     expect(result.stdout).toContain(
       'Note: Leave 1 other Skill|Read PostToolUse entry in place. Pass --remove-spike to remove it.',
     );
@@ -384,6 +410,9 @@ describe('installer', () => {
   test('removes the spike entry only with --remove-spike', () => {
     const result = install('--apply', '--remove-spike');
     expect(result.status).toBe(0);
+    expect(result.stdout).toContain(
+      `:\n  - hooks.PostToolUse ${JSON.stringify(spike)}\n`,
+    );
     const settings = JSON.parse(
       readFileSync(join(home, '.claude/settings.json'), 'utf8'),
     );

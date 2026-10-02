@@ -93,56 +93,20 @@ function plannedSettings(before, hook, removeSpike) {
   after.hooks.PostToolUse = [...kept, entry];
   after.permissions ??= {};
   const deny = after.permissions.deny ?? [];
-  after.permissions.deny = [
-    ...deny,
-    ...denyRules.filter(rule => !deny.includes(rule)),
+  const added = denyRules.filter(rule => !deny.includes(rule));
+  after.permissions.deny = [...deny, ...added];
+  const same = candidate => JSON.stringify(candidate) === JSON.stringify(entry);
+  const removed = entries.filter(candidate => !kept.includes(candidate));
+  const changes = [
+    ...removed
+      .filter(candidate => !same(candidate))
+      .map(candidate => `- hooks.PostToolUse ${JSON.stringify(candidate)}`),
+    ...(removed.some(same)
+      ? []
+      : [`+ hooks.PostToolUse ${JSON.stringify(entry)}`]),
+    ...added.map(rule => `+ permissions.deny ${JSON.stringify(rule)}`),
   ];
-  return { after, spikes };
-}
-
-function diff(before, after) {
-  const a = before.split('\n');
-  const b = after.split('\n');
-  const lengths = Array.from({ length: a.length + 1 }, () =>
-    new Array(b.length + 1).fill(0),
-  );
-  for (let i = a.length - 1; i >= 0; i -= 1)
-    for (let j = b.length - 1; j >= 0; j -= 1)
-      lengths[i][j] =
-        a[i] === b[j]
-          ? lengths[i + 1][j + 1] + 1
-          : Math.max(lengths[i + 1][j], lengths[i][j + 1]);
-  const lines = [];
-  let i = 0;
-  let j = 0;
-  while (i < a.length || j < b.length) {
-    if (i < a.length && j < b.length && a[i] === b[j]) {
-      lines.push(['  ', a[i]]);
-      i += 1;
-      j += 1;
-    } else if (
-      i < a.length &&
-      (j === b.length || lengths[i + 1][j] >= lengths[i][j + 1])
-    ) {
-      lines.push(['- ', a[i]]);
-      i += 1;
-    } else {
-      lines.push(['+ ', b[j]]);
-      j += 1;
-    }
-  }
-  const shown = [];
-  let last = -1;
-  lines.forEach(([mark, line], index) => {
-    const near = lines
-      .slice(Math.max(0, index - 2), index + 3)
-      .some(([other]) => other !== '  ');
-    if (!near) return;
-    if (last >= 0 && index > last + 1) shown.push('  ...');
-    shown.push(`${mark}${line}`);
-    last = index;
-  });
-  return shown.join('\n');
+  return { after, spikes, changes };
 }
 
 function readSettings(file) {
@@ -198,18 +162,17 @@ function plan(home, env, flags) {
     });
   else notes.push(`Keep the existing key at ${where.key}.`);
   const { text, settings } = readSettings(where.settings);
-  const { after, spikes } = plannedSettings(
+  const { after, spikes, changes } = plannedSettings(
     settings,
     where.hook,
     flags.removeSpike,
   );
-  const afterText = `${JSON.stringify(after, null, 2)}\n`;
-  const beforeText = text ? `${JSON.stringify(settings, null, 2)}\n` : '';
   if (spikes.length && !flags.removeSpike)
     notes.push(
       `Leave ${spikes.length} other Skill|Read PostToolUse ${spikes.length === 1 ? 'entry' : 'entries'} in place. Pass --remove-spike to remove ${spikes.length === 1 ? 'it' : 'them'}.`,
     );
-  if (beforeText !== afterText) {
+  if (changes.length) {
+    const afterText = `${JSON.stringify(after, null, 2)}\n`;
     const backup = `${where.settings}.backup-${new Date().toISOString().replace(/[:.]/gu, '-')}`;
     if (text)
       steps.push({
@@ -217,7 +180,7 @@ function plan(home, env, flags) {
         run: () => copyFileSync(where.settings, backup),
       });
     steps.push({
-      say: `${text ? 'Update' : 'Create'} ${where.settings}:\n${diff(beforeText, afterText)}`,
+      say: `${text ? 'Update' : 'Create'} ${where.settings}:\n${changes.map(change => `  ${change}`).join('\n')}`,
       run: () => {
         mkdirSync(dirname(where.settings), { recursive: true });
         writeFileSync(`${where.settings}.tmp`, afterText);

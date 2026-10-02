@@ -121,7 +121,7 @@ node tools/skills/install-receipt-hook.mjs
 node tools/skills/install-receipt-hook.mjs --apply
 ```
 
-The first command prints every planned change and the settings diff, and writes nothing. `--apply` makes the changes:
+The first command prints every planned change, including each hook entry and deny rule it adds to or removes from the settings, and writes nothing. `--apply` makes the changes:
 
 1. It copies the hook to `~/.claude/hooks/skill-receipt-hook.mjs` and writes `~/.claude/hooks/skill-receipt-roots.json`.
 2. It generates an Ed25519 keypair and writes the private key to `~/.claude/skill-receipts/private-key.pem` with mode 0600. It never replaces an existing key.
