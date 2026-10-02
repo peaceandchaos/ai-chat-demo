@@ -147,10 +147,9 @@ export function createChatView(
       isStreaming: streaming(messages),
     });
 
-  // Walks the newest `limit` messages again. Only actions that move the chat's
-  // leaf or switch chats call this.
-  const rebuild = (chatId: string, limit = historyPage): void => {
-    const path = session.path(archive.chat(chatId).leafId, limit);
+  const newestPage = (chatId: string): SavedMessage[] =>
+    session.path(archive.chat(chatId).leafId, historyPage);
+  const showPage = (chatId: string, path: SavedMessage[]): void => {
     rows.clear();
     const messages = path.map(view);
     store.setState({
@@ -214,13 +213,16 @@ export function createChatView(
     newChat: () =>
       attempt(() => {
         const current = archive.chat(store.getState().chatId);
-        if (current.leafId !== null) rebuild(archive.createChat().id);
+        if (current.leafId === null) return;
+        const { id } = archive.createChat();
+        showPage(id, newestPage(id));
       }),
     openChat: chatId =>
       attempt(() => {
         if (chatId === store.getState().chatId) return;
+        const path = newestPage(chatId);
         archive.openChat(chatId);
-        rebuild(chatId);
+        showPage(chatId, path);
       }),
     // Reads only the next page, starting above the oldest message shown.
     loadOlder: () =>
@@ -237,7 +239,8 @@ export function createChatView(
       }),
   }));
 
-  rebuild(archive.metadata().currentChatId ?? archive.createChat().id);
+  const opened = archive.metadata().currentChatId ?? archive.createChat().id;
+  showPage(opened, newestPage(opened));
   store.setState({ recents: archive.recents() });
   session.subscribe(refresh);
   return store;

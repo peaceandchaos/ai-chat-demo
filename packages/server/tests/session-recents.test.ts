@@ -88,6 +88,24 @@ test('Recents lists sent chats newest first without unsent chats, and opening on
   expect(after().recents.map(chat => chat.id)).toEqual([b, a]);
 });
 
+test('a saved chat that cannot be read does not open, so it is not saved as the chat to reopen at launch', () => {
+  const { storage, a, unsent } = seededStorage();
+  const phone = openPhone(server, storage);
+  const reports: string[] = [];
+  const view = createChatView(phone.archive, phone.session, error =>
+    reports.push(error),
+  );
+  const leafId = phone.archive.chat(a).leafId ?? '';
+  storage.values.set(`archive/message/${leafId}`, '{"broken":true}');
+
+  view.getState().openChat(a);
+  expect(reports).toEqual(['Saved chats are unavailable.']);
+  expect(view.getState().chatId).toBe(unsent);
+  expect(phone.archive.metadata().currentChatId).toBe(unsent);
+  const relaunched = openPhone(server, phone.storage.snapshot());
+  expect(openView(relaunched)().chatId).toBe(unsent);
+});
+
 test('older history loads one page at a time until all 1,200 messages show in order, and a page costs the same at any depth', async () => {
   const storage = new MemoryStorage();
   const chatId = seedChat(new ChatArchive(storage, uuid), longTurns(600));
