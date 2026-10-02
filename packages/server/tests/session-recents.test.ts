@@ -118,13 +118,11 @@ test('older history loads one page at a time until all 1,200 messages show in or
 
   expect(state().messages).toHaveLength(historyPage);
   expect(state().messages.at(-1)?.text).toMatch(/^Answer 600\. /u);
-  expect(state().hasOlder).toBe(true);
-  expect(state().addedOlder).toBe(false);
   const newest = state().messages.at(-1);
 
   const reads: number[] = [];
   const spy = jest.spyOn(storage, 'getString');
-  while (state().hasOlder) {
+  for (let page = 1; page < 1_200 / historyPage; page++) {
     const before = state().messages.length;
     spy.mockClear();
     state().loadOlder();
@@ -132,7 +130,6 @@ test('older history loads one page at a time until all 1,200 messages show in or
     expect(state().messages.length - before).toBe(
       Math.min(historyPage, 1_200 - before),
     );
-    expect(state().addedOlder).toBe(true);
   }
   spy.mockRestore();
   expect(reads).toHaveLength(1_200 / historyPage - 1);
@@ -145,7 +142,6 @@ test('older history loads one page at a time until all 1,200 messages show in or
   expect(state().messages).toHaveLength(1_200);
   expect(state().send('One more')).toBe('saved');
   expect(state().messages).toHaveLength(1_202);
-  expect(state().addedOlder).toBe(false);
   expect(state().messages[0].text).toBe('Question 1');
   const reply = state().messages[1_201];
   server.providers.script(reply.id).text('Done').end();

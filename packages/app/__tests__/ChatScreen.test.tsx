@@ -1,11 +1,14 @@
 import React from 'react';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
+import { useStore as mockUseStore } from 'zustand';
+import { createStore, type StoreApi } from 'zustand/vanilla';
 import { ChatScreen } from '../src/screens/ChatScreen';
-import type { ChatViewState } from '../src/state/chatView';
+import type { ChatViewState, Message } from '../src/state/chatView';
 
 type ListProps = {
   initialScrollAtEnd?: boolean;
   maintainScrollAtEnd?: unknown;
+  maintainVisibleContentPosition?: unknown;
   onScrollBeginDrag: () => void;
   onEndVisible: (visible: boolean) => void;
 };
@@ -43,10 +46,10 @@ jest.mock('../src/components/ScrollToBottomButton', () => ({
   ScrollToBottomButton: () => null,
 }));
 
-let mockState: ChatViewState;
+let mockStore: StoreApi<ChatViewState>;
 jest.mock('../src/state/chatStore', () => ({
   useChatStore: <T,>(select: (current: ChatViewState) => T): T =>
-    select(mockState),
+    mockUseStore(mockStore, select),
 }));
 
 const followTail = { on: { dataChange: true, itemLayout: true } };
@@ -63,8 +66,6 @@ function chatState(isStreaming: boolean): ChatViewState {
         status: isStreaming ? 'streaming' : 'done',
       },
     ],
-    hasOlder: false,
-    addedOlder: false,
     isStreaming,
     recents: [],
     send: () => 'saved',
@@ -76,16 +77,17 @@ function chatState(isStreaming: boolean): ChatViewState {
 }
 
 function openChat(isStreaming: boolean) {
-  mockState = chatState(isStreaming);
-  const screen = () => <ChatScreen onOpenRecents={() => undefined} />;
-  let renderer!: ReactTestRenderer;
+  mockStore = createStore(() => chatState(isStreaming));
   act(() => {
-    renderer = create(screen());
+    create(<ChatScreen onOpenRecents={() => undefined} />);
   });
   return {
+    change: (messages: Message[]) => {
+      act(() => mockStore.setState({ messages }));
+      return mockList.props?.maintainVisibleContentPosition;
+    },
     finish: () => {
-      mockState = chatState(false);
-      act(() => renderer.update(screen()));
+      act(() => mockStore.setState(chatState(false)));
     },
   };
 }
@@ -109,4 +111,34 @@ test('a reply still streaming when its chat opens, as after a relaunch, is follo
 test('a chat whose reply has finished opens without following', () => {
   openChat(false);
   expect(mockList.props?.maintainScrollAtEnd).toBeUndefined();
+});
+
+test('the list holds the rows on screen only for the change that adds an older page', () => {
+  const chat = openChat(true);
+  const messages = () => mockStore.getState().messages;
+  const older = (n: number): Message[] => [
+    { id: `older-${n}`, role: 'user', text: 'Earlier', status: 'done' },
+    { id: `older-${n}-reply`, role: 'assistant', text: 'Yes', status: 'done' },
+  ];
+  expect(mockList.props?.maintainVisibleContentPosition).toEqual({
+    data: false,
+  });
+
+  expect(chat.change([...older(1), ...messages()])).toEqual({ data: true });
+  const reply = messages()[messages().length - 1];
+  expect(
+    chat.change([
+      ...messages().slice(0, -1),
+      { ...reply, text: 'Partial and more' },
+    ]),
+  ).toEqual({ data: false });
+
+  expect(chat.change([...older(2), ...messages()])).toEqual({ data: true });
+  expect(
+    chat.change([
+      ...messages(),
+      { id: 'next', role: 'user', text: 'Next', status: 'done' },
+      { id: 'next-reply', role: 'assistant', text: '', status: 'streaming' },
+    ]),
+  ).toEqual({ data: false });
 });

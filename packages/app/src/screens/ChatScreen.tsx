@@ -57,7 +57,6 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   const newChat = useChatStore(state => state.newChat);
   const loadOlder = useChatStore(state => state.loadOlder);
   const chatId = useChatStore(state => state.chatId);
-  const addedOlder = useChatStore(state => state.addedOlder);
   const messagesLength = useChatStore(state => state.messages.length);
   const isStreaming = useChatStore(state => state.isStreaming);
   const [composerHeight, setComposerHeight] = useState(0);
@@ -169,7 +168,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
     <View style={styles.container}>
       <BootSplash.HideOnDraw fade />
       <ChatMessages>
-        {messages => (
+        {(messages, addedOlder) => (
           <KeyboardAwareLegendList
             ref={listRef}
             style={styles.fill}

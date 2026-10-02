@@ -23,10 +23,6 @@ export type ChatViewState = {
   chatId: string;
   // The newest part of the chat's path. loadOlder() adds earlier messages.
   messages: Message[];
-  hasOlder: boolean;
-  // True when the last change to messages added older history above them. The
-  // list keeps the rows on screen in place only for that change.
-  addedOlder: boolean;
   isStreaming: boolean;
   // Chats with a sent message, most recently updated first.
   recents: ChatRecord[];
@@ -143,7 +139,6 @@ export function createChatView(
     store.setState({
       chatId,
       messages,
-      addedOlder: false,
       isStreaming: streaming(messages),
     });
 
@@ -151,14 +146,7 @@ export function createChatView(
     session.path(archive.chat(chatId).leafId, historyPage);
   const showPage = (chatId: string, path: SavedMessage[]): void => {
     rows.clear();
-    const messages = path.map(view);
-    store.setState({
-      chatId,
-      messages,
-      hasOlder: Boolean(path[0]?.parentId),
-      addedOlder: false,
-      isStreaming: streaming(messages),
-    });
+    show(chatId, path.map(view));
   };
 
   const refresh = (): void => {
@@ -177,8 +165,6 @@ export function createChatView(
   const store = createStore<ChatViewState>()(() => ({
     chatId: '',
     messages: [],
-    hasOlder: false,
-    addedOlder: false,
     isStreaming: false,
     recents: [],
     send: (text, attachments = []) => {
@@ -231,11 +217,7 @@ export function createChatView(
         const oldest = rows.get(messages[0]?.id ?? '')?.saved;
         if (!oldest?.parentId) return;
         const older = session.path(oldest.parentId, historyPage);
-        store.setState({
-          messages: [...older.map(view), ...messages],
-          hasOlder: Boolean(older[0]?.parentId),
-          addedOlder: true,
-        });
+        store.setState({ messages: [...older.map(view), ...messages] });
       }),
   }));
 
