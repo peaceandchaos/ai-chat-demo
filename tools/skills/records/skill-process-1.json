@@ -14,12 +14,35 @@
       "findings": [
         {
           "finding": "The safety fact: nothing outside tools/skills imports the new modules, and Jest already discovers tools/__tests__/*.test.js, so test:verified runs the new test without a config change. verify:commit at the head proves it.",
+          "cites": "Steps 2",
           "none": "No breakage found; no existing caller changes."
         },
         {
           "finding": "Second author pass, looking past grep at the diff wire format: an added line whose text starts with \"++ \" prints as \"+++ ...\" in the --unified=0 diff, and parseAddedLines took it for a file header. The real file then lost its later added lines, so addedLines rules such as network-calls and credential-lines missed it. The header-lookalike test failed before the fix with network-care missing.",
+          "cites": "Steps 3",
           "commit": "58ed89f0cd6b",
           "patch": "7afd2f94fdc49b1754fbccae31ecc268baa7cb27"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "blast-radius",
+          "source": "Skill",
+          "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_013i6cKRXRUEEFCiFvmCaANt",
+          "time": "2026-10-02T11:52:11.759Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "1GF0yxkSUjpAgJqYWk8nd6e5zMFe5TpJIahZb7/Q/18+7BGQfJdrTjfSXaQz4CFR+V0Lbo24gqgxDr7xkdVWDA=="
         }
       ]
     },
@@ -29,8 +52,30 @@
       "findings": [
         {
           "finding": "printRequired wrapped the skill id in a template literal that added nothing.",
+          "cites": "Focus Areas",
           "commit": "2958652b9656",
           "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "deslop",
+          "source": "Skill",
+          "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_019kyBvXoQdLm2wX8hkKbXXf",
+          "time": "2026-10-02T11:52:12.424Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "uG/j6rSJPtl3BOZxZTyg+QsfVj49sxt3GdsEzeNCGK+GQdwcgcg4trEhonNYp4PJsPA3B6ZcNxJXxwwPgPVoBQ=="
         }
       ]
     },
@@ -40,16 +85,40 @@
       "findings": [
         {
           "finding": "requiredSkills carried a comment that restated its name.",
+          "cites": "Steps 3",
           "commit": "2958652b9656",
           "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         },
         {
           "finding": "parseNumstat keeps one comment on the empty rename path, which is git numstat -z format that the code cannot show.",
+          "cites": "Steps 2",
           "none": "Kept: it explains an external format."
         },
         {
           "finding": "Second author pass: the skill's first step spawns comment-sicko, and this pass runs without subagents, so I audited the comments inline. The two comments in change.cjs describe git output formats, the numstat rename fields and the tab after a spaced path.",
+          "cites": "Steps 1",
           "none": "Kept both. They explain external formats that the code cannot show."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "no-comments",
+          "source": "Skill",
+          "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01EWFqAqcCbJ7U2DjexNndXi",
+          "time": "2026-10-02T11:52:12.499Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "SrFHuKTgueYnSnS+H7vcgUUdZXwErwctOG3XTSYcsqkrMo7T4A/jP1fE1tg6m6KPLDcfuAoK8B6XUFtlvNFCBQ=="
         }
       ]
     },
@@ -59,13 +128,36 @@
       "findings": [
         {
           "finding": "Routing JSON was parsed at the boundary but globs and patterns were rebuilt for every file inside the matcher.",
+          "cites": "Boundary Discipline",
           "commit": "2958652b9656",
           "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         },
         {
           "finding": "network-calls and credential-lines matched routing.json, which holds their own pattern text.",
+          "cites": "Boundary Discipline",
           "commit": "89272af3c116",
           "patch": "eb2d0fd8bbc1f8ef8dfbd63a9c6889535a9f8cae"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-boundary-discipline",
+          "source": "Skill",
+          "sha256": "e59efe04ed66e3a403a50e70640daeb5c7b592598687a67b6e25ceed6251d19f",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_018NhposF6ynZZ1hdXZoRiDH",
+          "time": "2026-10-02T11:52:13.033Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "BY3PNWDX0p5dgwK/IQv6jZIdwXQNZzI9jNO+8SheaIXaSdkyYO54lbndIgtcY3VDLfi/ObvrhBe9YPdQHO5AAA=="
         }
       ]
     },
@@ -75,18 +167,42 @@
       "findings": [
         {
           "finding": "Root cause of the change-rule bug: changeMatch modeled its filters as early returns, so the first filter decided the result. The fix makes the filters a conjunction instead of adding a special case for commitSubject.",
+          "cites": "Fix Root Causes",
           "commit": "2958652b9656",
           "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         },
         {
           "finding": "Found in independent review: added-line rules never matched a path with a space, because git diff ends that \"+++ b/\" path with a tab. The new test failed with the skill missing, and passes after the tab is stripped. Paths that git still C-quotes, such as those with a tab or a double quote, are not handled.",
+          "cites": "Fix Root Causes",
           "commit": "8113bfe",
           "patch": "1b4d4f869ee399691d84a3b27a32bf5293283065"
         },
         {
           "finding": "Second author pass: the root cause of the header misread is that the parser had no state for where a file header ends. The fix reads headers only between \"diff --git\" and the first \"@@\" instead of filtering lookalike paths. A search of tools/ found no other diff parser with the same flaw.",
+          "cites": "Fix Root Causes",
           "commit": "58ed89f0cd6b",
           "patch": "7afd2f94fdc49b1754fbccae31ecc268baa7cb27"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-fix-root-causes",
+          "source": "Skill",
+          "sha256": "4c5fd0fb9eb4754dff9a6dd4d1de7a87dc927f5154ab3afd643bedb9b7f8b6b9",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01VqsSbmvHc6H6SN6LFP7wAh",
+          "time": "2026-10-02T11:52:13.108Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "bES3HH3z3U0xXa2YYKhgcoaK+NAYO+7+1j4mVR93HHrx569yZ89rXrxAVWpYfdfnhH++7cG6hvs2qjV1KYYOBA=="
         }
       ]
     },
@@ -103,7 +219,29 @@
       "findings": [
         {
           "finding": "cli.cjs dispatches four shapes of arguments in one if chain; each branch is one line, so a command table would add a layer without removing reading.",
+          "cites": "Minimize Reader Load",
           "none": "Kept the direct chain."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-minimize-reader-load",
+          "source": "Skill",
+          "sha256": "772bd55686c20d49e1220d0728de4587cd5608ae2968b7896c5477b3f8813dfc",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01E7K9mpB5yFajppyAaqvwa5",
+          "time": "2026-10-02T11:52:16.368Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "rxM1TwAsbB5NxRNlcK87DphKEOWHmL3kbtXzWGYqoBxElWGjQYSywOx676DUScwNs9wXURoejjAwPWHVz0PXCA=="
         }
       ]
     },
@@ -113,7 +251,29 @@
       "findings": [
         {
           "finding": "Seven code mutations (unsorted output, ignored exclusions, missed CommonJS exports, old rename path, plan content rules, missing root check, change filters not ANDed) each failed the fixture test; logs are in the PR evidence.",
+          "cites": "Script the check when you can",
           "none": "Evidence, not a defect."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-prove-it-works",
+          "source": "Skill",
+          "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01RpT1RNeCjT34c1uRGHkuUy",
+          "time": "2026-10-02T11:52:16.978Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "VjEkPs0dSOJfkOc2JAo0VQzTT+kttBgQ7UlJpK7fR5vyingH8cAcBK6xQlbbcgdmOlr4CHHPLq6V8LFKHlLkCA=="
         }
       ]
     },
@@ -123,8 +283,30 @@
       "findings": [
         {
           "finding": "The rename mutation survived the first fixture, so the plan case gained a rename out of src/ before the feature commit.",
+          "cites": "Sequence work into verifiable units",
           "commit": "63bbc172e48f",
           "patch": "6d7ec468381cf9a6b5978e81ccbaefda47f82b45"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-sequence-verifiable-units",
+          "source": "Skill",
+          "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01W7G7bwgboU1A4KPzeqwihh",
+          "time": "2026-10-02T11:52:17.055Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "vLbJJhIpoKXDcuomMHEIBSMIvawLDuhX1b4ahDa+yvejX4L2uwinF/w3i26NbkOP2/oOW+xhrBUJFyxyl4MnAg=="
         }
       ]
     },
@@ -141,13 +323,36 @@
       "findings": [
         {
           "finding": "routing.cjs exported a globs schema that nothing imported.",
+          "cites": "Subtract Before You Add",
           "commit": "89272af3c116",
           "patch": "eb2d0fd8bbc1f8ef8dfbd63a9c6889535a9f8cae"
         },
         {
           "finding": "Second author pass: routing.cjs still exported matchesAny and change.cjs exported exportNames, and nothing in the stack imports either. The earlier pass removed one unused export but not the pattern.",
+          "cites": "Subtract Before You Add",
           "commit": "9ce299914797",
           "patch": "9e02ad3f04c3748aef6fcc4146a534250430f7cb"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-subtract-before-you-add",
+          "source": "Skill",
+          "sha256": "84bfde4d3dc16360264e0cb944b2dfbd8d92a70624322e83b93432f8e35dc60e",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01MadNGNyeGdJDKf5EGpfYug",
+          "time": "2026-10-02T11:52:17.682Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "0YvNOYobtmcnMsjYR01wWLMaDrnuN5y/k2PhnVEIRmekH8yuQSNeO92J7utL8HNW76KsStYCKvwllam4YJUXDQ=="
         }
       ]
     },
@@ -164,7 +369,29 @@
       "findings": [
         {
           "finding": "The fixture test compares the exact printed output, which is the contract (deterministic, sorted, with every reason), and each mutation above changed that output.",
+          "cites": "Test behavior, not implementation",
           "none": "No weak assertion found."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-test-behavior-not-implementation",
+          "source": "Skill",
+          "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01Po4KAu3LpUm39A6J2JJs1y",
+          "time": "2026-10-02T11:52:17.763Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "Ly5hYVimyWRpirvPMJxdg90+7wngtm+lEGJ4c6+eWEDBuHyxajHUAgBdz1oJwjoKnWJ+9JeZm7iXI9eU5fwwBg=="
         }
       ]
     },
@@ -174,8 +401,30 @@
       "findings": [
         {
           "finding": "docs/skills.md said a change rule tests one filter after the fix made filters a conjunction.",
+          "cites": "Voice and repo specifics",
           "commit": "ef208e624b22",
           "patch": "0507620d82f180c443ae6f04cf2168cde1d27444"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "technical-writing",
+          "source": "Skill",
+          "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01N2ryr1mavwoHdMDbGvy5qD",
+          "time": "2026-10-02T11:52:21.779Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "myrpM85WfZezOEKvdmJjWlcZMHTWnLQuiB6Noa6yrp1ht/3RdFl4LegXvFTpZ4T2SjblF3JLhx+GoEJkwKFxDA=="
         }
       ]
     },
@@ -185,12 +434,35 @@
       "findings": [
         {
           "finding": "The committed-routing test asserts only that rules exist, but its protection is that parseRouting does not throw on a typo in a skill id.",
+          "cites": "Review questions",
           "none": "Kept: it is the only check of the real routing file."
         },
         {
           "finding": "Second author pass: the header-lookalike case shares the spaced-path test body through test.each, so both parse hazards run the real CLI and assert the full printed output. It failed before the fix with network-care missing for src/client.ts.",
+          "cites": "Review questions",
           "commit": "58ed89f0cd6b",
           "patch": "7afd2f94fdc49b1754fbccae31ecc268baa7cb27"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "test-prune",
+          "source": "Skill",
+          "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_016s1WvZ8MjPNkFEmSA4YKLh",
+          "time": "2026-10-02T11:52:22.395Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "Dl9yVT7Q3DEVuFsmbymxSpPAhcnC0PQsaiWs290iaxYTIImRH+1qArybhEz17NTIJI2pKxkHfdq5TE+YUT4VCw=="
         }
       ]
     },
@@ -200,12 +472,35 @@
       "findings": [
         {
           "finding": "Change-rule filters were not composed like file-rule filters, which made the two rule kinds read differently.",
+          "cites": "Primary Review Questions",
           "commit": "2958652b9656",
           "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         },
         {
           "finding": "No file passes 300 lines; routing, change reading, and the CLI each own one concern.",
+          "cites": "Non-Negotiable Additional Standards 1",
           "none": "No decomposition needed."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "thermo-nuclear-code-quality-review",
+          "source": "Skill",
+          "sha256": "35f68c89a24f690eaba7f77c637d3b7dc1cb0fc7bf17670606ffd83f074fa626",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01RLCcvFd4uwnsHAFtLe4wQM",
+          "time": "2026-10-02T11:52:22.474Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "/MtgnWxlIJxl5YAW3oG1EZ2VI87OpIlbMUEkA/CUmNl8ZWAi25eWxi/8twOEy1Ufx1aNMFJTrsWY5FTdoAQaCA=="
         }
       ]
     },
@@ -221,7 +516,29 @@
       "findings": [
         {
           "finding": "Checked AGENTS.md, README.md, and docs/skills.md for long dashes, mid-sentence colons, and filler.",
+          "cites": "Filler",
           "none": "None found."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "unslop",
+          "source": "Skill",
+          "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01Rm3eyYnpU5i3n9dRb2BPao",
+          "time": "2026-10-02T11:52:22.928Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "9bjXiX6k2Cm4wMHMbWjqfSVE+GoZZBGFkeCwDo9SncUXiSZtAO68Ckz9dGDuOepxGx3on1tctdY8knxnSmwWAg=="
         }
       ]
     },
@@ -231,7 +548,29 @@
       "findings": [
         {
           "finding": "The AGENTS.md pointer front-loads the trigger (before you edit) and names the command and the doc.",
+          "cites": "Context pointers",
           "none": "No change needed."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "writing-for-agents",
+          "source": "Skill",
+          "sha256": "a842323e664e5af104eac5c97ad22fda929ebeb62d81c501161ac1f6f482db58",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01JdspwiAQRQ34GCRBGkJktD",
+          "time": "2026-10-02T11:52:23.018Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "0a44a1bed5b991ea1f910269a6b1ca88ee951c07",
+          "headPatch": "23b86cb8f7548ff774f1b057ce27172f0fa9ad72",
+          "sig": "eV8/0Q5BkiVCmYHo7GLDsY0+OT6/6W+hzWx40rzYuE2riJqx/qF5LY02I3ajSXRxrZrwS1n+lJW2+mNcghL4Cg=="
         }
       ]
     }
