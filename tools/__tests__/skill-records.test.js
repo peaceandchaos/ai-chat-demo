@@ -16,10 +16,6 @@ const {
   authored,
   reviewed,
   noAuthorReceipt,
-  noReviewerReceipt,
-  upperPath,
-  upperOn,
-  noReview,
   setUpRecordFixture,
   removeRecordFixture,
 } = require('./record-fixture.cjs');
@@ -33,6 +29,20 @@ let work;
 let middle;
 let later;
 let receipt;
+
+const noReviewerReceipt = (change, skill) =>
+  `tools/skills/records/${change}.json: review of ${skill} has no valid receipt from a session and agent pair that made none of this record's author receipts. The reviewer loads it with the Skill tool, then runs npm run skills:record -- ${change} <base> --review.`;
+const upperPath = 'tools/skills/records/upper.json';
+// Commits an upper record on top of the stack.
+const upperOn = (branch, skills, review) =>
+  recordOn(
+    branch,
+    [{ change: 'upper', base: { commit: middle }, skills, review }],
+    [],
+    later,
+  );
+const noReview = change =>
+  `tools/skills/records/${change}.json has no review section, and a pull request needs an independent review of every record. The reviewer loads each required skill with the Skill tool, then runs npm run skills:record -- ${change} <base> --review.`;
 
 beforeAll(() => {
   ({
