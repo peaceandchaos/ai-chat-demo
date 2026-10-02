@@ -12,6 +12,7 @@ const { globPattern, requiredSkills } = require('./routing.cjs');
 const recordsDirectory = 'tools/skills/records';
 const recordFile = /^tools\/skills\/records\/([a-z0-9-]+)\.json$/u;
 
+const changeId = /^[a-z0-9-]+$/u;
 const findingSchema = z
   .strictObject({
     finding: z.string().min(1),
@@ -21,27 +22,12 @@ const findingSchema = z
       .optional(),
     none: z.string().min(1).optional(),
   })
-  .transform((finding, context) => {
-    if ((finding.commit === undefined) === (finding.none === undefined)) {
-      context.addIssue({
-        code: 'custom',
-        message:
-          'needs exactly one resolution: "commit" with the fixing commit, or "none" with the reason',
-      });
-      return z.NEVER;
-    }
-    return finding.commit === undefined
-      ? {
-          finding: finding.finding,
-          resolution: { kind: 'none', reason: finding.none },
-        }
-      : {
-          finding: finding.finding,
-          resolution: { kind: 'commit', commit: finding.commit },
-        };
-  });
+  .refine(
+    finding => (finding.commit === undefined) !== (finding.none === undefined),
+    'needs exactly one resolution: "commit" with the fixing commit, or "none" with the reason',
+  );
 const recordSchema = z.strictObject({
-  change: z.string().regex(/^[a-z0-9-]+$/u),
+  change: z.string().regex(changeId),
   skills: z
     .array(
       z.strictObject({
@@ -103,14 +89,12 @@ function entryProblems(path, entry, routing, required) {
 
 function findingProblems(path, entry, commits) {
   const problems = [];
-  for (const { finding, resolution } of entry.findings) {
-    if (resolution.kind === 'none') continue;
-    const matches = commits.filter(commit =>
-      commit.startsWith(resolution.commit),
-    );
+  for (const { finding, commit: cited } of entry.findings) {
+    if (cited === undefined) continue;
+    const matches = commits.filter(commit => commit.startsWith(cited));
     if (matches.length !== 1)
       problems.push(
-        `${path}: ${entry.skill} finding "${finding}" cites ${resolution.commit}, which is ${matches.length ? 'ambiguous' : 'not a commit'} in this range.`,
+        `${path}: ${entry.skill} finding "${finding}" cites ${cited}, which is ${matches.length ? 'ambiguous' : 'not a commit'} in this range.`,
       );
   }
   return problems;
@@ -172,23 +156,9 @@ function checkRecords(root, routing, change) {
   };
 }
 
-function serialize(record) {
-  return {
-    change: record.change,
-    skills: record.skills.map(({ skill, files, reason, findings }) => ({
-      skill,
-      files,
-      ...(reason ? { reason } : {}),
-      findings: findings.map(({ finding, resolution }) =>
-        resolution.kind === 'commit'
-          ? { finding, commit: resolution.commit }
-          : { finding, none: resolution.reason },
-      ),
-    })),
-  };
-}
-
 function writeRecord(root, routing, change, id) {
+  if (!changeId.test(id))
+    throw new Error('Name the change in lowercase-with-dashes.');
   const path = join(root, recordsDirectory, `${id}.json`);
   const record = existsSync(path)
     ? recordSchema.parse(JSON.parse(readFileSync(path, 'utf8')))
@@ -209,7 +179,7 @@ function writeRecord(root, routing, change, id) {
   }
   record.skills.sort((a, b) => (a.skill < b.skill ? -1 : 1));
   mkdirSync(join(root, recordsDirectory), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(serialize(record), null, 2)}\n`);
+  writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);
   return path;
 }
 

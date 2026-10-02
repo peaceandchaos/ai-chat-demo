@@ -54,8 +54,6 @@ function printRequired(root, routing, change) {
 }
 
 function record(root, [id, base, head = 'HEAD']) {
-  if (!/^[a-z0-9-]+$/u.test(id))
-    throw new Error('Name the change in lowercase-with-dashes.');
   const path = writeRecord(
     root,
     readRouting(root),
