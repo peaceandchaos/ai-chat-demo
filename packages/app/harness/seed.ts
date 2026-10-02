@@ -1,6 +1,6 @@
 import type { ChatArchive } from '../src/state/archive';
 
-export type SeedTurn = { question: string; answer: string };
+type SeedTurn = { question: string; answer: string };
 
 // Saves finished turns the way a settled reply ends up on disk: completed,
 // acknowledged, and off the job list, so the session has nothing to resume.
