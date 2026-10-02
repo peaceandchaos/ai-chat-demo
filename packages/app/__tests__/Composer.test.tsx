@@ -2,8 +2,7 @@ import React from 'react';
 import { TextInput, View } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
-import { Composer } from '../src/components/Composer';
-import type { SendResult } from '../src/state/chatStore';
+import { Composer, type SendResult } from '../src/components/Composer';
 
 jest.mock('react-native-reanimated', () => ({
   __esModule: true,

@@ -2,10 +2,16 @@ import React from 'react';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { useStore as mockUseStore } from 'zustand';
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import type { SendResult } from '../src/components/Composer';
 import { ChatScreen } from '../src/screens/ChatScreen';
 import type { ChatViewState, Message } from '../src/state/chatView';
 
+type AnchoredEndSpace = {
+  anchorIndex: number;
+  onSizeChanged: (size: number) => void;
+};
 type ListProps = {
+  anchoredEndSpace?: AnchoredEndSpace;
   initialScrollAtEnd?: boolean;
   maintainScrollAtEnd?: unknown;
   maintainVisibleContentPosition?: unknown;
@@ -14,6 +20,11 @@ type ListProps = {
 };
 type RenderedList = { props?: ListProps };
 const mockList: RenderedList = {};
+type ComposerProps = {
+  onSubmit: (text: string, attachments: []) => SendResult;
+};
+type RenderedComposer = { props?: ComposerProps };
+const mockComposer: RenderedComposer = {};
 
 jest.mock('@legendapp/list/keyboard', () => ({
   KeyboardAwareLegendList: (props: ListProps) => {
@@ -37,7 +48,12 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 jest.mock('react-native-bootsplash', () => ({ HideOnDraw: () => null }));
 jest.mock('../src/components/Header', () => ({ Header: () => null }));
-jest.mock('../src/components/Composer', () => ({ Composer: () => null }));
+jest.mock('../src/components/Composer', () => ({
+  Composer: (props: ComposerProps) => {
+    mockComposer.props = props;
+    return null;
+  },
+}));
 jest.mock('../src/components/EmptyState', () => ({ EmptyState: () => null }));
 jest.mock('../src/components/MessageBubble', () => ({
   MessageBubble: () => null,
@@ -68,7 +84,7 @@ function chatState(isStreaming: boolean): ChatViewState {
     ],
     isStreaming,
     recents: [],
-    send: () => 'saved',
+    send: () => null,
     stop: () => undefined,
     newChat: () => undefined,
     openChat: () => undefined,
@@ -141,4 +157,84 @@ test('the list holds the rows on screen only for the change that adds an older p
       { id: 'next-reply', role: 'assistant', text: '', status: 'streaming' },
     ]),
   ).toEqual({ data: false });
+});
+
+const question = (id: string): Message => ({
+  id,
+  role: 'user',
+  text: 'Question',
+  status: 'done',
+});
+const answer = (id: string, status: Message['status']): Message => ({
+  id,
+  role: 'assistant',
+  text: 'Answer',
+  status,
+});
+
+function chatWith(chats: Record<string, Message[]>, open: string) {
+  const show = (chatId: string, messages: Message[]) =>
+    mockStore.setState({
+      chatId,
+      messages,
+      isStreaming: messages.at(-1)?.status === 'streaming',
+    });
+  // What a send does to the chat view: saves the turn and shows the rows it
+  // could read.
+  type Sent = { userId: string; rows: Message[] };
+  let sent: Sent = { userId: '', rows: [] };
+  mockStore = createStore(() => ({
+    ...chatState(false),
+    chatId: open,
+    messages: chats[open],
+    send: () => {
+      const { chatId, messages } = mockStore.getState();
+      chats[chatId] = [...messages, ...sent.rows];
+      show(chatId, chats[chatId]);
+      return sent.userId;
+    },
+  }));
+  const screen = () => <ChatScreen onOpenRecents={() => undefined} />;
+  let renderer!: ReactTestRenderer;
+  act(() => {
+    renderer = create(screen());
+  });
+  return {
+    sendShowing: (userId: string, rows: Message[]) => {
+      sent = { userId, rows };
+      act(() => {
+        mockComposer.props?.onSubmit('Question', []);
+      });
+    },
+    // Opening a chat from Recents, which may be the chat already shown.
+    openFromRecents: (chatId: string) => {
+      act(() => {
+        show(chatId, chats[chatId]);
+        renderer.update(screen());
+      });
+    },
+  };
+}
+
+test('the anchored end space belongs to the sent user turn, wherever that turn is in the list', () => {
+  const chats = {
+    a: [question('a1'), answer('a1-reply', 'done')],
+    b: [question('b1'), answer('b1-reply', 'done')],
+  };
+  const chat = chatWith(chats, 'a');
+  expect(mockList.props?.anchoredEndSpace).toBeUndefined();
+
+  chat.sendShowing('a2', [question('a2'), answer('a2-reply', 'streaming')]);
+  expect(mockList.props?.anchoredEndSpace?.anchorIndex).toBe(2);
+
+  // Chat b was not sent in this launch, so it shows no anchored end space.
+  chat.openFromRecents('b');
+  expect(mockList.props?.anchoredEndSpace).toBeUndefined();
+  chat.openFromRecents('a');
+  expect(mockList.props?.anchoredEndSpace?.anchorIndex).toBe(2);
+
+  // A send whose user turn could not be read back shows only the reply.
+  chat.openFromRecents('b');
+  chat.sendShowing('b2', [answer('b2-reply', 'streaming')]);
+  expect(mockList.props?.anchoredEndSpace).toBeUndefined();
 });

@@ -18,7 +18,7 @@ import { Glass } from './Glass';
 import { Icon } from './Icon';
 import { useAttachments } from '../hooks/useAttachments';
 import { useDraft } from '../hooks/useDraft';
-import type { Attachment, SendResult } from '../state/chatStore';
+import type { Attachment } from '../state/chatStore';
 import { theme } from '../theme';
 
 const INPUT_MAX_HEIGHT = 120;
@@ -26,6 +26,9 @@ const INPUT_MAX_HEIGHT = 120;
 // Shared duration for the attachment pill swell/shrink so the thumbnail fade
 // and the height collapse stay in lockstep.
 const THUMBS_ANIM_MS = 220;
+
+// The composer keeps its input when the message was not saved.
+export type SendResult = 'saved' | 'unsaved';
 
 type ComposerProps = {
   chatId: string;

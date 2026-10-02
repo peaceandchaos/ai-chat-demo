@@ -65,7 +65,7 @@ test('Recents lists sent chats newest first without unsent chats, and opening on
   ]);
   expect(state().isStreaming).toBe(false);
 
-  expect(state().send('Alpha three')).toBe('saved');
+  expect(state().send('Alpha three')).toBe(state().messages.at(-2)?.id);
   const reply = state().messages[5];
   server.providers.script(reply.id).text('A3').end();
   await settled(phone, reply.id);
@@ -81,7 +81,7 @@ test('Recents lists sent chats newest first without unsent chats, and opening on
     'Bravo',
     'B1',
   ]);
-  expect(after().send('Bravo again')).toBe('saved');
+  expect(after().send('Bravo again')).toBe(after().messages.at(-2)?.id);
   expect(relaunched.archive.message(after().messages[3].id).picker).toBe(
     'deepseek',
   );
@@ -140,7 +140,7 @@ test('older history loads one page at a time until all 1,200 messages show in or
 
   state().loadOlder();
   expect(state().messages).toHaveLength(1_200);
-  expect(state().send('One more')).toBe('saved');
+  expect(state().send('One more')).toBe(state().messages.at(-2)?.id);
   expect(state().messages).toHaveLength(1_202);
   expect(state().messages[0].text).toBe('Question 1');
   const reply = state().messages[1_201];

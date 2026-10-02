@@ -76,23 +76,29 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
     [openReasoning],
   );
 
-  // The anchor is the last sent user turn, which stays second from the end
-  // while its reply streams and older pages load above it.
-  const [anchoredChat, setAnchoredChat] = useState<string | null>(null);
-  const anchorIndex = anchoredChat === chatId ? messagesLength - 2 : undefined;
+  // The anchor is the user turn sent last in this launch. A chat that does
+  // not show that turn has no anchor.
+  const [anchorId, setAnchorId] = useState<string | null>(null);
+  const anchorIndex = useChatStore(state => {
+    for (let index = state.messages.length - 1; index >= 0; index--)
+      if (state.messages[index].id === anchorId) return index;
+    return undefined;
+  });
   // A sent reply is followed once it overflows the reserved space. A reply
   // already streaming when the chat opened, as after a relaunch, has no
-  // anchored turn and is followed from the start. A drag pauses either. Each
-  // state names the chat it belongs to, so opening another chat starts
-  // without it.
-  const [overflowedChat, setOverflowedChat] = useState<string | null>(null);
-  const [resumedChat, setResumedChat] = useState<string | null>(null);
-  const [pausedChat, setPausedChat] = useState<string | null>(null);
-  if (isStreaming && anchorIndex == null && resumedChat !== chatId) {
-    setResumedChat(chatId);
+  // anchored turn and is followed from the start. A drag pauses either.
+  const [overflowedAnchorId, setOverflowedAnchorId] = useState<string | null>(
+    null,
+  );
+  const [resumedChatId, setResumedChatId] = useState<string | null>(null);
+  const [pausedChatId, setPausedChatId] = useState<string | null>(null);
+  if (isStreaming && anchorIndex == null && resumedChatId !== chatId) {
+    setResumedChatId(chatId);
   }
-  const tracking = overflowedChat === chatId || resumedChat === chatId;
-  const following = tracking && pausedChat !== chatId;
+  const tracking =
+    (anchorIndex != null && overflowedAnchorId === anchorId) ||
+    resumedChatId === chatId;
+  const following = tracking && pausedChatId !== chatId;
 
   // Image messages are taller than the text cap; leave them uncapped so the top
   // of the image lands at the anchor offset instead of being clipped above it.
@@ -117,23 +123,27 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   const onSubmit = useCallback(
     (text: string, attachments: Attachment[]) => {
       const isFirstMessage = messagesLength === 0;
-      const result = send(text, attachments);
-      if (result === 'unsaved') {
-        return result;
+      const userId = send(text, attachments);
+      if (userId === null) {
+        return 'unsaved';
       }
-      setOverflowedChat(null);
-      setResumedChat(null);
-      setPausedChat(null);
-      setAnchoredChat(chatId);
+      setResumedChatId(null);
+      setPausedChatId(null);
+      setAnchorId(userId);
       scrollMessageToEnd({ animated: !isFirstMessage, closeKeyboard: true });
-      return result;
+      return 'saved';
     },
-    [chatId, messagesLength, send, scrollMessageToEnd],
+    [messagesLength, send, scrollMessageToEnd],
   );
 
   // A chat opened from Recents starts at its newest message. The list stays
   // mounted across chats: remounting it while Recents freezes this page left
-  // the header and composer showing the wrong SF Symbols.
+  // the header and composer showing the wrong SF Symbols, because
+  // react-native-nitro-symbols 0.0.8 keeps a recycled view's symbol
+  // (ios/HybridSymbolView.swift: `prepareForRecycle() {}`) and sets a symbol
+  // only when the prop changed
+  // (nitrogen/generated/ios/c++/views/HybridSymbolViewComponent.mm:
+  // `symbolName.isDirty = false`).
   useEffect(() => {
     listRef.current?.scrollToEnd({ animated: false });
   }, [chatId]);
@@ -146,7 +156,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
       setShowScrollDown(!visible);
       // Back at the bottom after a manual scroll-up: re-arm tail-follow
       if (visible && tracking) {
-        setPausedChat(null);
+        setPausedChatId(null);
       }
     },
     [tracking],
@@ -156,7 +166,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   // scroll up (e.g. to read a table)
   const onScrollBeginDrag = useCallback(() => {
     if (tracking) {
-      setPausedChat(chatId);
+      setPausedChatId(chatId);
     }
   }, [chatId, tracking]);
 
@@ -177,8 +187,6 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
             renderItem={renderMessage}
             // Let the bottom contentInset / anchored end-space area still catch scroll touches (RN 0.81+ hit-test bug, facebook/react-native#54123).
             applyWorkaroundForContentInsetHitTestBug
-            // The saved chat starts at its newest message; scrolling to the top
-            // loads the page before it without moving what is on screen.
             initialScrollAtEnd
             onStartReached={loadOlder}
             maintainVisibleContentPosition={
@@ -201,7 +209,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
                     anchorOffset: insets.top + 56,
                     onSizeChanged: size => {
                       if (size <= 0) {
-                        setOverflowedChat(chatId);
+                        setOverflowedAnchorId(anchorId);
                       }
                     },
                   }

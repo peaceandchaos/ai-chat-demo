@@ -26,7 +26,8 @@ export type ChatViewState = {
   isStreaming: boolean;
   // Chats with a sent message, most recently updated first.
   recents: ChatRecord[];
-  send: (text: string, attachments?: Attachment[]) => SendResult;
+  // Returns the saved user turn's id, or null when nothing was saved.
+  send: (text: string, attachments?: Attachment[]) => string | null;
   stop: () => void;
   newChat: () => void;
   openChat: (chatId: string) => void;
@@ -34,8 +35,6 @@ export type ChatViewState = {
 };
 
 export const historyPage = 50;
-
-export type SendResult = 'saved' | 'unsaved';
 
 export type ChatStore = StoreApi<ChatViewState>;
 
@@ -162,7 +161,7 @@ export function createChatView(
     if (changed || isStreaming !== streaming(next)) show(chatId, next);
   };
 
-  const store = createStore<ChatViewState>()(() => ({
+  const store: ChatStore = createStore<ChatViewState>()(() => ({
     chatId: '',
     messages: [],
     isStreaming: false,
@@ -179,7 +178,7 @@ export function createChatView(
           ),
         'These images can’t be sent.',
       );
-      if (!reply) return 'unsaved';
+      if (!reply) return null;
       const userId = reply.parentId;
       if (userId && attachments.length > 0)
         sentImages.set(
@@ -190,7 +189,7 @@ export function createChatView(
       const turn = user ? [user, reply] : [reply];
       show(chatId, [...store.getState().messages, ...turn.map(view)]);
       attempt(() => store.setState({ recents: archive.recents() }));
-      return 'saved';
+      return userId;
     },
     stop: () => {
       const leaf = store.getState().messages.at(-1);
@@ -210,7 +209,6 @@ export function createChatView(
         archive.openChat(chatId);
         showPage(chatId, path);
       }),
-    // Reads only the next page, starting above the oldest message shown.
     loadOlder: () =>
       attempt(() => {
         const { messages } = store.getState();
