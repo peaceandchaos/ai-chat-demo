@@ -200,3 +200,43 @@ test('an empty or ineffective compaction fails without silently truncating histo
     ),
   ).rejects.toThrow('did not free');
 });
+
+test('an image counts by its per-image estimate, not its encoded length', async () => {
+  const photo = (characters: number): ResponseInputItem => ({
+    type: 'message',
+    role: 'user',
+    content: [
+      {
+        type: 'input_image',
+        image_url: `data:image/png;base64,${'A'.repeat(characters)}`,
+      },
+    ],
+  });
+  const empty = contextSize([{ type: 'message', role: 'user', content: [] }]);
+  // OpenAI's documented ceiling: 30,000 patches at the 1.2 multiplier.
+  expect(contextSize([photo(4)]) - empty).toBeGreaterThanOrEqual(
+    Math.ceil(30_000 * 1.2),
+  );
+  expect(contextSize([photo(2_999_000)])).toBe(contextSize([photo(4)]));
+
+  // Small encoded images still fill the window and lead to compaction.
+  const input = submission();
+  input.history = history(Array.from({ length: 13 }, (_, index) => `${index}`));
+  for (const entry of input.history)
+    if (entry.role === 'user')
+      entry.images = Array.from(
+        { length: 4 },
+        () => 'data:image/png;base64,AAAA',
+      );
+  input.userTurnId = input.history[12].id;
+  const calls: ResponseInputItem[][] = [];
+  const prepared = await prepareContext(
+    input,
+    'kimi',
+    signal,
+    before,
+    services(calls),
+  );
+  expect(calls.length).toBeGreaterThan(0);
+  expect(prepared.checkpoint?.method).toBe('kimi-summary');
+});
