@@ -534,8 +534,8 @@
           "none": "No workflow step changed."
         },
         {
-          "finding": "Second author pass: jobs.ts and worker.ts only stop exporting JobUpdate and WorkerOptions. The server does not use the Workflow DevKit.",
-          "none": "No durable workflow code changes."
+          "finding": "Second author pass: jobs.ts and worker.ts only stop exporting JobUpdate and WorkerOptions. The durable reply in packages/server/workflows/reply.ts, which uses the Workflow DevKit, does not change in this range.",
+          "none": "No workflow or step function changes."
         }
       ]
     }
