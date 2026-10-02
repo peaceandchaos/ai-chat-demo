@@ -25,6 +25,8 @@
     "verify:current": "node tools/verify.cjs current",
     "skills:required": "node tools/skills/cli.cjs required",
     "skills:catalog": "node tools/skills/cli.cjs catalog",
+    "skills:record": "node tools/skills/cli.cjs record",
+    "skills:check": "node tools/skills/cli.cjs check",
     "react-compiler-check": "npm run react-compiler-check --workspace packages/app",
     "start": "npm run start --workspace packages/app",
     "ios": "npm run ios --workspace packages/app",
