@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import {
   submissionCommands,
+  submissionSchema,
   type ModelKey,
   type Submission,
 } from '../../../shared/contracts';
@@ -188,5 +189,27 @@ test.each<ModelKey>(['kimi', 'deepseek', 'gpt-6.1-sol', 'gpt-6-astra'])(
     });
     expect(upstream).toHaveLength(1);
     expect(upstream[0]).toContain(photo);
+  },
+);
+
+test.each<ModelKey>(['kimi', 'deepseek', 'gpt-6.1-sol', 'gpt-6-astra'])(
+  'a message with the most and largest photos the contract accepts reaches %s',
+  async model => {
+    const photos = Array.from(
+      { length: 4 },
+      () =>
+        `data:image/png;base64,${randomBytes(2_249_982).toString('base64')}`,
+    );
+    const input = photoTurn(model, photos);
+    expect(submissionSchema.parse(input)).toEqual(input);
+    expect(Math.min(...photos.map(item => item.length))).toBeGreaterThan(
+      2_999_990,
+    );
+    expect(await submitTurn(input)).toEqual({
+      status: 'completed',
+      error: null,
+    });
+    expect(upstream).toHaveLength(1);
+    for (const item of photos) expect(upstream[0]).toContain(item);
   },
 );
