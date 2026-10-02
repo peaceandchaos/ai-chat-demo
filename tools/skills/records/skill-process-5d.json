@@ -371,5 +371,326 @@
         }
       ]
     }
-  ]
+  ],
+  "review": {
+    "skills": [
+      {
+        "skill": "blast-radius",
+        "findings": [
+          {
+            "finding": "Review base: dffee9a, the last PR5 commit and the base the 5d report names. With e22c06d, skills:record --review adds 12 author entries. From dffee9a it adds none, and the 10 required skills match the author section.",
+            "cites": "Steps",
+            "none": "No defect."
+          },
+          {
+            "finding": "GITHUB_EVENT_NAME passes through cleanEnvironment in tools/verification/snapshot.cjs, so a hosted pull request job runs skills:check in pull request mode. 053ae2b keeps the fixture tests out of that mode.",
+            "cites": "Steps",
+            "none": "No defect."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "blast-radius",
+            "source": "Skill",
+            "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_018BpkiYheSRjbqdcNKmsViU",
+            "time": "2026-10-02T13:29:42.407Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "MfUxYYU/f15e7D8YY3RDP+emTGiixmxDhlOpNEWpHEnj+lPjrVF6ON1ZqUMVDSVuFQ3c2Wj41X1oyUUd1OpAAQ=="
+          }
+        ]
+      },
+      {
+        "skill": "deslop",
+        "findings": [
+          {
+            "finding": "8ac891b names the review requirement as one boolean instead of repeating the condition.",
+            "cites": "Focus Areas",
+            "none": "No slop to remove."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "deslop",
+            "source": "Skill",
+            "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_01GsiovVLkDX1c7ysRiePcLw",
+            "time": "2026-10-02T13:29:43.036Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "n4aPA9H9igqEMkceoWbf0UZ7W+/Wo3yoC8Tv6MuXzbgDvzT4keXGniiPOu+UrjNLjzqdjsL29FhRRvBC1+HLDw=="
+          }
+        ]
+      },
+      {
+        "skill": "no-comments",
+        "findings": [
+          {
+            "finding": "I applied this skill inline and did not dispatch the comment-sicko agent, because this review session may not spawn agents. 5d adds no comment that restates the code.",
+            "cites": "Steps",
+            "none": "No comment to remove."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "no-comments",
+            "source": "Skill",
+            "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_01YT2BdaLYRqGYrmqT5Enr9f",
+            "time": "2026-10-02T13:29:43.124Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "eTic5A0NmaqMNP9Kps4WUJUTjMS9CMlsOox0b9QwM05JlHZLoP0oH7xBkU+DwDMzE1Sk7fMqGjJFzwd5Xa4SDg=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-prove-it-works",
+        "findings": [
+          {
+            "finding": "Open, High. The pull request review rule is checked across all records together. records.cjs:282-287 checks only that each record has a review section. receiptProblems at tools/skills/receipts.cjs:106-114 then asks whether any record holds a non-author review receipt for each skill. A record whose review entries hold only its own author's receipts passes when another record's review has a reviewer receipt for the same skill. Probe: with four 5d review entries holding only the 5d author's own receipts, a pull request run passes and prints \"with independent review\" (review-evidence/gap/probe-review-own-author.log, commit 3c9cf622).",
+            "cites": "Prove It Works"
+          },
+          {
+            "finding": "The 5d author receipts were made at 13:21:55 to 13:22:00Z on 8ac891b, after all 5d code commits, and the Skill tool answered \"already loaded\". They prove a Skill call bound to a range commit, not a fresh read at that head. The earlier loads were bound to 6424990, outside the range. The 5d report discloses this; the record does not.",
+            "cites": "Prove It Works",
+            "none": "Disclosure of weak evidence. The tool behavior is open in the skill-process-5 review of technical-writing."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-prove-it-works",
+            "source": "Skill",
+            "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_019Wajfb4wV6DnsVK25HNiBZ",
+            "time": "2026-10-02T13:29:50.513Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "7z2Yr5448dlReb7itAkl49EHL549Vu6HKcCXjyYSFRATDOcuG2xBPyzVBpQ0XN8U5uslNDGNU62aGFU6C2qNBg=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-sequence-verifiable-units",
+        "findings": [
+          {
+            "finding": "053ae2b adds the rule with its tests, 9e55391 documents it, and 8ac891b refactors after both.",
+            "cites": "Sequence work into verifiable units",
+            "none": "No defect."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-sequence-verifiable-units",
+            "source": "Skill",
+            "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_017rQf2uwCe1m61tAxV8pQYi",
+            "time": "2026-10-02T13:29:51.155Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "RoY1r+9rl0ci4q6apt9miZPLOBi61g6vhCrvn0Yd9gyhOJBrU63hk3uw5eu8YZl+N8JI5EgmkZXEqw45/7N1Bw=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-test-behavior-not-implementation",
+        "findings": [
+          {
+            "finding": "053ae2b adds the test \"a pull request run needs a review section in every record and a reviewer receipt for every required skill\" (tools/__tests__/skill-records.test.js:389). No test gives one record a review made of its own author's receipts, so the suite passes with the open aggregation defect.",
+            "cites": "Test behavior, not implementation",
+            "none": "Covered by the open finding under principle-prove-it-works."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-test-behavior-not-implementation",
+            "source": "Skill",
+            "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_01Up4q7jA2URxTmekznNWEgh",
+            "time": "2026-10-02T13:29:51.753Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "b+v5WYcoB4dBz8CvkZXBbWlARV+1tTH5+95Xu9k1cdSYvpE9VWRPNt/hrtlKw1OR+1IU08WxcCai1khpb/RXBQ=="
+          }
+        ]
+      },
+      {
+        "skill": "technical-writing",
+        "findings": [
+          {
+            "finding": "Open, Medium. README.md:65 says verify:commit fails when \"the record\" misses a required skill or \"lacks a signed receipt for a required skill\". AGENTS.md:38 says verify:commit \"fails until the record covers every required skill with a valid receipt\". Both came from 9e55391. The check aggregates coverage and receipts across all records in the range, so a single record can miss both and pass (review-evidence/gap/).",
+            "cites": "Voice and repo specifics"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "technical-writing",
+            "source": "Skill",
+            "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_01VVAUHeHXT8cXw7JnkzTbi7",
+            "time": "2026-10-02T13:29:56.437Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "WRxkoSX86eFADBrvu0z79F2R2YHNMwbl8HVsniNxsS1d1jgiAnTQmqYi6SxYWBx6kzzmr7x5aOtG0QYoG0anCA=="
+          }
+        ]
+      },
+      {
+        "skill": "test-prune",
+        "findings": [
+          {
+            "finding": "053ae2b unsets GITHUB_EVENT_NAME in the fixture helper only. The 5d record reports that 10 of 12 tests failed without it (pr5d/ci-env-without-isolation.log); I did not rerun that. The change keeps the fixtures independent of the job event and removes no case.",
+            "cites": "Review questions",
+            "none": "No pruning needed."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "test-prune",
+            "source": "Skill",
+            "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_014m3EGC2ayPkvUz2g2QDYnv",
+            "time": "2026-10-02T13:29:57.049Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "sarm+O88S9soMvYH6v2De3sR3sNCDgzVnmiv1vcPF1QOkbZwy2OPuNsQPZpocuc/qg0v01GPLcueB5b0/qlICg=="
+          }
+        ]
+      },
+      {
+        "skill": "unslop",
+        "findings": [
+          {
+            "finding": "The 5d docs say what the pull request run fails and when hosted CI does not run it.",
+            "cites": "Plain speech 27",
+            "none": "No slop. The overclaim is open under technical-writing."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "unslop",
+            "source": "Skill",
+            "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_01T7Ajm7bDT3pCM3mmujFrmf",
+            "time": "2026-10-02T13:29:58.166Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "5CBBMyR7gGdW/nCQQtYuw/v9RDn8BxKd2hQAta/aUl1CqAZ0mE1dH11kPvn7Np6YbtSCvzG/rzXCI6FAjEkBBQ=="
+          }
+        ]
+      },
+      {
+        "skill": "writing-for-agents",
+        "findings": [
+          {
+            "finding": "Open, Medium. AGENTS.md:38 is always loaded, and it tells agents that the check enforces per-record coverage and receipts. An agent that trusts it can skip loading skills for one record of a multi-record range and still see the check pass. The line should state what the check enforces today.",
+            "cites": "Context pointers"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "writing-for-agents",
+            "source": "Skill",
+            "sha256": "a842323e664e5af104eac5c97ad22fda929ebeb62d81c501161ac1f6f482db58",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_01448kwSKuPBvSonWcp4dYD6",
+            "time": "2026-10-02T13:29:58.685Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "99LFvkeaQpOmXKtqa6a6erebTlDogW6u20x2UjU/1+sBcmEQ5u1FErfcw04yNI9E3JLXZ8HxsG4qvkpb2QFBAw=="
+          }
+        ]
+      }
+    ]
+  }
 }
