@@ -2,6 +2,7 @@ const { existsSync, readFileSync } = require('node:fs');
 const { join } = require('node:path');
 const { z } = require('zod');
 const { git } = require('../verification/snapshot.cjs');
+const { changeSubject, globPattern } = require('./routing.cjs');
 
 const ledgerPath = 'tools/skills/ledger.json';
 const testCase = { file: z.string().min(1), name: z.string().min(1) };
@@ -87,4 +88,27 @@ function ledgerProblems(root, ledger) {
   return problems;
 }
 
-module.exports = { ledgerPath, readLedger, ledgerProblems };
+function lessonsFor(ledger, change) {
+  const lessons = [];
+  const enforced = [];
+  for (const entry of ledger.lessons) {
+    if (entry.enforcement.kind !== 'guidance') {
+      enforced.push(entry.id);
+      continue;
+    }
+    const paths = change.files.flatMap(file =>
+      [file.path, file.from].filter(Boolean),
+    );
+    const patterns = entry.paths?.map(globPattern);
+    const files = patterns
+      ? paths.filter(path => patterns.some(glob => glob.test(path)))
+      : paths.length
+        ? [changeSubject]
+        : [];
+    if (files.length)
+      lessons.push({ entry, files: [...new Set(files)].sort() });
+  }
+  return { lessons, enforced: enforced.sort() };
+}
+
+module.exports = { ledgerPath, readLedger, ledgerProblems, lessonsFor };

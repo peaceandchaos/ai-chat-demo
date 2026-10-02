@@ -109,6 +109,39 @@ const fixtureRouting = {
   ],
 };
 
+const fixtureLedger = {
+  lessons: [
+    {
+      id: 'client-retry',
+      lesson: 'Retry a failed load once.',
+      seen: ['an earlier fix'],
+      enforcement: { kind: 'guidance' },
+      paths: ['src/client.ts'],
+    },
+    {
+      id: 'head-watch',
+      lesson: 'Watch the pushed head.',
+      seen: ['one run', 'another run'],
+      enforcement: { kind: 'guidance' },
+      link: 'https://example.invalid/decision',
+    },
+    {
+      id: 'lib-care',
+      lesson: 'Library code needs care.',
+      seen: ['a library change'],
+      enforcement: { kind: 'guidance' },
+      paths: ['lib/**'],
+    },
+    {
+      id: 'typed',
+      lesson: 'A type enforces this.',
+      seen: ['a type fix'],
+      enforcement: { kind: 'check', check: 'types' },
+      paths: ['src/**'],
+    },
+  ],
+};
+
 function write(directory, path, text) {
   mkdirSync(dirname(join(directory, path)), { recursive: true });
   writeFileSync(join(directory, path), text);
@@ -143,6 +176,7 @@ beforeAll(() => {
     'tools/skills/routing.json',
     JSON.stringify(fixtureRouting),
   );
+  write(repository, 'tools/skills/ledger.json', JSON.stringify(fixtureLedger));
   write(
     repository,
     'src/api.ts',
@@ -238,6 +272,14 @@ test('prints each required skill once with the rules and files that require it',
       '  added: New.',
       '    src/client.ts',
       '',
+      'Lessons from tools/skills/ledger.json:',
+      '  client-retry (seen once): Retry a failed load once.',
+      '    src/client.ts',
+      '  head-watch (seen 2 times): Watch the pushed head.',
+      '    <change>',
+      '',
+      'Enforced, so not listed: typed.',
+      '',
     ].join('\n'),
   );
   expect(skills(['required', base, head]).stdout).toBe(result.stdout);
@@ -285,6 +327,14 @@ test('evaluates a planned file list by path and status only', () => {
       read('roots', 'new-file-care'),
       '  added: New.',
       '    notes/todo.md',
+      '',
+      'Lessons from tools/skills/ledger.json:',
+      '  head-watch (seen 2 times): Watch the pushed head.',
+      '    <change>',
+      '  lib-care (seen once): Library code needs care.',
+      '    lib/old.ts',
+      '',
+      'Enforced, so not listed: typed.',
       '',
     ].join('\n'),
   );

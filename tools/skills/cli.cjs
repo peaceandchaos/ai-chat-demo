@@ -3,7 +3,12 @@ const { readFileSync } = require('node:fs');
 const { join, relative, resolve } = require('node:path');
 const { git } = require('../verification/snapshot.cjs');
 const { readPlan, readRange } = require('./change.cjs');
-const { ledgerPath, ledgerProblems, readLedger } = require('./ledger.cjs');
+const {
+  ledgerPath,
+  ledgerProblems,
+  lessonsFor,
+  readLedger,
+} = require('./ledger.cjs');
 const { checkRecords, writeRecord } = require('./records.cjs');
 const {
   parseRouting,
@@ -52,6 +57,16 @@ function printRequired(root, routing, change) {
         lines.push(`    ${subject}${detail ? ` (${detail})` : ''}`);
     }
   }
+  const { lessons, enforced } = lessonsFor(readLedger(root), change);
+  if (lessons.length) lines.push('', `Lessons from ${ledgerPath}:`);
+  for (const { entry, files } of lessons) {
+    const times =
+      entry.seen.length === 1 ? 'once' : `${entry.seen.length} times`;
+    lines.push(`  ${entry.id} (seen ${times}): ${entry.lesson}`);
+    for (const file of files) lines.push(`    ${file}`);
+  }
+  if (enforced.length)
+    lines.push('', `Enforced, so not listed: ${enforced.join(', ')}.`);
   console.log(lines.join('\n'));
 }
 
