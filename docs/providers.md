@@ -71,12 +71,13 @@ counts as a fixed 36,000 tokens whatever its length. Sources, checked
 2026-10-01:
 
 - OpenAI [images and vision](https://developers.openai.com/api/docs/guides/images-vision):
-  `gpt-5.6-sol` covers an image with 32 px patches. Requests here set no
+  `gpt-6-astra` covers an image with 32 px patches. Requests here set no
   `detail`, so `auto` applies, which keeps the original dimensions. The API
   rejects an image above 30,000 patches, and the model multiplier is 1.2, so one
-  image costs at most 36,000 tokens. `gpt-6-sol` accepts images
-  ([model page](https://developers.openai.com/api/docs/models/gpt-6-sol)) but is
-  not in the guide's sizing or multiplier tables; the same ceiling is assumed.
+  image costs at most 36,000 tokens. `gpt-6.1-sol` accepts images
+  ([model page](https://developers.openai.com/api/docs/models/gpt-6.1-sol)) but
+  is not in the guide's sizing or multiplier tables. Its image cost is assumed
+  to follow the same ceiling; this is unverified.
 - DeepSeek [vision](https://api-docs.deepseek.com/guides/vision/): at most
   1,024 tokens per image. The page names `deepseek-flash`; Gateway may route
   `deepseek-v4.1-flash` to another host.

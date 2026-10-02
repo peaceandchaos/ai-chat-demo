@@ -177,7 +177,7 @@ async function submitTurn(input: Submission) {
   return { status, error };
 }
 
-test.each<ModelKey>(['kimi', 'deepseek', 'gpt-5.6', 'gpt-6'])(
+test.each<ModelKey>(['kimi', 'deepseek', 'gpt-6.1-sol', 'gpt-6-astra'])(
   'a 1 MB photo from the picker reaches %s and the reply completes',
   async model => {
     expect(photo.length).toBeGreaterThan(1_000_000);
