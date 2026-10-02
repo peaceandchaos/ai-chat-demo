@@ -13,7 +13,7 @@ let current: ChatView | null = null;
 
 // One session per JavaScript runtime. The transport is built only after the
 // device id exists, and nothing connects until a reply needs the server.
-export function startAppSession(): Promise<ChatView> {
+export async function startAppSession(): Promise<ChatView> {
   started ??= (async () => {
     const archive = openArchive();
     const deviceId = await loadDeviceId();
@@ -34,7 +34,12 @@ export function startAppSession(): Promise<ChatView> {
     followAppState(session);
     return current;
   })();
-  return started;
+  try {
+    return await started;
+  } catch (error) {
+    started = null;
+    throw error;
+  }
 }
 
 export function chatView(): ChatView {

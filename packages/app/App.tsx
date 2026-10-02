@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { StatusBar } from 'react-native';
+import { Alert, StatusBar } from 'react-native';
+import BootSplash from 'react-native-bootsplash';
 import {
   SafeAreaProvider,
   initialWindowMetrics,
@@ -12,7 +13,20 @@ function App() {
   // The splash stays up until ChatScreen draws, so waiting here shows nothing new.
   const [ready, setReady] = useState(false);
   useEffect(() => {
-    void startAppSession().then(() => setReady(true));
+    const start = (): void => {
+      startAppSession().then(
+        () => setReady(true),
+        () => {
+          void BootSplash.hide({ fade: true });
+          Alert.alert(
+            'Something went wrong',
+            'Your chats could not be opened.',
+            [{ text: 'Retry', onPress: start }],
+          );
+        },
+      );
+    };
+    start();
   }, []);
 
   return (

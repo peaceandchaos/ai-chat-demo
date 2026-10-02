@@ -88,7 +88,6 @@
   "overrides": [
     {
       "files": [
-        "packages/app/App.tsx",
         "packages/app/__tests__/App.test.tsx",
         "packages/app/babel.config.js",
         "packages/app/index.js",
