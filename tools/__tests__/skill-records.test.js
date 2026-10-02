@@ -657,6 +657,34 @@ test('fails closed without a committed public key or lock, and still checks cita
   );
 });
 
+test('reports a git failure while reading the public key, not a missing key', () => {
+  const clone = join(scratch, 'missing-object');
+  git(scratch, [
+    'clone',
+    '--quiet',
+    '--no-hardlinks',
+    '--branch',
+    'clean',
+    repository,
+    clone,
+  ]);
+  const blob = git(clone, [
+    'rev-parse',
+    'HEAD:tools/skills/receipt-public-key.pem',
+  ]);
+  rmSync(join(clone, '.git/objects', blob.slice(0, 2), blob.slice(2)));
+  const result = spawnSync(process.execPath, [cli, 'check', base], {
+    cwd: clone,
+    encoding: 'utf8',
+    env: { ...process.env, SKILL_ROOT_MAIN: skillsRoot },
+  });
+  expect(result.stderr).toMatch(
+    /^Command failed: git show [0-9a-f]{40}:tools\/skills\/receipt-public-key\.pem\n/u,
+  );
+  expect(result.stderr).not.toContain('No public key');
+  expect(result.status).toBe(1);
+});
+
 test('rejects a finding without exactly one status and a record named for another change', () => {
   recordOn('unresolved', [
     {

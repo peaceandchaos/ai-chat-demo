@@ -215,14 +215,13 @@ function recordScope(root, routing, start, end, head) {
   return { own, ownCommits, later, required: requiredOf(routing, own) };
 }
 
+// Returns null for a path that the head commit does not hold, and lets every
+// other git error through.
 function headReader(root, head) {
-  return path => {
-    try {
-      return git(root, ['show', `${head}:${path}`]);
-    } catch {
-      return null;
-    }
-  };
+  return path =>
+    git(root, ['ls-tree', head, '--', path])
+      ? git(root, ['show', `${head}:${path}`])
+      : null;
 }
 
 function workingReader(root) {
