@@ -254,6 +254,35 @@ test('Delete rejects later context parts and prevents them from recreating a cha
   }
 });
 
+// With 150 ms between polls, the app committed reply text every 150 ms instead
+// of main's 50 ms (ui-evidence/ab-pr1).
+test('an attached reader checks a running job for new text every 40 ms', async () => {
+  const f = await fixture();
+  try {
+    const job = submission();
+    await f.jobs.submit(owner, job, f.dispatch);
+    const reader = new AbortController();
+    const waits: number[] = [];
+    let lastPollEnd: number | null = null;
+    const poll = f.jobs.poll.bind(f.jobs);
+    jest.spyOn(f.jobs, 'poll').mockImplementation(async (...args) => {
+      if (lastPollEnd !== null) waits.push(performance.now() - lastPollEnd);
+      if (waits.length === 9) reader.abort();
+      const result = await poll(...args);
+      lastPollEnd = performance.now();
+      return result;
+    });
+    await deliverJob(f.jobs, owner, job.attemptId, reader.signal, () =>
+      Promise.resolve(),
+    );
+    const median = [...waits].sort((a, b) => a - b)[4];
+    expect(median).toBeGreaterThanOrEqual(38);
+    expect(median).toBeLessThan(80);
+  } finally {
+    await f.postgres.close();
+  }
+});
+
 test('an attached reader ends with the final snapshot when the job ends without an event', async () => {
   const f = await fixture();
   try {
