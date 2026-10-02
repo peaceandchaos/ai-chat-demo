@@ -1,0 +1,201 @@
+{
+  "change": "skill-process-1",
+  "skills": [
+    {
+      "skill": "blast-radius",
+      "files": [
+        "package.json",
+        "tools/__tests__/skills.test.js",
+        "tools/skills/change.cjs",
+        "tools/skills/cli.cjs",
+        "tools/skills/routing.cjs",
+        "tools/skills/routing.json"
+      ],
+      "findings": [
+        {
+          "finding": "The safety fact: nothing outside tools/skills imports the new modules, and Jest already discovers tools/__tests__/*.test.js, so test:verified runs the new test without a config change. verify:commit at the head proves it.",
+          "none": "No breakage found; no existing caller changes."
+        }
+      ]
+    },
+    {
+      "skill": "deslop",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "printRequired wrapped the skill id in a template literal that added nothing.",
+          "commit": "2958652b9656"
+        }
+      ]
+    },
+    {
+      "skill": "no-comments",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "requiredSkills carried a comment that restated its name.",
+          "commit": "2958652b9656"
+        },
+        {
+          "finding": "parseNumstat keeps one comment on the empty rename path, which is git numstat -z format that the code cannot show.",
+          "none": "Kept: it explains an external format."
+        }
+      ]
+    },
+    {
+      "skill": "principle-boundary-discipline",
+      "files": ["tools/__tests__/skills.test.js"],
+      "findings": [
+        {
+          "finding": "Routing JSON was parsed at the boundary but globs and patterns were rebuilt for every file inside the matcher.",
+          "commit": "2958652b9656"
+        },
+        {
+          "finding": "network-calls and credential-lines matched routing.json, which holds their own pattern text.",
+          "commit": "89272af3c116"
+        }
+      ]
+    },
+    {
+      "skill": "principle-fix-root-causes",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Root cause of the change-rule bug: changeMatch modeled its filters as early returns, so the first filter decided the result. The fix makes the filters a conjunction instead of adding a special case for commitSubject.",
+          "commit": "2958652b9656"
+        }
+      ]
+    },
+    {
+      "skill": "principle-minimize-reader-load",
+      "files": [
+        "docs/skills.md",
+        "tools/__tests__/skills.test.js",
+        "tools/skills/change.cjs",
+        "tools/skills/cli.cjs",
+        "tools/skills/routing.cjs",
+        "tools/skills/routing.json"
+      ],
+      "findings": [
+        {
+          "finding": "cli.cjs dispatches four shapes of arguments in one if chain; each branch is one line, so a command table would add a layer without removing reading.",
+          "none": "Kept the direct chain."
+        }
+      ]
+    },
+    {
+      "skill": "principle-prove-it-works",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Seven code mutations (unsorted output, ignored exclusions, missed CommonJS exports, old rename path, plan content rules, missing root check, change filters not ANDed) each failed the fixture test; logs are in the PR evidence.",
+          "none": "Evidence, not a defect."
+        }
+      ]
+    },
+    {
+      "skill": "principle-sequence-verifiable-units",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The rename mutation survived the first fixture, so the plan case gained a rename out of src/ before the feature commit.",
+          "commit": "63bbc172e48f"
+        }
+      ]
+    },
+    {
+      "skill": "principle-subtract-before-you-add",
+      "files": [
+        "docs/skills.md",
+        "tools/__tests__/skills.test.js",
+        "tools/skills/change.cjs",
+        "tools/skills/cli.cjs",
+        "tools/skills/routing.cjs",
+        "tools/skills/routing.json"
+      ],
+      "findings": [
+        {
+          "finding": "routing.cjs exported a globs schema that nothing imported.",
+          "commit": "89272af3c116"
+        }
+      ]
+    },
+    {
+      "skill": "principle-test-behavior-not-implementation",
+      "files": [
+        "package.json",
+        "tools/__tests__/skills.test.js",
+        "tools/skills/change.cjs",
+        "tools/skills/cli.cjs",
+        "tools/skills/routing.cjs",
+        "tools/skills/routing.json"
+      ],
+      "findings": [
+        {
+          "finding": "The fixture test compares the exact printed output, which is the contract (deterministic, sorted, with every reason), and each mutation above changed that output.",
+          "none": "No weak assertion found."
+        }
+      ]
+    },
+    {
+      "skill": "technical-writing",
+      "files": ["<change>", "AGENTS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "docs/skills.md said a change rule tests one filter after the fix made filters a conjunction.",
+          "commit": "ef208e624b22"
+        }
+      ]
+    },
+    {
+      "skill": "test-prune",
+      "files": ["tools/__tests__/skills.test.js"],
+      "findings": [
+        {
+          "finding": "The committed-routing test asserts only that rules exist, but its protection is that parseRouting does not throw on a typo in a skill id.",
+          "none": "Kept: it is the only check of the real routing file."
+        }
+      ]
+    },
+    {
+      "skill": "thermo-nuclear-code-quality-review",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Change-rule filters were not composed like file-rule filters, which made the two rule kinds read differently.",
+          "commit": "2958652b9656"
+        },
+        {
+          "finding": "No file passes 300 lines; routing, change reading, and the CLI each own one concern.",
+          "none": "No decomposition needed."
+        }
+      ]
+    },
+    {
+      "skill": "unslop",
+      "files": [
+        "<change>",
+        "AGENTS.md",
+        "README.md",
+        "docs/skills.md",
+        "tools/skills/routing.json"
+      ],
+      "findings": [
+        {
+          "finding": "Checked AGENTS.md, README.md, and docs/skills.md for long dashes, mid-sentence colons, and filler.",
+          "none": "None found."
+        }
+      ]
+    },
+    {
+      "skill": "writing-for-agents",
+      "files": ["AGENTS.md", "tools/skills/routing.json"],
+      "findings": [
+        {
+          "finding": "The AGENTS.md pointer front-loads the trigger (before you edit) and names the command and the doc.",
+          "none": "No change needed."
+        }
+      ]
+    }
+  ]
+}
