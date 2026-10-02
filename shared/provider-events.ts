@@ -1,8 +1,11 @@
 import { z } from 'zod';
 import { decodeJson } from './contracts';
 
+// What the reply is doing before its text starts.
+export type ReplyLabel = 'Thinking' | 'Responding';
+
 export type ParsedProviderEvent =
-  | { kind: 'status'; label: string }
+  | { kind: 'status'; label: ReplyLabel }
   | { kind: 'delta'; text: string; stopped?: boolean }
   | { kind: 'reasoning'; text: string }
   | { kind: 'completed'; responseId: string }

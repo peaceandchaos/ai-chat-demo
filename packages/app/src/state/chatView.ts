@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import type { ReplyLabel } from '../../../../shared/provider-events';
 import type { ChatArchive, SavedMessage } from './archive';
 import type { AttemptActivity, ChatSession } from './session';
 
@@ -15,6 +16,7 @@ export type Message = {
   status: MessageStatus;
   attachments?: string[];
   reasoning?: string;
+  statusLabel?: ReplyLabel;
 };
 
 export type ChatViewState = {
@@ -71,6 +73,7 @@ export function toMessage(
     text: saved.text,
     status: replyStatus(saved, activity),
     reasoning: saved.reasoning || undefined,
+    statusLabel: activity.kind === 'connected' ? activity.label : undefined,
   };
 }
 
@@ -79,6 +82,7 @@ function sameMessage(a: Message, b: Message): boolean {
     a.text === b.text &&
     a.status === b.status &&
     a.reasoning === b.reasoning &&
+    a.statusLabel === b.statusLabel &&
     a.attachments === b.attachments
   );
 }

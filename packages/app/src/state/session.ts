@@ -1,4 +1,5 @@
 import type { ModelKey } from '../../../../shared/contracts';
+import type { ReplyLabel } from '../../../../shared/provider-events';
 import {
   TransportError,
   type ChatTransport,
@@ -27,7 +28,7 @@ export type LifecycleState =
 
 export type AttemptActivity =
   | { kind: 'idle' }
-  | { kind: 'connected' }
+  | { kind: 'connected'; label: ReplyLabel }
   | { kind: 'waiting'; error: string }
   | { kind: 'halted'; error: string };
 
@@ -53,6 +54,7 @@ type Running = {
   failures: number;
   operation: Operation;
   interruption: Interruption | null;
+  label: ReplyLabel;
 };
 type Runner =
   | Running
@@ -125,7 +127,8 @@ export class ChatSession {
   activity(id: string): AttemptActivity {
     const runner = this.runners.get(id);
     if (!runner) return { kind: 'idle' };
-    if (runner.kind === 'running') return { kind: 'connected' };
+    if (runner.kind === 'running')
+      return { kind: 'connected', label: runner.label };
     return { kind: runner.kind, error: runner.error };
   }
 
@@ -269,6 +272,7 @@ export class ChatSession {
       failures,
       operation: 'submit',
       interruption: null,
+      label: 'Thinking',
     };
     this.runners.set(id, runner);
     void this.drive(id, runner).then(
@@ -368,6 +372,7 @@ export class ChatSession {
         return;
       case 'progress':
         runner.failures = 0;
+        if (applied.label) runner.label = applied.label;
         this.update(id, applied.message);
         this.scheduleCheckpoint();
         this.render();

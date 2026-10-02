@@ -76,6 +76,34 @@ test('a sent turn streams into the view without storage reads and keeps settled 
   expect(state().messages).toBe(rows);
 });
 
+test('the waiting row says Thinking until the reply message starts, then Responding', async () => {
+  const phone = openPhone(server);
+  server.providers.selection = 'gpt-6.1-sol';
+  createChat(phone, 'gpt-6.1-sol');
+  const { state } = openView(phone);
+  state().send('Question');
+  const reply = state().messages[1];
+  await until(
+    'the server accepts the reply',
+    () => phone.archive.message(reply.id).accepted,
+  );
+  expect(state().messages[1]).toMatchObject({
+    text: '',
+    status: 'streaming',
+    statusLabel: 'Thinking',
+  });
+  server.providers.script(reply.id).item('message');
+  await until(
+    'the reply message starts',
+    () => state().messages[1].statusLabel === 'Responding',
+  );
+  expect(state().messages[1]).toMatchObject({ text: '', status: 'streaming' });
+  server.providers.script(reply.id).text('Hello').end();
+  await settled(phone, reply.id);
+  await until('the view settles', () => !state().isStreaming);
+  expect(state().messages[1].statusLabel).toBeUndefined();
+});
+
 test('a reply that fails keeps its partial text on the existing error line', async () => {
   const phone = openPhone(server);
   createChat(phone, 'kimi');
