@@ -11,6 +11,7 @@ type AnchoredEndSpace = {
   onSizeChanged: (size: number) => void;
 };
 type ListProps = {
+  ref: { current: unknown };
   anchoredEndSpace?: AnchoredEndSpace;
   initialScrollAtEnd?: boolean;
   maintainScrollAtEnd?: unknown;
@@ -20,6 +21,7 @@ type ListProps = {
 };
 type RenderedList = { props?: ListProps };
 const mockList: RenderedList = {};
+const mockScrollToEnd = jest.fn();
 type ComposerProps = {
   onSubmit: (text: string, attachments: []) => SendResult;
 };
@@ -29,6 +31,7 @@ const mockComposer: RenderedComposer = {};
 jest.mock('@legendapp/list/keyboard', () => ({
   KeyboardAwareLegendList: (props: ListProps) => {
     mockList.props = props;
+    props.ref.current = { scrollToEnd: mockScrollToEnd };
     return null;
   },
   useKeyboardChatComposerInset: () => ({
@@ -95,7 +98,7 @@ function chatState(isStreaming: boolean): ChatViewState {
 function openChat(isStreaming: boolean) {
   mockStore = createStore(() => chatState(isStreaming));
   act(() => {
-    create(<ChatScreen onOpenRecents={() => undefined} />);
+    create(<ChatScreen onOpenRecents={() => undefined} openCount={0} />);
   });
   return {
     change: (messages: Message[]) => {
@@ -194,7 +197,10 @@ function chatWith(chats: Record<string, Message[]>, open: string) {
       return sent.userId;
     },
   }));
-  const screen = () => <ChatScreen onOpenRecents={() => undefined} />;
+  let openCount = 0;
+  const screen = () => (
+    <ChatScreen onOpenRecents={() => undefined} openCount={openCount} />
+  );
   let renderer!: ReactTestRenderer;
   act(() => {
     renderer = create(screen());
@@ -208,6 +214,7 @@ function chatWith(chats: Record<string, Message[]>, open: string) {
     },
     // Opening a chat from Recents, which may be the chat already shown.
     openFromRecents: (chatId: string) => {
+      openCount += 1;
       act(() => {
         show(chatId, chats[chatId]);
         renderer.update(screen());
@@ -237,4 +244,14 @@ test('the anchored end space belongs to the sent user turn, wherever that turn i
   chat.openFromRecents('b');
   chat.sendShowing('b2', [answer('b2-reply', 'streaming')]);
   expect(mockList.props?.anchoredEndSpace).toBeUndefined();
+});
+
+test('opening the chat already shown from Recents scrolls it to the newest message', () => {
+  const chat = chatWith(
+    { a: [question('a1'), answer('a1-reply', 'done')] },
+    'a',
+  );
+  mockScrollToEnd.mockClear();
+  chat.openFromRecents('a');
+  expect(mockScrollToEnd).toHaveBeenCalledWith({ animated: false });
 });

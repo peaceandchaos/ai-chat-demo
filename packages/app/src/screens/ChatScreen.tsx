@@ -47,9 +47,11 @@ const ReasoningSheet = React.lazy(() =>
 
 type ChatScreenProps = {
   onOpenRecents: () => void;
+  // Counts chats opened from Recents, including the one already shown.
+  openCount: number;
 };
 
-export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
+export function ChatScreen({ onOpenRecents, openCount }: ChatScreenProps) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const send = useChatStore(state => state.send);
@@ -146,7 +148,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   // `symbolName.isDirty = false`).
   useEffect(() => {
     listRef.current?.scrollToEnd({ animated: false });
-  }, [chatId]);
+  }, [chatId, openCount]);
 
   const keyboardOffset = { opened: insets.bottom };
 
