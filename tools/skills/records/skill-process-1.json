@@ -15,6 +15,11 @@
         {
           "finding": "The safety fact: nothing outside tools/skills imports the new modules, and Jest already discovers tools/__tests__/*.test.js, so test:verified runs the new test without a config change. verify:commit at the head proves it.",
           "none": "No breakage found; no existing caller changes."
+        },
+        {
+          "finding": "Second author pass, looking past grep at the diff wire format: an added line whose text starts with \"++ \" prints as \"+++ ...\" in the --unified=0 diff, and parseAddedLines took it for a file header. The real file then lost its later added lines, so addedLines rules such as network-calls and credential-lines missed it. The header-lookalike test failed before the fix with network-care missing.",
+          "commit": "58ed89f0cd6b",
+          "patch": "7afd2f94fdc49b1754fbccae31ecc268baa7cb27"
         }
       ]
     },
@@ -39,6 +44,10 @@
         {
           "finding": "parseNumstat keeps one comment on the empty rename path, which is git numstat -z format that the code cannot show.",
           "none": "Kept: it explains an external format."
+        },
+        {
+          "finding": "Second author pass: the skill's first step spawns comment-sicko, and this pass runs without subagents, so I audited the comments inline. The two comments in change.cjs describe git output formats, the numstat rename fields and the tab after a spaced path.",
+          "none": "Kept both. They explain external formats that the code cannot show."
         }
       ]
     },
@@ -67,6 +76,11 @@
         {
           "finding": "Found in independent review: added-line rules never matched a path with a space, because git diff ends that \"+++ b/\" path with a tab. The new test failed with the skill missing, and passes after the tab is stripped. Paths that git still C-quotes, such as those with a tab or a double quote, are not handled.",
           "commit": "8113bfe"
+        },
+        {
+          "finding": "Second author pass: the root cause of the header misread is that the parser had no state for where a file header ends. The fix reads headers only between \"diff --git\" and the first \"@@\" instead of filtering lookalike paths. A search of tools/ found no other diff parser with the same flaw.",
+          "commit": "58ed89f0cd6b",
+          "patch": "7afd2f94fdc49b1754fbccae31ecc268baa7cb27"
         }
       ]
     },
@@ -121,6 +135,11 @@
         {
           "finding": "routing.cjs exported a globs schema that nothing imported.",
           "commit": "89272af3c116"
+        },
+        {
+          "finding": "Second author pass: routing.cjs still exported matchesAny and change.cjs exported exportNames, and nothing in the stack imports either. The earlier pass removed one unused export but not the pattern.",
+          "commit": "9ce299914797",
+          "patch": "9e02ad3f04c3748aef6fcc4146a534250430f7cb"
         }
       ]
     },
@@ -158,6 +177,11 @@
         {
           "finding": "The committed-routing test asserts only that rules exist, but its protection is that parseRouting does not throw on a typo in a skill id.",
           "none": "Kept: it is the only check of the real routing file."
+        },
+        {
+          "finding": "Second author pass: the header-lookalike case shares the spaced-path test body through test.each, so both parse hazards run the real CLI and assert the full printed output. It failed before the fix with network-care missing for src/client.ts.",
+          "commit": "58ed89f0cd6b",
+          "patch": "7afd2f94fdc49b1754fbccae31ecc268baa7cb27"
         }
       ]
     },
