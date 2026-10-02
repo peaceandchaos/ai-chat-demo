@@ -138,8 +138,8 @@ export function ChatScreen({ onOpenRecents, openCount }: ChatScreenProps) {
     [messagesLength, send, scrollMessageToEnd],
   );
 
-  // The list stays mounted across chats because remounting it while Recents
-  // froze this page left react-native-nitro-symbols 0.0.8 showing wrong icons.
+  // A chat starts at its newest message when it opens and when Recents opens
+  // it again while it is shown.
   useEffect(() => {
     listRef.current?.scrollToEnd({ animated: false });
   }, [chatId, openCount]);
