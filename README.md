@@ -17,7 +17,7 @@ npm ci
 cp packages/app/src/config.example.ts packages/app/src/config.ts
 ```
 
-Set `PROXY_BASE_URL` in `config.ts` to your chat server's origin, and keep the example value for static checks. The app source holds no provider credentials; they stay on the server. `npm run build:ios-js` stops before bundling when `config.ts` holds anything but the names `config.example.ts` exports; the Xcode build does not run that check. Native builds require Xcode, CocoaPods, and `pod install` in `packages/app/ios`. Xcode license acceptance and native build verification remain pending; the current local checks do not establish device behavior.
+Set `PROXY_BASE_URL` in `config.ts` to your chat server's origin, and keep the example value for static checks. The app source holds no provider credentials; they stay on the server. Metro refuses to start or bundle when `config.ts` holds anything but the names `config.example.ts` exports. The check runs in `packages/app/metro.config.js`, so it covers the Xcode bundle phase, `npm run ios`, `npm start`, and `npm run build:ios-js`. Native builds require Xcode, CocoaPods, and `pod install` in `packages/app/ios`. Xcode license acceptance and native build verification remain pending; the current local checks do not establish device behavior.
 
 ```sh
 npm start                    # Metro
