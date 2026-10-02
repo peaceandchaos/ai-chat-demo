@@ -5,7 +5,10 @@ export type ModelConfig = {
   wire: 'responses' | 'gateway';
   window: number;
   maxOutput: number;
+  // The server's working-context limit: text bytes plus a per-image estimate.
   threshold: number;
+  // OpenAI Responses only: the token count sent as compact_threshold.
+  compactThreshold?: number;
 };
 
 // Source links and the selected output budget are recorded in docs/providers.md.
@@ -30,6 +33,7 @@ export const models: Record<ModelKey, ModelConfig> = {
     window: 1_050_000,
     maxOutput: 32_768,
     threshold: 800_000,
+    compactThreshold: 200_000,
   },
   'gpt-6-astra': {
     id: 'gpt-6-astra',
@@ -37,6 +41,7 @@ export const models: Record<ModelKey, ModelConfig> = {
     window: 1_050_000,
     maxOutput: 32_768,
     threshold: 800_000,
+    compactThreshold: 200_000,
   },
 };
 

@@ -171,6 +171,25 @@ test('oversized original text is processed in bounded windows without deleting i
   expect(input.history[0].text).toBe(original);
 });
 
+test('text that JSON escapes heavily is still split into pieces below the threshold', async () => {
+  const input = submission();
+  input.history[0].text = '\u0001'.repeat(12_000);
+  const calls: ResponseInputItem[][] = [];
+  const prepared = await prepareContext(
+    input,
+    'gpt-6.1-sol',
+    signal,
+    before,
+    services(calls),
+    { ...config, wire: 'responses' },
+  );
+  expect(calls.length).toBeGreaterThan(0);
+  expect(calls.every(items => contextSize(items) < config.threshold)).toBe(
+    true,
+  );
+  expect(prepared.checkpoint?.method).toBe('openai-compaction');
+});
+
 test('an empty or ineffective compaction fails without silently truncating history', async () => {
   const input = submission();
   input.history = history(Array.from({ length: 5 }, () => 'C'.repeat(9000)));
@@ -199,4 +218,44 @@ test('an empty or ineffective compaction fails without silently truncating histo
       { ...config, wire: 'responses' },
     ),
   ).rejects.toThrow('did not free');
+});
+
+test('an image counts by its per-image estimate, not its encoded length', async () => {
+  const photo = (characters: number): ResponseInputItem => ({
+    type: 'message',
+    role: 'user',
+    content: [
+      {
+        type: 'input_image',
+        image_url: `data:image/png;base64,${'A'.repeat(characters)}`,
+      },
+    ],
+  });
+  const empty = contextSize([{ type: 'message', role: 'user', content: [] }]);
+  // OpenAI's documented ceiling: 30,000 patches at the 1.2 multiplier.
+  expect(contextSize([photo(4)]) - empty).toBeGreaterThanOrEqual(
+    Math.ceil(30_000 * 1.2),
+  );
+  expect(contextSize([photo(2_999_000)])).toBe(contextSize([photo(4)]));
+
+  // Small encoded images still fill the window and lead to compaction.
+  const input = submission();
+  input.history = history(Array.from({ length: 13 }, (_, index) => `${index}`));
+  for (const entry of input.history)
+    if (entry.role === 'user')
+      entry.images = Array.from(
+        { length: 4 },
+        () => 'data:image/png;base64,AAAA',
+      );
+  input.userTurnId = input.history[12].id;
+  const calls: ResponseInputItem[][] = [];
+  const prepared = await prepareContext(
+    input,
+    'kimi',
+    signal,
+    before,
+    services(calls),
+  );
+  expect(calls.length).toBeGreaterThan(0);
+  expect(prepared.checkpoint?.method).toBe('kimi-summary');
 });

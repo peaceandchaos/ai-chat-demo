@@ -42,6 +42,15 @@ socket. No previous-response id is required for recovery. After a regular respon
 the saved working window can drop items before its last compaction item. The
 standalone `/responses/compact` result is kept as its full canonical window.
 
+Both GPT models send `compact_threshold: 200_000` tokens (owner decision H9,
+2026-10-01). OpenAI bills a request above 272,000 input tokens at its
+long-context rate, and the request that crosses the threshold still carries the
+new message and any images. OpenAI publishes no recommended value; its
+compaction guide uses `200_000` in every example. The server's own
+working-context `threshold` stays at 800,000 and is a separate setting. Usage
+records should confirm after acceptance that no GPT request exceeded 272,000
+input tokens.
+
 Kimi's method is adapted from
 [Kimi CLI at `9ab1286b8fe4e6bcd116949a27ce5e0ac3389c82`](https://github.com/MoonshotAI/kimi-cli/tree/9ab1286b8fe4e6bcd116949a27ce5e0ac3389c82):
 `src/kimi_cli/soul/compaction.py`, `src/kimi_cli/config.py`, and its compact prompt.
@@ -61,12 +70,38 @@ excluded from visible summaries. Apache license and NOTICE files for Kimi and
 the DeepSeek MIT license are beside the adapted source under
 `packages/server/src/compaction/`.
 
-The app uses a conservative UTF-8 byte estimate for working-context pressure.
-Provider tokenizers are unavailable through the chosen APIs. This may compact
-earlier than provider usage would require, especially for images. It avoids the
-Kimi reference's acknowledged multilingual undercount from `characters / 4`.
-Oversize inline images fail visibly. Actual token usage and image limits remain
-part of live verification.
+The app uses a conservative UTF-8 byte estimate for text in working-context
+pressure. Provider tokenizers are unavailable through the chosen APIs. This may
+compact earlier than provider usage would require. It avoids the Kimi
+reference's acknowledged multilingual undercount from `characters / 4`.
+
+Providers count an image by its dimensions, not its encoded size, so each image
+counts as a fixed 36,000 tokens whatever its length. Sources, checked
+2026-10-01:
+
+- OpenAI [images and vision](https://developers.openai.com/api/docs/guides/images-vision):
+  `gpt-6-astra` covers an image with 32 px patches. Requests here set no
+  `detail`, so `auto` applies, which keeps the original dimensions. The API
+  rejects an image above 30,000 patches, and the model multiplier is 1.2, so one
+  image costs at most 36,000 tokens. `gpt-6.1-sol` accepts images
+  ([model page](https://developers.openai.com/api/docs/models/gpt-6.1-sol)) but
+  is not in the guide's sizing or multiplier tables. Its image cost is assumed
+  to follow the same ceiling; this is unverified.
+- DeepSeek [vision](https://api-docs.deepseek.com/guides/vision/): at most
+  1,024 tokens per image. The page names `deepseek-flash`; Gateway may route
+  `deepseek-v4.1-flash` to another host.
+- Kimi [vision](https://platform.kimi.ai/docs/guide/use-kimi-vision-model):
+  `kimi-k3` accepts images. Image tokens are computed dynamically and grow with
+  resolution; no formula or per-image cap is published. It recommends at most
+  4096 × 2160. The 36,000 estimate is unverified for Kimi.
+- Both Gateway model pages list image input that counts as input tokens.
+
+The estimate bounds token pressure, not request bytes. Four 3 MB images are
+valid in one message, and a context below the 800,000 threshold can hold about 22
+images. No Gateway request-body limit is documented; a 2025
+[community report](https://community.vercel.com/t/ai-gateway-payload-size/23450)
+describes HTTP 413 above 4.5 MB. Actual image token usage and request-size
+limits remain part of live verification.
 
 On a provider switch, the server reconstructs only the selected path. It never
 sends an OpenAI encrypted item to Gateway. Long original text can be divided into

@@ -43,11 +43,23 @@ export function textItem(
   };
 }
 
+// Providers count an image by its dimensions, not its encoded bytes. This is the
+// largest per-image cost documented for the configured models: OpenAI's
+// 30,000-patch limit at its 1.2 multiplier. Sources are in docs/providers.md.
+export const imageEstimate = 36_000;
+
 // A byte upper estimate protects multilingual text when provider tokenizers are
 // unavailable. It intentionally compacts earlier than the CLI's chars/4 estimate.
-// Inline image bytes are conservative too; oversize images fail visibly.
 function itemSize(item: ResponseInputItem): number {
-  return Buffer.byteLength(JSON.stringify(item), 'utf8') + 16;
+  if (item.type !== 'message')
+    return Buffer.byteLength(JSON.stringify(item), 'utf8') + 16;
+  const text = item.content.filter(part => part.type !== 'input_image');
+  const images = item.content.length - text.length;
+  return (
+    Buffer.byteLength(JSON.stringify({ ...item, content: text }), 'utf8') +
+    16 +
+    images * imageEstimate
+  );
 }
 
 export function contextSize(items: ResponseInputItem[]): number {
@@ -61,11 +73,12 @@ function* messagePieces(
   maxBytes: number,
 ): Generator<ResponseInputItem> {
   if (entry.role === 'assistant' && !entry.complete) return;
-  // Split only working input, never the visible record. UTF-8 code points stay intact.
+  // Split only working input, never the visible record. UTF-8 code points stay
+  // intact. Each point is measured as itemSize counts it, after JSON escaping.
   let text = '';
   let bytes = 0;
   for (const point of entry.text) {
-    const length = Buffer.byteLength(point, 'utf8');
+    const length = Buffer.byteLength(JSON.stringify(point), 'utf8') - 2;
     if (bytes + length > maxBytes && text) {
       yield textItem(entry.role, text);
       text = '';
