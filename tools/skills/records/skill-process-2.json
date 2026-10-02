@@ -25,6 +25,14 @@
         {
           "finding": "CI checks out one commit without history, so verify:current cannot find a merge base.",
           "none": "verify:current skips range checks without --base and prints that it did; the workflow change is a separate patch because the bot cannot push workflows."
+        },
+        {
+          "finding": "Requiring a patch on every citation fails every existing record until skills:record refills it. Records 1 and 2 were refilled on this branch.",
+          "none": "Later branches refill theirs in their own record commits."
+        },
+        {
+          "finding": "verify:push now fails a pushed branch with no commits ahead of origin/main. The CI patch's push to main runs verify:current, which reports an empty range as not run and still exits 0.",
+          "none": "Documented in docs/skills.md and the CI note."
         }
       ]
     },
@@ -35,6 +43,10 @@
         {
           "finding": "An earlier draft of writeRecord deleted records already merged at the base, which added a deletion to every later change.",
           "none": "Removed before the first commit; records stay, as docs/skills.md explains."
+        },
+        {
+          "finding": "citePatch catches a failed rev-parse. A record can cite a SHA that does not exist, and the check must then report it, so the catch is at a boundary.",
+          "none": "Kept."
         }
       ]
     },
@@ -45,6 +57,22 @@
         {
           "finding": "Three comments remain: the range-check argument contract in checks.cjs, why verify.cjs resolves the base in the source repository, and why the fixture base holds a merged record.",
           "none": "Each states a constraint the code cannot show."
+        }
+      ]
+    },
+    {
+      "skill": "principle-fix-root-causes",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Found in independent review: citations failed after every cherry-pick, because the check matched findings to commits only by SHA. Citations now carry the commit's patch-id, which a cherry-pick keeps. Before the fix, the cherry-picked work/skill-process-2b failed with four citations outside the range.",
+          "commit": "536f0c7",
+          "patch": "4c0063a42549f3f82db9466184b33102661172c5"
+        },
+        {
+          "finding": "Found in independent review: verify:current printed a plain PASS without --base, and verify:commit --base HEAD passed range checks over zero commits. Both came from deciding on the presence of a base instead of the size of the range.",
+          "commit": "fb35920",
+          "patch": "7adad44a8ed9616b48ee2b861063a1ee05c42701"
         }
       ]
     },
@@ -104,7 +132,8 @@
       "findings": [
         {
           "finding": "The resolution transform needed an inverse serialize step to write records back.",
-          "commit": "685401e"
+          "commit": "434345aa4001",
+          "patch": "7428eadfe6030388ba751ee595396bf815635bd6"
         }
       ]
     },
@@ -123,7 +152,17 @@
       "findings": [
         {
           "finding": "The first mutation for unchanged records only removed the deleted-file filter, which no test covered; the clean case now deletes the merged record and a separate mutation reads every record in the tree.",
-          "commit": "58d548503a04"
+          "commit": "f8b4ff0c5484",
+          "patch": "c88551d3e2acf7a1aae5d414da5c3bf374ac4c37"
+        },
+        {
+          "finding": "The committed-and-staged test pinned the range checks running with the commit as its own base, so it asserted the empty-range defect. Its fixture now has an earlier main.",
+          "commit": "fb35920",
+          "patch": "7adad44a8ed9616b48ee2b861063a1ee05c42701"
+        },
+        {
+          "finding": "Nine mutations of the citation and range logic fail the tests: SHA-only matching, an optional patch, a mismatched patch, no SHA rewrite, no patch fill, an allowed empty commit range, range checks over an empty current range, no notRun field, and a plain PASS.",
+          "none": "Logs in skill-process-evidence/pr2b."
         }
       ]
     },
@@ -134,6 +173,11 @@
         {
           "finding": "docs/skills.md lists each failure the check reports and states what a pass does not prove.",
           "none": "No change needed."
+        },
+        {
+          "finding": "AGENTS.md and README.md said each finding was resolved. The check proves only that each finding has a resolution.",
+          "commit": "152eb3b",
+          "patch": "2eeec2d4fe4426e86b542265834fe847303ba06d"
         }
       ]
     },
@@ -156,11 +200,17 @@
       "findings": [
         {
           "finding": "Parsed records had a different shape from stored records, so every write had to translate back.",
-          "commit": "685401e"
+          "commit": "434345aa4001",
+          "patch": "7428eadfe6030388ba751ee595396bf815635bd6"
         },
         {
           "finding": "The change-id pattern was repeated in the CLI and the records module.",
-          "commit": "685401e"
+          "commit": "434345aa4001",
+          "patch": "7428eadfe6030388ba751ee595396bf815635bd6"
+        },
+        {
+          "finding": "The range decision added three conditions to verify, which crossed the complexity limit of 20.",
+          "none": "Moved into planRanges before the commit, which keeps verify as orchestration."
         }
       ]
     },
@@ -181,6 +231,11 @@
         {
           "finding": "The AGENTS.md line names the trigger (before you push), the command, and the limit of the check.",
           "none": "No change needed."
+        },
+        {
+          "finding": "The AGENTS.md record line claimed more than the check proves.",
+          "commit": "152eb3b",
+          "patch": "2eeec2d4fe4426e86b542265834fe847303ba06d"
         }
       ]
     }

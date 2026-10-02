@@ -29,7 +29,8 @@
       "findings": [
         {
           "finding": "printRequired wrapped the skill id in a template literal that added nothing.",
-          "commit": "2958652b9656"
+          "commit": "2958652b9656",
+          "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         }
       ]
     },
@@ -39,7 +40,8 @@
       "findings": [
         {
           "finding": "requiredSkills carried a comment that restated its name.",
-          "commit": "2958652b9656"
+          "commit": "2958652b9656",
+          "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         },
         {
           "finding": "parseNumstat keeps one comment on the empty rename path, which is git numstat -z format that the code cannot show.",
@@ -57,11 +59,13 @@
       "findings": [
         {
           "finding": "Routing JSON was parsed at the boundary but globs and patterns were rebuilt for every file inside the matcher.",
-          "commit": "2958652b9656"
+          "commit": "2958652b9656",
+          "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         },
         {
           "finding": "network-calls and credential-lines matched routing.json, which holds their own pattern text.",
-          "commit": "89272af3c116"
+          "commit": "89272af3c116",
+          "patch": "eb2d0fd8bbc1f8ef8dfbd63a9c6889535a9f8cae"
         }
       ]
     },
@@ -71,11 +75,13 @@
       "findings": [
         {
           "finding": "Root cause of the change-rule bug: changeMatch modeled its filters as early returns, so the first filter decided the result. The fix makes the filters a conjunction instead of adding a special case for commitSubject.",
-          "commit": "2958652b9656"
+          "commit": "2958652b9656",
+          "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         },
         {
           "finding": "Found in independent review: added-line rules never matched a path with a space, because git diff ends that \"+++ b/\" path with a tab. The new test failed with the skill missing, and passes after the tab is stripped. Paths that git still C-quotes, such as those with a tab or a double quote, are not handled.",
-          "commit": "8113bfe"
+          "commit": "8113bfe",
+          "patch": "1b4d4f869ee399691d84a3b27a32bf5293283065"
         },
         {
           "finding": "Second author pass: the root cause of the header misread is that the parser had no state for where a file header ends. The fix reads headers only between \"diff --git\" and the first \"@@\" instead of filtering lookalike paths. A search of tools/ found no other diff parser with the same flaw.",
@@ -117,7 +123,8 @@
       "findings": [
         {
           "finding": "The rename mutation survived the first fixture, so the plan case gained a rename out of src/ before the feature commit.",
-          "commit": "63bbc172e48f"
+          "commit": "63bbc172e48f",
+          "patch": "6d7ec468381cf9a6b5978e81ccbaefda47f82b45"
         }
       ]
     },
@@ -134,7 +141,8 @@
       "findings": [
         {
           "finding": "routing.cjs exported a globs schema that nothing imported.",
-          "commit": "89272af3c116"
+          "commit": "89272af3c116",
+          "patch": "eb2d0fd8bbc1f8ef8dfbd63a9c6889535a9f8cae"
         },
         {
           "finding": "Second author pass: routing.cjs still exported matchesAny and change.cjs exported exportNames, and nothing in the stack imports either. The earlier pass removed one unused export but not the pattern.",
@@ -166,7 +174,8 @@
       "findings": [
         {
           "finding": "docs/skills.md said a change rule tests one filter after the fix made filters a conjunction.",
-          "commit": "ef208e624b22"
+          "commit": "ef208e624b22",
+          "patch": "0507620d82f180c443ae6f04cf2168cde1d27444"
         }
       ]
     },
@@ -191,7 +200,8 @@
       "findings": [
         {
           "finding": "Change-rule filters were not composed like file-rule filters, which made the two rule kinds read differently.",
-          "commit": "2958652b9656"
+          "commit": "2958652b9656",
+          "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         },
         {
           "finding": "No file passes 300 lines; routing, change reading, and the CLI each own one concern.",
