@@ -196,8 +196,7 @@ function main(args) {
     catalog(root, rest.length === 1);
   } else if (
     command === 'record' &&
-    rest.filter(arg => arg !== '--review').length >= 2 &&
-    rest.filter(arg => arg !== '--review').length <= 3
+    [2, 3].includes(rest.filter(arg => arg !== '--review').length)
   ) {
     record(root, rest);
   } else if (command === 'ledger' && !rest.length) {
