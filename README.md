@@ -34,6 +34,7 @@ npm run audit:check          # all high/critical findings block
 npm run build:server
 npm run build:ios-js          # release JS bundle; not native compilation
 npm run react-compiler-check # report; not proof of native compilation
+npm run skills:required -- origin/main # skills this branch must apply
 npm run verify:commit -- HEAD
 ```
 
@@ -54,6 +55,10 @@ The 13 selected anti-slop rules remain errors. Their source and license are in `
 Every high/critical dependency advisory blocks acceptance, regardless of exposure. Moderate/low findings have dated dispositions in `tools/verification/dependency-dispositions.json`; new or expired findings need review. No update or override is automatic.
 
 The scanner excludes Android-specific files and scans the remaining app. Stream and tool arguments receive schema validation; raw network errors are not logged. Reply links require HTTP/HTTPS, structural validation, and OS support. Checks exercise React Native's actual JavaScript URL implementation. The fresh scanner run reports no shared-code findings and six medium dependency entries. The separate dependency gate checks their advisory dispositions. Any other scanner finding fails unless `tools/verification/security-dispositions.json` records a current, reasoned disposition for it. Neither check proves native networking safety. All seven native patches and the Metro patch must apply during `npm ci`.
+
+## Skill routing
+
+`tools/skills/routing.json` maps paths, file statuses, removed exports, added lines, commit subjects, and change size to required skills. `npm run skills:required` prints each required skill with the rule and file that require it. [Skill routing](docs/skills.md) describes the rules and the skill roots.
 
 ## Test review
 

@@ -31,6 +31,10 @@ npm run verify:commit -- HEAD
 
 The example config has no live credentials. Never copy personal config or environment files into verification checkouts. `verify:staged` checks the index; `verify:commit` installs locked dependencies in a fresh checkout and records the tested commit/tree. `verify:current` is for a clean CI checkout. Working-tree checks are useful feedback, not proof about another commit. Read `tools/verification/checks.cjs` for the implemented suite.
 
+## Skills
+
+Before you edit, run `npm run skills:required -- --plan <path>...` for the files you plan to touch. Read and apply every `SKILL.md` it lists. On a branch, run `npm run skills:required -- origin/main`. Set the skill roots first, as `docs/skills.md` describes. `tools/skills/routing.json` decides what is required; changes to it need owner review.
+
 ## Checks and repairs
 
 Use the repository `test-prune` skill when reviewing test quality. Prefer meaningful integration checks for important flows. Keep small boundary checks when they provide clearer evidence. Do not optimize test count, coverage, or scores.
