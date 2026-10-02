@@ -53,6 +53,7 @@ export default eslintCompatPlugin({
     'no-type-assertion': {
       meta: {
         type: 'problem',
+        defaultOptions: [{ allow: [] }],
         schema: [
           {
             type: 'object',

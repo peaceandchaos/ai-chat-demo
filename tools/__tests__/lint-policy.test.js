@@ -177,6 +177,26 @@ test('allows const assertions, and assertions in a listed boundary file', () => 
   }
 });
 
+test('rejects assertions when the rule is enabled without options', () => {
+  const config = require('../../.oxlintrc.json');
+  const bare = join(app, '.lint-policy-bare-test.json');
+  writeFileSync(
+    bare,
+    JSON.stringify({
+      ...config,
+      ignorePatterns: [],
+      rules: { ...config.rules, 'project/no-type-assertion': 'error' },
+    }),
+  );
+  try {
+    const result = lint('export const first = [1].at(0)!;', bare);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('project(no-type-assertion)');
+  } finally {
+    rmSync(bare, { force: true });
+  }
+});
+
 test('allows a documented raw-input decoder exception', () => {
   const result = lint(
     [
