@@ -1,6 +1,6 @@
 # Personal iOS chat: foundation checkpoint
 
-This repository extends the [Margelo chat demo](https://blog.margelo.com/building-native-llm-chat-app-with-rag). The inherited demo screens now run on the saved-chat session and reach providers only through the chat server. The demo's direct provider connection, document search, and key settings are removed from the source. Recents still shows the inherited mocked list.
+This repository extends the [Margelo chat demo](https://blog.margelo.com/building-native-llm-chat-app-with-rag). The inherited demo screens now run on the saved-chat session and reach providers only through the chat server. The demo's direct provider connection, document search, and key settings are removed from the source. Recents lists the saved chats.
 
 Builds made before that removal embedded any real keys from `config.ts` in their bundle, and the native socket prewarmer stored the OpenAI socket request, key included, on the device. An install upgraded from such a build sends that stored request once on its first launch, before JavaScript runs and clears the queue. Rotate any key that was ever in a built app.
 
@@ -76,8 +76,10 @@ a submission automatically. Its consumer must persist acceptance, results, and
 cursors before acknowledging them to the server.
 
 `packages/app/src/state/chatView.ts` connects this layer, the native binding, and the
-session controller below to the existing screens. The user owns the UI work. The
-screens and the mocked Recents list keep their UI.
+session controller below to the existing screens. The user owns the UI work, and the
+screens keep their UI. Recents lists saved chats with a sent message, newest first,
+and its search matches titles loosely. A chat opens at its newest 50 messages, and
+scrolling to the top loads the 50 before them.
 
 `packages/app/src/network/nativeDrivers.ts` is the iOS binding for these drivers. It
 uses the Nitro request builder and WebSocket objects directly, so nothing reaches the
