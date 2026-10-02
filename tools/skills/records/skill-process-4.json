@@ -547,5 +547,495 @@
         }
       ]
     }
-  ]
+  ],
+  "review": {
+    "skills": [
+      {
+        "skill": "blast-radius",
+        "findings": [
+          {
+            "finding": "Review base: 2d20bfe, the head of the previous PR. With e22c06d, skills:record --review adds 8 author entries that PR4 never needed. From 2d20bfe the run adds none, and the 14 required skills match the author section (review-evidence/bases.txt, own-ranges.txt).",
+            "cites": "Steps",
+            "none": "No defect."
+          },
+          {
+            "finding": "ledger.cjs reads checks and rangeChecks from tools/verification/checks.cjs, .oxlintrc.json, and test files. Its output feeds skills:required and verify:commit.",
+            "cites": "Steps",
+            "none": "No unhandled caller."
+          },
+          {
+            "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
+            "cites": "Steps",
+            "none": "Disclosure only. I left the receipt as the tool wrote it. The tool defect stays open in the skill-process-5 review of principle-prove-it-works."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "blast-radius",
+            "source": "Skill",
+            "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a42657a13c0275804",
+            "agentType": "pstack:poteto-agent-high",
+            "toolUseId": "toolu_012GUyCjvHQ6Q6FHPc7uvS4s",
+            "time": "2026-10-02T13:21:55.183Z",
+            "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-5d",
+            "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+            "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+            "sig": "IDsGpHBL+a0oK5V0veidhjjtwoxzOnMkpaH3QLFptzwd/t+B36XGTCEimIii7e1VnNlzhKwNqTZ4X0G6DPawAA=="
+          }
+        ]
+      },
+      {
+        "skill": "deslop",
+        "findings": [
+          {
+            "finding": "I read the range diff for casts to any, abnormal try/catch, and comments that restate code. I found none beyond the open findings recorded elsewhere in this review.",
+            "cites": "Focus Areas",
+            "none": "No slop to remove."
+          },
+          {
+            "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
+            "cites": "Focus Areas",
+            "none": "Disclosure only. I left the receipt as the tool wrote it. The tool defect stays open in the skill-process-5 review of principle-prove-it-works."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "deslop",
+            "source": "Skill",
+            "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a42657a13c0275804",
+            "agentType": "pstack:poteto-agent-high",
+            "toolUseId": "toolu_01XsfBGuiAU1uibVCS8xX8F3",
+            "time": "2026-10-02T13:21:55.799Z",
+            "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-5d",
+            "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+            "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+            "sig": "+l/U82KUbk1e+GFvfN3YN/rzyORspjtWjH3oBHmqtQXcHJq5fZrzg09EElBxHcjAC6HEFE7r0926O49BzU0aBg=="
+          }
+        ]
+      },
+      {
+        "skill": "no-comments",
+        "findings": [
+          {
+            "finding": "I applied this skill inline and did not dispatch the comment-sicko agent, because this review session may not spawn agents. I found no comment in ledger.cjs that restates the code.",
+            "cites": "Steps",
+            "none": "No comment to remove."
+          },
+          {
+            "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
+            "cites": "Steps",
+            "none": "Disclosure only. I left the receipt as the tool wrote it. The tool defect stays open in the skill-process-5 review of principle-prove-it-works."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "no-comments",
+            "source": "Skill",
+            "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a42657a13c0275804",
+            "agentType": "pstack:poteto-agent-high",
+            "toolUseId": "toolu_01RxtQ1UKnG24yQmPagi4FzY",
+            "time": "2026-10-02T13:21:55.873Z",
+            "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-5d",
+            "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+            "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+            "sig": "diJv8cBvnnq9lZOMtjnLuUMGkrDE8azlEoF89Wc/oR1Ywn+as2uxiRH+3pUwT8xArTz3gwSYbkxcoxvu7XxhCQ=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-fix-root-causes",
+        "findings": [
+          {
+            "finding": "Open, Low. tools/skills/ledger.cjs:62 tests rule.check in checks, and ledger.cjs:70 reads config.rules[rule.rule], both through the object prototype. A ledger entry that names check \"constructor\" or \"toString\", or lint rule \"constructor\", counts as enforced. Probe: review-evidence/ledger-prototype-probe.log accepts constructor and toString and rejects only \"retired\". Object.hasOwn would fix both lines.",
+            "cites": "Fix Root Causes"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-fix-root-causes",
+            "source": "Skill",
+            "sha256": "4c5fd0fb9eb4754dff9a6dd4d1de7a87dc927f5154ab3afd643bedb9b7f8b6b9",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_01HXCNHkVbvrXsnpZ7sB8ng5",
+            "time": "2026-10-02T13:29:43.921Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "PtxGBOGxxuebtZfUmirGDjqDiJ70GDLFAF2aKMRXc/DFyz+gKzy3gu3bt0F67YZ+4XBrvYlrIhGry/FPvcneBA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-minimize-reader-load",
+        "findings": [
+          {
+            "finding": "ledger.cjs is 134 lines, and enforcementProblem handles each enforcement kind in one branch.",
+            "cites": "Minimize Reader Load",
+            "none": "No defect."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-minimize-reader-load",
+            "source": "Skill",
+            "sha256": "772bd55686c20d49e1220d0728de4587cd5608ae2968b7896c5477b3f8813dfc",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_01ArSzgS4WNtyYxNrrGs8qzL",
+            "time": "2026-10-02T13:29:44.999Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "MdepDBW9rdAscJ+jHiQ8yNPzg3pSAPGZ9693dEJDYwA13/79gRtQUR5VV8oDHsHJPtHNXCMftgy2X4bnNDmPDQ=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-prove-it-works",
+        "findings": [
+          {
+            "finding": "Open, Low. tools/skills/ledger.cjs:62 accepts a range check as enforcement. tools/skills/ledger.json:4-12 does this today: lesson commit-types names check commit-types, the typecheck:range range check. Hosted CI runs verify:current without --base, so range checks do not run there, and the lesson counts as enforced by a check that no hosted job runs. Scenario: a range edit that leaves an earlier commit uncompilable recurs in a hosted run, and the ledger still reports the lesson as enforced.",
+            "cites": "Prove It Works"
+          },
+          {
+            "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
+            "cites": "Prove It Works",
+            "none": "Disclosure only. I left the receipt as the tool wrote it. The tool defect stays open in the skill-process-5 review of principle-prove-it-works."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-prove-it-works",
+            "source": "Skill",
+            "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a42657a13c0275804",
+            "agentType": "pstack:poteto-agent-high",
+            "toolUseId": "toolu_01MVXZPonKncLJLheZxPdiJZ",
+            "time": "2026-10-02T13:21:56.327Z",
+            "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-5d",
+            "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+            "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+            "sig": "+78XZGrLnuHeKajjvlQu0dv+O/XHhs0oqgPN3loPH2ZhcM3igmWVI5lHAWEyjYwzOYqGgHJSTvZxWEWAQXIsDQ=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-sequence-verifiable-units",
+        "findings": [
+          {
+            "finding": "4e8128a tightens test enforcement in its own commit after the feature, with its record next to it.",
+            "cites": "Sequence work into verifiable units",
+            "none": "No defect."
+          },
+          {
+            "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
+            "cites": "Sequence work into verifiable units",
+            "none": "Disclosure only. I left the receipt as the tool wrote it. The tool defect stays open in the skill-process-5 review of principle-prove-it-works."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-sequence-verifiable-units",
+            "source": "Skill",
+            "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a42657a13c0275804",
+            "agentType": "pstack:poteto-agent-high",
+            "toolUseId": "toolu_01MaETrkNWSDahoEzmFm2YiX",
+            "time": "2026-10-02T13:21:56.400Z",
+            "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-5d",
+            "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+            "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+            "sig": "Y9LxYuHej3/tocxg938PU1HEepyZ1cVgNruNu+xjhNC6td1MUDAlUpGvoXxIj5AkpNx1AP8c0tr8JpojdnPYBA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-subtract-before-you-add",
+        "findings": [
+          {
+            "finding": "ac75730 reads the change paths once for all lessons instead of per lesson.",
+            "cites": "Subtract Before You Add",
+            "none": "No defect."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-subtract-before-you-add",
+            "source": "Skill",
+            "sha256": "84bfde4d3dc16360264e0cb944b2dfbd8d92a70624322e83b93432f8e35dc60e",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_011CP4vL32ovTjzznZ1gNn22",
+            "time": "2026-10-02T13:29:51.294Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "v/MCpeMRkr/omIGC+fHx9Z9rewkPI/QqQkA7J1MVlf5AwnoReudpaAbg2I4W1ZBNONe+u0RCVIWZ7DWXUGoGAA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-test-behavior-not-implementation",
+        "findings": [
+          {
+            "finding": "Open, Low. definesTest at tools/skills/ledger.cjs:48-54 accepts a test call anywhere in the file, including inside describe.skip, and does not check that Jest discovers the file. Probe: review-evidence/ledger-describe-skip-probe.log reports no problem for a named test inside describe.skip. The jest/no-disabled-tests lint rule covers files in the test glob, but a file outside Jest discovery passes with no test ever running.",
+            "cites": "Test behavior, not implementation"
+          },
+          {
+            "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
+            "cites": "Test behavior, not implementation",
+            "none": "Disclosure only. I left the receipt as the tool wrote it. The tool defect stays open in the skill-process-5 review of principle-prove-it-works."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-test-behavior-not-implementation",
+            "source": "Skill",
+            "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a42657a13c0275804",
+            "agentType": "pstack:poteto-agent-high",
+            "toolUseId": "toolu_01779KzQc5iusCZvyRqC4igB",
+            "time": "2026-10-02T13:21:59.030Z",
+            "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-5d",
+            "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+            "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+            "sig": "vAKfKDHYBw5gVHCoMIsPd4nlmOdtzvA0Ofus0+HT4WnkvDrnmukAvGZZ/Ib/WJmjaUmsC6hZWNMZ3F/cR+haDg=="
+          }
+        ]
+      },
+      {
+        "skill": "technical-writing",
+        "findings": [
+          {
+            "finding": "dc86db4 says typecheck enforces a type lesson. tools/skills/ledger.json gives responses-compact-threshold the kind \"type\".",
+            "cites": "Voice and repo specifics",
+            "none": "No defect."
+          },
+          {
+            "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
+            "cites": "Voice and repo specifics",
+            "none": "Disclosure only. I left the receipt as the tool wrote it. The tool defect stays open in the skill-process-5 review of principle-prove-it-works."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "technical-writing",
+            "source": "Skill",
+            "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a42657a13c0275804",
+            "agentType": "pstack:poteto-agent-high",
+            "toolUseId": "toolu_01HYgN5zt4U69WFfzJRJoMgJ",
+            "time": "2026-10-02T13:21:59.643Z",
+            "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-5d",
+            "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+            "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+            "sig": "2tE7NAiHU8lTmJKE3CGPKknYApYhLsJtuxZhB38q/5wOLYD2WMoS6r6gkNZZu8hRJvlM9Jw5XHt8OYgWRtWpDw=="
+          }
+        ]
+      },
+      {
+        "skill": "test-prune",
+        "findings": [
+          {
+            "finding": "The ledger tests assert exact problem text for missing checks, rules, and tests. The open definesTest finding under principle-test-behavior-not-implementation needs a describe.skip case.",
+            "cites": "Review questions",
+            "none": "Covered by the open finding under principle-test-behavior-not-implementation."
+          },
+          {
+            "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
+            "cites": "Review questions",
+            "none": "Disclosure only. I left the receipt as the tool wrote it. The tool defect stays open in the skill-process-5 review of principle-prove-it-works."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "test-prune",
+            "source": "Skill",
+            "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a42657a13c0275804",
+            "agentType": "pstack:poteto-agent-high",
+            "toolUseId": "toolu_01DnyGcNVMBdpkh8Un3zZBt6",
+            "time": "2026-10-02T13:21:59.716Z",
+            "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-5d",
+            "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+            "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+            "sig": "ho7/h1B+SnmjJ+g+drCQLc4dVaFQ5Yacc/aEmK1l+8s5PC2L98AJB+8PhMLUVYU0zBnfm5NoQA6JQfXiDspHAA=="
+          }
+        ]
+      },
+      {
+        "skill": "thermo-nuclear-code-quality-review",
+        "findings": [
+          {
+            "finding": "The ledger is a separate module with its own schema, not branches added to records.cjs.",
+            "cites": "Non-Negotiable Additional Standards 2",
+            "none": "No defect."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "thermo-nuclear-code-quality-review",
+            "source": "Skill",
+            "sha256": "35f68c89a24f690eaba7f77c637d3b7dc1cb0fc7bf17670606ffd83f074fa626",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a6f2e1d3baa74f5d7",
+            "agentType": "pstack:effort-high",
+            "toolUseId": "toolu_01D8GjpPnixK97c2nFCujYzj",
+            "time": "2026-10-02T13:29:57.126Z",
+            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-review",
+            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
+            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
+            "sig": "rEUTtanMfJiPAM6yAs6bCfzviEnXvpWp0BUFA9HO2nNDEGlMpu24IvBimRKU8OZZJpQUBtgpkZ0DMc1f5AQfCA=="
+          }
+        ]
+      },
+      {
+        "skill": "unslop",
+        "findings": [
+          {
+            "finding": "86c4270 shortens the ledger instruction and drops semicolons.",
+            "cites": "Plain speech 27",
+            "none": "No slop."
+          },
+          {
+            "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
+            "cites": "Plain speech 27",
+            "none": "Disclosure only. I left the receipt as the tool wrote it. The tool defect stays open in the skill-process-5 review of principle-prove-it-works."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "unslop",
+            "source": "Skill",
+            "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a42657a13c0275804",
+            "agentType": "pstack:poteto-agent-high",
+            "toolUseId": "toolu_016C9PL4k7zaQ4xDqYbnuRJZ",
+            "time": "2026-10-02T13:22:00.162Z",
+            "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-5d",
+            "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+            "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+            "sig": "I/5VrXX3GjkzCHMOEDv7iqhXVyIO2opFmtq8BRFs5jEAsoK0wDJzy6O6q1kCWdVvsIF7y1XyhBpPB6j1BokPBA=="
+          }
+        ]
+      },
+      {
+        "skill": "writing-for-agents",
+        "findings": [
+          {
+            "finding": "The ledger sentences in AGENTS.md:36 point at tools/skills/ledger.json and the skills:required output instead of restating lessons.",
+            "cites": "Context pointers",
+            "none": "No defect."
+          },
+          {
+            "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
+            "cites": "Pruning",
+            "none": "Disclosure only. I left the receipt as the tool wrote it. The tool defect stays open in the skill-process-5 review of principle-prove-it-works."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "writing-for-agents",
+            "source": "Skill",
+            "sha256": "a842323e664e5af104eac5c97ad22fda929ebeb62d81c501161ac1f6f482db58",
+            "partial": false,
+            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+            "agent": "a42657a13c0275804",
+            "agentType": "pstack:poteto-agent-high",
+            "toolUseId": "toolu_01M6smn2MGyuiisQMTB5WQKS",
+            "time": "2026-10-02T13:22:00.237Z",
+            "cwd": "53c058b4560d861bea3ad6bc5375cdd59ef6a651d84ae29c4685cea960d717e4",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": "work/skill-process-5d",
+            "head": "8ac891bec453d49e57919d49445e2b887108b27d",
+            "headPatch": "a6410e7599ee650673724973b014834144c8e5a4",
+            "sig": "y8BsurNE6ZxFqi4vSOY8ldZ88zPxKP3rxplf4EgDXmR+E3TDz9WAprYzC0aiq0EC4jrFe6Kp8vqB+Ek9A3YDCA=="
+          }
+        ]
+      }
+    ]
+  }
 }
