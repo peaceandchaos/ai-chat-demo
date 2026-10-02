@@ -42,6 +42,8 @@ let skillsRoot;
 let hook;
 let base;
 let work;
+let middle;
+let later;
 let receipt;
 
 function write(path, text) {
@@ -55,12 +57,21 @@ function commit(message) {
   return git(repository, ['rev-parse', 'HEAD']);
 }
 
-function recordOn(branch, records, remove = []) {
-  git(repository, ['checkout', '--quiet', '-B', branch, work]);
+function writeRecords(records) {
+  for (const record of records)
+    write(
+      `tools/skills/records/${record.change}.json`,
+      JSON.stringify({ base: { commit: base }, ...record }),
+    );
+}
+
+// Commits records on `from`. A record without a base starts at the fixture's
+// base commit.
+function recordOn(branch, records, remove = [], from = work) {
+  git(repository, ['checkout', '--quiet', '-B', branch, from]);
   git(repository, ['clean', '--force', '-d', '--quiet']);
   for (const path of remove) rmSync(join(repository, path));
-  for (const record of records)
-    write(`tools/skills/records/${record.change}.json`, JSON.stringify(record));
+  writeRecords(records);
   return commit(`chore: record ${branch}`);
 }
 
@@ -110,10 +121,30 @@ const looked = (finding = 'Looked.', none = 'Fine.') => ({
   cites: 'Steps',
   none,
 });
-const noAuthorReceipt = skill =>
-  `${skill} is required, but no record holds a valid author receipt for it. Load it with the Skill tool, then run npm run skills:record.`;
-const noReviewerReceipt = skill =>
-  `${skill} is required, but no record holds a valid receipt for it from a reviewer who is not an author. The reviewer loads it with the Skill tool, then runs npm run skills:record -- <change-id> <base> --review.`;
+const authored = (skill, files, ...receipts) => ({
+  skill,
+  files,
+  findings: [looked()],
+  receipts,
+});
+const reviewed = (skill, ...receipts) => ({
+  skill,
+  findings: [looked()],
+  receipts,
+});
+const noAuthorReceipt = (change, skill) =>
+  `tools/skills/records/${change}.json: ${skill} has no valid author receipt. Load it with the Skill tool, then run npm run skills:record -- ${change} <base>.`;
+const noReviewerReceipt = (change, skill) =>
+  `tools/skills/records/${change}.json: review of ${skill} has no valid receipt from a session and agent pair that made none of this record's author receipts. The reviewer loads it with the Skill tool, then runs npm run skills:record -- ${change} <base> --review.`;
+const upperPath = 'tools/skills/records/upper.json';
+// Commits an upper record on top of the stack.
+const upperOn = (branch, skills, review) =>
+  recordOn(
+    branch,
+    [{ change: 'upper', base: { commit: middle }, skills, review }],
+    [],
+    later,
+  );
 const noReview = change =>
   `tools/skills/records/${change}.json has no review section, and a pull request needs an independent review of every record. The reviewer loads each required skill with the Skill tool, then runs npm run skills:record -- ${change} <base> --review.`;
 
@@ -165,6 +196,34 @@ beforeAll(() => {
   receipt.reviewSource = sign('source-care', { session_id: 'session-review' });
   receipt.subagentAlways = sign('always', { agent_id: 'agent-review' });
   receipt.subagentSource = sign('source-care', { agent_id: 'agent-review' });
+  // A stack: the lower record covers base..middle, and each test adds an
+  // upper record whose base is middle and whose range adds src/b.ts.
+  git(repository, ['checkout', '--quiet', '-B', 'stack', work]);
+  writeRecords([
+    {
+      change: 'lower',
+      skills: [
+        authored('always', ['<change>'], receipt.always),
+        authored('source-care', ['src/**'], receipt.source),
+      ],
+      review: {
+        skills: [
+          reviewed('always', receipt.reviewAlways),
+          reviewed('source-care', receipt.reviewSource),
+        ],
+      },
+    },
+  ]);
+  middle = commit('chore: record lower');
+  write('src/b.ts', 'export const b = 2;\n');
+  later = commit('feat: add b');
+  receipt.upperAlways = sign('always');
+  receipt.upperSource = sign('source-care');
+  receipt.upperExtra = sign('extra');
+  receipt.upperReviewAlways = sign('always', { session_id: 'session-review' });
+  receipt.upperReviewSource = sign('source-care', {
+    session_id: 'session-review',
+  });
 }, 30000);
 
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
@@ -174,42 +233,142 @@ test('passes when the records in the range cover every required skill with recei
     'clean',
     [
       {
-        change: 'lower',
+        change: 'upper',
+        base: { commit: middle },
         skills: [
           {
             skill: 'always',
             files: ['<change>'],
-            findings: [cite('A loose name.', work)],
-            receipts: [receipt.atBase],
+            findings: [cite('A loose name.', later)],
+            receipts: [receipt.upperAlways],
           },
-        ],
-      },
-      {
-        change: 'upper',
-        skills: [
           {
             skill: 'source-care',
             files: ['src/**'],
-            findings: [looked('Checked a.ts.', 'Nothing to fix.')],
-            receipts: [receipt.source],
+            findings: [looked('Checked b.ts.', 'Nothing to fix.')],
+            receipts: [receipt.upperSource],
           },
           {
             skill: 'extra',
-            files: ['src/a.ts'],
+            files: ['src/b.ts'],
             reason: 'The export is new.',
             findings: [looked('Checked callers.', 'None exist.')],
-            receipts: [],
+            receipts: [receipt.upperExtra],
           },
         ],
       },
     ],
     ['tools/skills/records/merged.json'],
+    later,
   );
   const result = skills(['check', base]);
   expect(result.stderr).toBe('');
   expect(result.status).toBe(0);
   expect(result.stdout).toBe(
-    `Skill records for ${range(head, 2)} cover all 2 required skills (tools/skills/records/lower.json, tools/skills/records/upper.json).\n`,
+    `Skill records for ${range(head, 4)} cover all 2 required skills (tools/skills/records/lower.json, tools/skills/records/upper.json).\n`,
+  );
+});
+
+test('checks each record against its own range, not the union of every record', () => {
+  const upperPair = (always, source) => [
+    authored('always', ['<change>'], ...always),
+    authored('source-care', ['src/**'], ...source),
+  ];
+  const empty = upperOn('upper-empty', upperPair([], []));
+  expect(skills(['check', base]).stderr).toBe(
+    [
+      `Skill records for ${range(empty, 4)} fail:`,
+      noAuthorReceipt('upper', 'always'),
+      noAuthorReceipt('upper', 'source-care'),
+      '',
+    ].join('\n'),
+  );
+  const borrowed = upperOn(
+    'upper-borrowed',
+    upperPair([receipt.always], [receipt.source]),
+  );
+  expect(skills(['check', base]).stderr).toBe(
+    [
+      `Skill records for ${range(borrowed, 4)} fail:`,
+      `${upperPath}: always receipt ${receipt.always.toolUseId} was made on a commit outside this change.`,
+      noAuthorReceipt('upper', 'always'),
+      `${upperPath}: source-care receipt ${receipt.source.toolUseId} was made on a commit outside this change.`,
+      noAuthorReceipt('upper', 'source-care'),
+      '',
+    ].join('\n'),
+  );
+  const stub = upperOn('upper-stub', [
+    authored('always', ['<change>'], receipt.upperAlways),
+  ]);
+  expect(skills(['check', base]).stderr).toBe(
+    [
+      `Skill records for ${range(stub, 4)} fail:`,
+      `${upperPath}: source-care is required by source for src/b.ts, but this record does not cover it.`,
+      '',
+    ].join('\n'),
+  );
+  const lowerPath = 'tools/skills/records/lower.json';
+  const reloaded = recordOn(
+    'lower-reloaded',
+    [
+      {
+        change: 'lower',
+        skills: [
+          authored('always', ['<change>'], receipt.upperAlways),
+          authored('source-care', ['src/**'], receipt.upperSource),
+        ],
+      },
+      {
+        change: 'upper',
+        base: { commit: middle },
+        skills: upperPair([receipt.upperAlways], [receipt.upperSource]),
+      },
+    ],
+    [],
+    later,
+  );
+  expect(skills(['check', base]).stderr).toBe(
+    [
+      `Skill records for ${range(reloaded, 4)} fail:`,
+      `${lowerPath}: always receipt ${receipt.upperAlways.toolUseId} was made on a commit outside this change.`,
+      noAuthorReceipt('lower', 'always'),
+      `${lowerPath}: source-care receipt ${receipt.upperSource.toolUseId} was made on a commit outside this change.`,
+      noAuthorReceipt('lower', 'source-care'),
+      '',
+    ].join('\n'),
+  );
+});
+
+test('fails commits that fall in no changed record and a base outside the history', () => {
+  const late = recordOn('late-base', [
+    {
+      change: 'late',
+      base: { commit: work },
+      skills: [authored('always', ['<change>'], receipt.always)],
+    },
+  ]);
+  expect(skills(['check', base]).stderr).toBe(
+    [
+      `Skill records for ${range(late, 2)} fail:`,
+      `No changed record's range holds 1 of the range's commits, from ${work.slice(0, 12)} to ${work.slice(0, 12)}. Give a record a base at or below ${work.slice(0, 12)}, or check from a later base.`,
+      '',
+    ].join('\n'),
+  );
+  const unknown = '0'.repeat(40);
+  const lost = recordOn('lost-base', [
+    {
+      change: 'lost',
+      base: { commit: unknown },
+      skills: [authored('always', ['<change>'], receipt.always)],
+    },
+  ]);
+  expect(skills(['check', base]).stderr).toBe(
+    [
+      `Skill records for ${range(lost, 2)} fail:`,
+      `tools/skills/records/lost.json: base ${unknown.slice(0, 12)} is neither HEAD nor an ancestor of HEAD, and no commit in the range has its patch-id.`,
+      `No changed record's range holds 2 of the range's commits, from ${work.slice(0, 12)} to ${lost.slice(0, 12)}. Give a record a base at or below ${work.slice(0, 12)}, or check from a later base.`,
+      '',
+    ].join('\n'),
   );
 });
 
@@ -260,8 +419,10 @@ test('reports each missing skill, outside commit, unknown skill, and unexplained
       `${path}: ghost is not a catalogued skill in tools/skills/routing.json.`,
       `${path}: extra is not required for this change; give a reason for applying it.`,
       `${path}: extra has no findings. When the skill found nothing, record that with "none" and the reason.`,
-      'always is required by every-change for <change>, but no skill record covers it.',
-      noAuthorReceipt('always'),
+      `${path}: always is required by every-change for <change>, but this record does not cover it.`,
+      noAuthorReceipt('broken', 'source-care'),
+      noAuthorReceipt('broken', 'ghost'),
+      noAuthorReceipt('broken', 'extra'),
       '',
     ].join('\n'),
   );
@@ -324,10 +485,11 @@ test('rejects tampered, foreign-key, stale, partial, misfiled, and out-of-range 
       `${path}: always receipt ${partial.toolUseId} records a partial read.`,
       `${path}: always receipt ${outside.toolUseId} was made on a commit outside this change.`,
       `${path}: always receipt ${receipt.source.toolUseId} is for source-care.`,
+      noAuthorReceipt('tampered', 'always'),
       `${path}: ghost receipt ${ghost.toolUseId} names a skill outside the catalog.`,
+      noAuthorReceipt('tampered', 'ghost'),
       `${path}: source-care receipt ${stale.toolUseId} hashes a SKILL.md that is not the one in tools/skills/catalog.lock.json.`,
-      noAuthorReceipt('always'),
-      noAuthorReceipt('source-care'),
+      noAuthorReceipt('tampered', 'source-care'),
       '',
     ].join('\n'),
   );
@@ -366,7 +528,7 @@ test('a review section needs receipts from a session and agent pair that wrote n
   expect(skills(['check', base]).stderr).toBe(
     [
       `Skill records for ${range(selfReviewed, 2)} fail:`,
-      noReviewerReceipt('always'),
+      noReviewerReceipt('self-reviewed', 'always'),
       '',
     ].join('\n'),
   );
@@ -386,63 +548,62 @@ test('a review section needs receipts from a session and agent pair that wrote n
   }
 });
 
-test('a pull request run needs a review section in every record and a reviewer receipt for every required skill', () => {
+test('a pull request run needs every record reviewed by a pair that made none of its author receipts', () => {
   const pullRequest = { GITHUB_EVENT_NAME: 'pull_request' };
-  const authored = (change, skill, files, author) => ({
-    change,
-    skills: [{ skill, files, findings: [looked()], receipts: [author] }],
-  });
-  const reviewedBy = (record, reviewer) => ({
-    ...record,
-    review: {
-      skills: [
-        {
-          skill: record.skills[0].skill,
-          findings: [looked()],
-          receipts: [reviewer],
-        },
-      ],
-    },
-  });
-  const lower = authored('lower', 'always', ['<change>'], receipt.always);
-  const upper = authored('upper', 'source-care', ['src/**'], receipt.source);
-  const unreviewed = recordOn('pr-unreviewed', [lower, upper]);
+  const authors = [
+    authored('always', ['<change>'], receipt.upperAlways),
+    authored('source-care', ['src/**'], receipt.upperSource),
+  ];
+  const unreviewed = upperOn('pr-unreviewed', authors);
   const local = skills(['check', base]);
   expect([local.stderr, local.status]).toEqual(['', 0]);
   const failed = skills(['check', base], pullRequest);
   expect(failed.status).toBe(1);
   expect(failed.stderr).toBe(
     [
-      `Skill records for ${range(unreviewed, 2)} fail:`,
-      noReview('lower'),
+      `Skill records for ${range(unreviewed, 4)} fail:`,
       noReview('upper'),
-      noReviewerReceipt('always'),
-      noReviewerReceipt('source-care'),
       '',
     ].join('\n'),
   );
 
-  const half = recordOn('pr-half-reviewed', [
-    reviewedBy(lower, receipt.reviewAlways),
-    upper,
-  ]);
+  const half = upperOn('pr-half-reviewed', authors, {
+    skills: [reviewed('always', receipt.upperReviewAlways)],
+  });
   expect(skills(['check', base], pullRequest).stderr).toBe(
     [
-      `Skill records for ${range(half, 2)} fail:`,
-      noReview('upper'),
-      noReviewerReceipt('source-care'),
+      `Skill records for ${range(half, 4)} fail:`,
+      `${upperPath}: source-care is required, but the review section has no entry for it. The reviewer loads it with the Skill tool, then runs npm run skills:record -- upper <base> --review.`,
       '',
     ].join('\n'),
   );
 
-  const reviewed = recordOn('pr-reviewed', [
-    reviewedBy(lower, receipt.reviewAlways),
-    reviewedBy(upper, receipt.reviewSource),
-  ]);
+  // The lower record's review holds a valid reviewer receipt for every skill,
+  // and that must not stand in for the upper record's own review.
+  const selfReviewed = upperOn('pr-self-reviewed', authors, {
+    skills: [
+      reviewed('always', receipt.upperAlways),
+      reviewed('source-care', receipt.upperReviewSource),
+    ],
+  });
+  expect(skills(['check', base], pullRequest).stderr).toBe(
+    [
+      `Skill records for ${range(selfReviewed, 4)} fail:`,
+      noReviewerReceipt('upper', 'always'),
+      '',
+    ].join('\n'),
+  );
+
+  const both = upperOn('pr-reviewed', authors, {
+    skills: [
+      reviewed('always', receipt.upperReviewAlways),
+      reviewed('source-care', receipt.upperReviewSource),
+    ],
+  });
   const passed = skills(['check', base], pullRequest);
   expect(passed.stderr).toBe('');
   expect(passed.stdout).toBe(
-    `Skill records for ${range(reviewed, 2)} cover all 2 required skills with independent review (tools/skills/records/lower.json, tools/skills/records/upper.json).\n`,
+    `Skill records for ${range(both, 4)} cover all 2 required skills with independent review (tools/skills/records/lower.json, tools/skills/records/upper.json).\n`,
   );
 });
 
@@ -519,6 +680,7 @@ test('rejects a finding without exactly one status and a record named for anothe
   ]);
   const misnamed = {
     change: 'other',
+    base: { commit: base },
     skills: [
       {
         skill: 'always',
@@ -542,8 +704,6 @@ test('rejects a finding without exactly one status and a record named for anothe
       `tools/skills/records/unresolved.json: skills.0.findings.1 ${resolution}`,
       'always is required by every-change for <change>, but no skill record covers it.',
       'source-care is required by source for src/a.ts, but no skill record covers it.',
-      noAuthorReceipt('always'),
-      noAuthorReceipt('source-care'),
       '',
     ].join('\n'),
   );
@@ -609,8 +769,6 @@ test('fails a range that changes no record', () => {
       'No skill record changed in this range. Run npm run skills:record -- <change-id> <base>.',
       'always is required by every-change for <change>, but no skill record covers it.',
       'source-care is required by source for src/a.ts, but no skill record covers it.',
-      noAuthorReceipt('always'),
-      noAuthorReceipt('source-care'),
       '',
     ].join('\n'),
   );
@@ -653,6 +811,7 @@ test('scaffolds a record, pulls author and reviewer receipts from this clone, an
   const scaffold = JSON.parse(readFileSync(path, 'utf8'));
   expect(scaffold).toEqual({
     change: 'scaffold',
+    base: { commit: base, patch: patchOf(base) },
     skills: [
       {
         skill: 'always',
@@ -772,6 +931,7 @@ test('rejects a receipt made on the old base after the change moves to a new bas
     'tools/skills/records/rebased.json',
     JSON.stringify({
       change: 'rebased',
+      base: { commit: moved },
       skills: [
         {
           skill: 'always',
@@ -794,7 +954,7 @@ test('rejects a receipt made on the old base after the change moves to a new bas
     [
       `Skill records for ${moved.slice(0, 12)}..${head.slice(0, 12)} (2 commits) fail:`,
       `tools/skills/records/rebased.json: always receipt ${receipt.atBase.toolUseId} was made on a commit outside this change.`,
-      noAuthorReceipt('always'),
+      noAuthorReceipt('rebased', 'always'),
       '',
     ].join('\n'),
   );

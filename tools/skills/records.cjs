@@ -1,7 +1,8 @@
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const {
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   writeFileSync,
 } = require('node:fs');
@@ -9,6 +10,7 @@ const { join } = require('node:path');
 const { z } = require('zod');
 const { cleanEnvironment, git } = require('../verification/snapshot.cjs');
 const { readLock } = require('./catalog.cjs');
+const { readRange } = require('./change.cjs');
 const {
   actor,
   missingKey,
@@ -23,6 +25,11 @@ const recordsDirectory = 'tools/skills/records';
 const recordFile = /^tools\/skills\/records\/([a-z0-9-]+)\.json$/u;
 
 const changeId = /^[a-z0-9-]+$/u;
+const patchId = z.string().regex(/^[0-9a-f]{40}$/u);
+const baseSchema = z.strictObject({
+  commit: z.string().regex(/^[0-9a-f]{40}$/u),
+  patch: patchId.optional(),
+});
 const findingSchema = z
   .strictObject({
     finding: z.string().min(1),
@@ -31,10 +38,7 @@ const findingSchema = z
       .string()
       .regex(/^[0-9a-f]{7,40}$/u)
       .optional(),
-    patch: z
-      .string()
-      .regex(/^[0-9a-f]{40}$/u)
-      .optional(),
+    patch: patchId.optional(),
     none: z.string().min(1).optional(),
     open: z.string().min(1).optional(),
   })
@@ -51,6 +55,7 @@ const findingSchema = z
   );
 const recordSchema = z.strictObject({
   change: z.string().regex(changeId),
+  base: baseSchema,
   skills: z
     .array(
       z.strictObject({
@@ -116,6 +121,98 @@ function rangeCommits(root, change) {
   ]))
     commits.set(commit, patch);
   return commits;
+}
+
+function isAncestor(root, older, newer) {
+  const { status } = spawnSync(
+    'git',
+    ['merge-base', '--is-ancestor', older, newer],
+    { cwd: root, env: cleanEnvironment(), stdio: 'ignore' },
+  );
+  if (status === 0 || status === 1) return status === 0;
+  throw new Error(
+    `git merge-base --is-ancestor ${older} ${newer} exited with ${status}.`,
+  );
+}
+
+function isCommit(root, commit) {
+  return (
+    spawnSync('git', ['cat-file', '-e', `${commit}^{commit}`], {
+      cwd: root,
+      env: cleanEnvironment(),
+      stdio: 'ignore',
+    }).status === 0
+  );
+}
+
+// A base resolves to itself when it is HEAD or an ancestor of HEAD. After a
+// rebase it resolves to the commit in the range that has its patch-id.
+function resolveBase(root, head, base, commits) {
+  if (isCommit(root, base.commit) && isAncestor(root, base.commit, head))
+    return base.commit;
+  const copy =
+    base.patch && [...commits].find(([, patch]) => patch === base.patch);
+  return copy ? copy[0] : null;
+}
+
+function baseOf(root, commit) {
+  const patch = patchIds(root, ['-1', commit]).get(commit);
+  return patch ? { commit, patch } : { commit };
+}
+
+// The resolved bases of the records in `texts`. A record without a valid base
+// bounds no other record's range.
+function startsOf(root, texts, head, commits) {
+  const starts = new Set();
+  for (const text of texts) {
+    let parsed;
+    try {
+      parsed = z.object({ base: baseSchema }).safeParse(JSON.parse(text));
+    } catch {
+      continue;
+    }
+    const start =
+      parsed.success && resolveBase(root, head, parsed.data.base, commits);
+    if (start) starts.add(start);
+  }
+  return starts;
+}
+
+// A record's range runs from its base to the nearest later record base, or to
+// HEAD when no record starts later.
+function rangeEnd(root, start, starts, head) {
+  let end = head;
+  let distance = Infinity;
+  for (const other of starts) {
+    if (other === start || !isAncestor(root, start, other)) continue;
+    const count = Number(
+      git(root, ['rev-list', '--count', `${start}..${other}`]),
+    );
+    if (count < distance) [end, distance] = [other, count];
+  }
+  return end;
+}
+
+const requiredOf = (routing, change) =>
+  new Map(
+    requiredSkills(routing, change).required.map(({ skill, reasons }) => [
+      skill,
+      reasons,
+    ]),
+  );
+
+// `own` is the record's range. `later` runs from its base to HEAD, where the
+// fixes that findings cite and the reviewer's loads land.
+function recordScope(root, routing, start, end, head) {
+  const later = rangeCommits(root, { base: start, head });
+  const own = readRange(root, start, end);
+  const ownCommits = new Map(
+    git(root, ['rev-list', `${start}..${end}`])
+      .split('\n')
+      .filter(Boolean)
+      .map(commit => [commit, later.get(commit)]),
+  );
+  return { own, ownCommits, later, required: requiredOf(routing, own) };
 }
 
 function headReader(root, head) {
@@ -238,7 +335,12 @@ function findingProblems(section, commits, pullRequest) {
   return problems;
 }
 
-function coverageProblems(required, entries) {
+// `path` names the record that must cover the skills, or is null when the
+// range has no record at all.
+function coverageProblems(required, entries, path) {
+  const holder = path
+    ? { prefix: `${path}: `, gap: 'this record does not cover it' }
+    : { prefix: '', gap: 'no skill record covers it' };
   const problems = [];
   for (const [skill, reasons] of required) {
     const patterns = entries
@@ -250,71 +352,110 @@ function coverageProblems(required, entries) {
         .filter(subject => !patterns.some(pattern => pattern.test(subject)));
       if (missing.length)
         problems.push(
-          `${skill} is required by ${rule} for ${missing.join(', ')}, but no skill record covers it.`,
+          `${holder.prefix}${skill} is required by ${rule} for ${missing.join(', ')}, but ${holder.gap}.`,
         );
     }
   }
   return problems;
 }
 
-function checkRecords(root, routing, change, { pullRequest }) {
-  const required = new Map(
-    requiredSkills(routing, change).required.map(({ skill, reasons }) => [
-      skill,
-      reasons,
-    ]),
-  );
-  const { records, problems } = readRecords(root, change);
-  if (required.size && !records.length && !problems.length)
+// Checks one record against its own range. `context` holds { routing, lock,
+// key, pullRequest }.
+function recordProblems(path, record, start, scope, context) {
+  const { routing, lock, key, pullRequest } = context;
+  const problems = [];
+  const seen = new Set();
+  for (const section of sectionsOf(path, record)) {
+    const id = `${section.role} ${section.entry.skill}`;
+    if (seen.has(id)) problems.push(`${labelOf(section)} appears twice.`);
+    seen.add(id);
     problems.push(
-      `No skill record changed in this range. Run npm run skills:record -- <change-id> <base>.`,
+      ...entryProblems(section, routing, scope.required),
+      ...findingProblems(section, scope.later, pullRequest),
+      ...(lock ? citationProblems(section, lock) : []),
     );
+  }
+  if (pullRequest && !record.review)
+    problems.push(
+      `${path} has no review section, and a pull request needs an independent review of every record. The reviewer loads each required skill with the Skill tool, then runs npm run skills:record -- ${record.change} <base> --review.`,
+    );
+  problems.push(...coverageProblems(scope.required, record.skills, path));
+  if (lock && key) {
+    const change = { base: start, basePatch: record.base.patch };
+    const bind = commits => ({ key, lock, routing, change, commits });
+    problems.push(
+      ...receiptProblems(path, record, [...scope.required.keys()], {
+        author: bind(scope.ownCommits),
+        review: bind(scope.later),
+      }),
+    );
+  }
+  return problems;
+}
+
+function recordTextsAt(root, head) {
+  return git(root, [
+    'ls-tree',
+    '-r',
+    '--name-only',
+    head,
+    '--',
+    recordsDirectory,
+  ])
+    .split('\n')
+    .filter(path => recordFile.test(path))
+    .map(path => git(root, ['show', `${head}:${path}`]));
+}
+
+function checkRecords(root, routing, change, { pullRequest }) {
+  const required = requiredOf(routing, change);
+  const { records, problems } = readRecords(root, change);
   const commits = rangeCommits(root, change);
   const read = headReader(root, change.head);
   const checked = required.size > 0 || records.length > 0;
   const { lock, problems: lockProblems } = readLock(read, routing);
   if (checked) problems.push(...lockProblems);
-  const sections = records.flatMap(({ path, record }) =>
-    sectionsOf(path, record),
+  const key = readPublicKey(read);
+  if (!records.length) {
+    if (required.size && !problems.length)
+      problems.push(
+        `No skill record changed in this range. Run npm run skills:record -- <change-id> <base>.`,
+      );
+    problems.push(...coverageProblems(required, [], null));
+  }
+  const starts = startsOf(
+    root,
+    recordTextsAt(root, change.head),
+    change.head,
+    commits,
   );
-  const seen = new Set();
-  for (const section of sections) {
-    const id = `${section.path} ${section.role} ${section.entry.skill}`;
-    if (seen.has(id)) problems.push(`${labelOf(section)} appears twice.`);
-    seen.add(id);
+  const covered = new Set();
+  for (const { path, record } of records) {
+    const start = resolveBase(root, change.head, record.base, commits);
+    if (!start) {
+      problems.push(
+        `${path}: base ${record.base.commit.slice(0, 12)} is neither HEAD nor an ancestor of HEAD, and no commit in the range has its patch-id.`,
+      );
+      continue;
+    }
+    const end = rangeEnd(root, start, starts, change.head);
+    const scope = recordScope(root, routing, start, end, change.head);
+    for (const commit of scope.ownCommits.keys()) covered.add(commit);
     problems.push(
-      ...entryProblems(section, routing, required),
-      ...findingProblems(section, commits, pullRequest),
-      ...(lock ? citationProblems(section, lock) : []),
+      ...recordProblems(path, record, start, scope, {
+        routing,
+        lock,
+        key,
+        pullRequest,
+      }),
     );
   }
-  if (pullRequest)
-    for (const { path, record } of records)
-      if (!record.review)
-        problems.push(
-          `${path} has no review section, and a pull request needs an independent review of every record. The reviewer loads each required skill with the Skill tool, then runs npm run skills:record -- ${record.change} <base> --review.`,
-        );
-  problems.push(
-    ...coverageProblems(
-      required,
-      sections
-        .filter(({ role }) => role === 'author')
-        .map(({ entry }) => entry),
-    ),
-  );
-  const reviewRequired =
-    pullRequest || sections.some(({ role }) => role === 'review');
-  const key = readPublicKey(read);
-  if (checked && lock && !key) problems.push(missingKey());
-  if (checked && lock && key)
+  const uncovered = [...commits.keys()].filter(commit => !covered.has(commit));
+  if (records.length && uncovered.length)
     problems.push(
-      ...receiptProblems(
-        sections,
-        [...required.keys()],
-        { key, lock, routing, change, commits },
-        reviewRequired,
-      ),
+      `No changed record's range holds ${uncovered.length} of the range's commits, from ${uncovered.at(-1).slice(0, 12)} to ${uncovered[0].slice(0, 12)}. Give a record a base at or below ${uncovered.at(-1).slice(0, 12)}, or check from a later base.`,
     );
+  if (checked && lock && !key) problems.push(missingKey());
   return {
     problems,
     commits: commits.size,
@@ -372,7 +513,7 @@ function scaffold(record, required, review) {
 
 // Pulls receipts for one side of the record. The other side's sessions are
 // excluded, so an author's receipt never stands in for a reviewer's.
-function pullSection(record, change, commits, pull) {
+function pullSection(record, start, scope, pull) {
   const own = record.review ? record.review.skills : [];
   const [entries, others] = pull.review
     ? [own, record.skills]
@@ -382,17 +523,14 @@ function pullSection(record, change, commits, pull) {
     key: pull.key,
     lock: pull.lock,
     routing: pull.routing,
-    change,
-    commits,
+    change: { base: start, basePatch: record.base.patch },
+    commits: pull.review ? scope.later : scope.ownCommits,
   };
-  const required = new Set(
-    requiredSkills(pull.routing, change).required.map(({ skill }) => skill),
-  );
   const missing = [];
   for (const entry of entries) {
     if (!pull.routing.skills[entry.skill]) continue;
     const pulled = pullReceipts(entry, pull.candidates, context, excluded);
-    if (!pulled && required.has(entry.skill)) missing.push(entry.skill);
+    if (!pulled && scope.required.has(entry.skill)) missing.push(entry.skill);
   }
   return missing;
 }
@@ -403,19 +541,39 @@ function pullSection(record, change, commits, pull) {
 function writeRecord(root, change, id, pull) {
   if (!changeId.test(id))
     throw new Error('Name the change in lowercase-with-dashes.');
-  const path = join(root, recordsDirectory, `${id}.json`);
+  const directory = join(root, recordsDirectory);
+  const path = join(directory, `${id}.json`);
   const record = existsSync(path)
     ? recordSchema.parse(JSON.parse(readFileSync(path, 'utf8')))
     : { change: id, skills: [] };
-  scaffold(record, requiredSkills(pull.routing, change).required, pull.review);
-  const commits = rangeCommits(root, change);
+  record.base = baseOf(root, change.base);
+  const others = existsSync(directory)
+    ? readdirSync(directory)
+        .filter(file => file.endsWith('.json') && file !== `${id}.json`)
+        .map(file => readFileSync(join(directory, file), 'utf8'))
+    : [];
+  const starts = startsOf(
+    root,
+    others,
+    change.head,
+    rangeCommits(root, change),
+  );
+  const end = rangeEnd(root, change.base, starts, change.head);
+  const scope = recordScope(root, pull.routing, change.base, end, change.head);
+  scaffold(
+    record,
+    requiredSkills(pull.routing, scope.own).required,
+    pull.review,
+  );
   for (const finding of [
     ...record.skills,
     ...(record.review?.skills ?? []),
   ].flatMap(entry => entry.findings))
-    citePatch(root, commits, finding);
-  const missing = pull.lock ? pullSection(record, change, commits, pull) : [];
-  mkdirSync(join(root, recordsDirectory), { recursive: true });
+    citePatch(root, scope.later, finding);
+  const missing = pull.lock
+    ? pullSection(record, change.base, scope, pull)
+    : [];
+  mkdirSync(directory, { recursive: true });
   writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`);
   return { path, missing };
 }

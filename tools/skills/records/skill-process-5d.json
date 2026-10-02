@@ -1,5 +1,9 @@
 {
   "change": "skill-process-5d",
+  "base": {
+    "commit": "dffee9a0ddfbbac4d5bdf3af03ac14bc4d0abeb0",
+    "patch": "517a0ebb1f8e6f4b5205bd1520d30b6ec17f8c70"
+  },
   "skills": [
     {
       "skill": "blast-radius",

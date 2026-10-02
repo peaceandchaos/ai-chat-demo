@@ -1,5 +1,9 @@
 {
   "change": "skill-process-2",
+  "base": {
+    "commit": "2634c10fb86aea22ce318c64b60b5c310879b1f5",
+    "patch": "7da31d4c762bfbb3455080092b8d64f7bb21d334"
+  },
   "skills": [
     {
       "skill": "blast-radius",

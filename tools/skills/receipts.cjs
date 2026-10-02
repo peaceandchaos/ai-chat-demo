@@ -56,18 +56,20 @@ function signed(receipt, key) {
 }
 
 // A receipt belongs to a change when the agent loaded the skill on the base or
-// on a commit of the range, or on a commit with the same patch-id as one in
-// the range, so cherry-picked and rebased copies keep their receipts.
+// on a commit of the range, or on a commit with the same patch-id as the base
+// or one in the range, so cherry-picked and rebased copies keep their receipts.
 function bound(receipt, change, commits) {
   if (receipt.head === change.base || commits.has(receipt.head)) return true;
   return (
     receipt.headPatch !== null &&
-    [...commits.values()].includes(receipt.headPatch)
+    (receipt.headPatch === change.basePatch ||
+      [...commits.values()].includes(receipt.headPatch))
   );
 }
 
-// `context` holds { key, lock, routing, change, commits }. `key` may
-// be null only while pulling, before the owner commits a public key.
+// `context` holds { key, lock, routing, change, commits }, where `change` is
+// { base, basePatch }. `key` may be null only while pulling, before the owner
+// commits a public key.
 function receiptFault(receipt, skill, context) {
   if (receipt.skill !== skill) return `is for ${receipt.skill}`;
   if (context.key && !signed(receipt, context.key))
@@ -84,35 +86,45 @@ function receiptFault(receipt, skill, context) {
 
 const actor = receipt => `${receipt.session} ${receipt.agent}`;
 
-function receiptProblems(sections, required, context, reviewRequired) {
+// Every author entry needs a valid receipt for the record's own range. When
+// the record has a review section, every review entry needs a valid receipt
+// from a session and agent pair that made none of this record's author
+// receipts, and every required skill needs a review entry. `contexts` holds
+// { author, review }.
+function receiptProblems(path, record, required, contexts) {
   const problems = [];
-  const valid = { author: [], review: [] };
-  for (const { path, role, entry } of sections) {
-    for (const receipt of entry.receipts) {
+  const validIn = (entry, context, label) =>
+    entry.receipts.filter(receipt => {
       const fault = receiptFault(receipt, entry.skill, context);
       if (fault)
         problems.push(
-          `${path}: ${entry.skill} receipt ${receipt.toolUseId ?? receipt.sig.slice(0, 12)} ${fault}.`,
+          `${path}: ${label}${entry.skill} receipt ${receipt.toolUseId ?? receipt.sig.slice(0, 12)} ${fault}.`,
         );
-      else valid[role].push(receipt);
-    }
-  }
-  const authors = new Set(valid.author.map(actor));
-  for (const skill of required) {
-    if (!valid.author.some(receipt => receipt.skill === skill))
+      return !fault;
+    });
+  for (const entry of record.skills)
+    if (!validIn(entry, contexts.author, '').length)
       problems.push(
-        `${skill} is required, but no record holds a valid author receipt for it. Load it with the Skill tool, then run npm run skills:record.`,
+        `${path}: ${entry.skill} has no valid author receipt. Load it with the Skill tool, then run npm run skills:record -- ${record.change} <base>.`,
       );
+  if (!record.review) return problems;
+  const authors = new Set(
+    record.skills.flatMap(entry => entry.receipts).map(actor),
+  );
+  for (const entry of record.review.skills)
     if (
-      reviewRequired &&
-      !valid.review.some(
-        receipt => receipt.skill === skill && !authors.has(actor(receipt)),
+      !validIn(entry, contexts.review, 'review of ').some(
+        receipt => !authors.has(actor(receipt)),
       )
     )
       problems.push(
-        `${skill} is required, but no record holds a valid receipt for it from a reviewer who is not an author. The reviewer loads it with the Skill tool, then runs npm run skills:record -- <change-id> <base> --review.`,
+        `${path}: review of ${entry.skill} has no valid receipt from a session and agent pair that made none of this record's author receipts. The reviewer loads it with the Skill tool, then runs npm run skills:record -- ${record.change} <base> --review.`,
       );
-  }
+  for (const skill of required)
+    if (!record.review.skills.some(entry => entry.skill === skill))
+      problems.push(
+        `${path}: ${skill} is required, but the review section has no entry for it. The reviewer loads it with the Skill tool, then runs npm run skills:record -- ${record.change} <base> --review.`,
+      );
   return problems;
 }
 

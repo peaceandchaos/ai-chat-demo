@@ -46,7 +46,15 @@ Each change carries a record at `tools/skills/records/<change-id>.json`. Write o
 npm run skills:record -- skill-routing origin/main
 ```
 
-The command adds every required skill with the files that require it and keeps any findings already in the file. It also copies receipts for those skills from the receipts file, as [Prove each load with a signed receipt](#prove-each-load-with-a-signed-receipt) describes. Running it again changes nothing. Fill in what each skill found:
+The command adds every required skill with the files that require it and keeps any findings already in the file. It also copies receipts for those skills from the receipts file, as [Prove each load with a signed receipt](#prove-each-load-with-a-signed-receipt) describes. Running it again changes nothing.
+
+The command stores the base as the record's `base`, with the commit and its patch-id:
+
+```json
+"base": { "commit": "e22c06d6553fe1465e67fa558db1a2d93e2f7569", "patch": "1fe66208be68d67a4ee6cf844c7ef1caa7e16206" }
+```
+
+The base starts the record's own range. The range ends at the nearest later base of any record at the head commit, or at the head. A stack of changes therefore splits into one range per record, and each record answers only for its own commits. After a rebase, the check finds the base by its patch-id in the checked range. Fill in what each skill found:
 
 ```json
 {
@@ -77,9 +85,11 @@ A finding names the commit that resolves it, or gives the reason under `none`. W
 
 `npm run skills:check -- origin/main` reads only the records that the range adds or changes, from the head commit. It fails when:
 
-- a required skill has no entry whose `files` globs cover each file that requires it
-- a required skill has no valid author receipt
-- the run requires review, and a required skill has no valid receipt from a reviewer. A run requires review when a record in the range has a `review` section, and in every pull request run
+- a record's `base` is not an ancestor of the head, and no commit in the range has its patch-id
+- a commit in the range falls in no changed record's own range
+- a skill that a record's own range requires has no entry in that record whose `files` globs cover each file that requires it
+- an author entry has no valid receipt
+- a record has a `review` section, and a review entry has no valid receipt from a session and agent pair that made none of the record's author receipts, or a skill that the record's range requires has no review entry
 - a pull request run finds a record in the range without a `review` section
 - a record holds an invalid receipt
 - a finding cites a heading or rule that the lock does not list for its skill
@@ -150,7 +160,7 @@ The check verifies each receipt with the committed public key. A receipt is vali
 - it is not partial
 - it belongs to this change
 
-A receipt belongs to this change when its `head` is the base or a commit in the range, or when its `headPatch` equals the patch-id of a commit in the range. Reviewer receipts count only when their session and agent pair appears in no author receipt.
+An author receipt belongs to the record when its `head` is the record's base or a commit in the record's own range, or when its `headPatch` equals the patch-id of one of them. A review receipt and a finding's cited commit may also come from a later commit up to the head, because review and fixes follow the change. Review receipts count only when their session and agent pair appears in none of the record's author receipts.
 
 This rule survives a cherry-pick and a rebase that keep the patches, because a copied commit keeps its patch-id. A time bound was the other candidate. It would reject every receipt after a rebase onto a newer `main`, and it would still accept a receipt from another change made after the same base. A receipt's `head` is always older than the commit that records it, so a receipt copied from a merged record can match this range only through a re-landed patch. The rule treats that patch as the same work.
 
@@ -169,7 +179,7 @@ This rule survives a cherry-pick and a rebase that keep the patches, because a c
 
 ### Where records live
 
-Records live in the repository, so `verify:commit` checks the same commit offline in a fresh clone, and review sees the record in the diff next to the code. Each change has its own file, and a range that spans two stacked changes reads both records. A range that edits an earlier change's record checks that record against the range's commits and required skills. Check such a range from a base below the earlier change, or its citations and entries fail.
+Records live in the repository, so `verify:commit` checks the same commit offline in a fresh clone, and review sees the record in the diff next to the code. Each change has its own file, and a range that spans two stacked changes reads both records. Each record answers for its own range, so one record's receipts and entries never cover another record's commits. A range that edits an earlier change's record checks that record against its own range, even when that range starts below the checked base. After a rebase, the check finds a moved base only by its patch-id in the checked range, so check such a range from below the earlier record's base.
 
 Records stay in the tree after merge, and git history keeps every version. The check ignores records that a range does not change, so old records cost one small file per change and never affect later checks. Remove old records only by owner decision.
 
