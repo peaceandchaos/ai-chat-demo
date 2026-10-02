@@ -93,7 +93,7 @@ Records stay in the tree after merge, and git history keeps every version. The c
 
 - `id` and `lesson`: a name and the rule to follow.
 - `seen`: one line per sighting, naming the commit, branch, or PR. The count is the number of lines.
-- `enforcement`: what stops the finding now. `guidance` means nothing does. `type` and `test` name a test `file` and its exact title in `name`. `lint` names a `rule`. `check` names a `check` from `tools/verification/checks.cjs`.
+- `enforcement`: what stops the finding now. `guidance` means nothing does. `test` names a test `file` and its exact title in `name`. `type` names a test the same way, but `npm run typecheck` enforces it through a `@ts-expect-error` fixture, and Jest only runs it. `lint` names a `rule`. `check` names a `check` from `tools/verification/checks.cjs`.
 - `paths` (optional): globs for guidance that applies only to some files. Without paths, a lesson applies to every change.
 - `link` (optional): an https issue URL or a tracked decision file.
 
