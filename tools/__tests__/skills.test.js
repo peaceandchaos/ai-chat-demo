@@ -436,6 +436,13 @@ test('the committed routing names only catalogued skills and roots', () => {
 
 test.each([
   ['whose path has a space', 'spaced', 'src/my client.ts', ''],
+  ['whose path git quotes', 'quoted', 'src/my "client".ts', ''],
+  [
+    'whose quoted path has escapes',
+    'escaped',
+    'src/back\\slash\tand \u001f é.ts',
+    '',
+  ],
   [
     'after an added line that looks like a diff header',
     'header-lookalike',

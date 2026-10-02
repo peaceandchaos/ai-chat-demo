@@ -56,6 +56,37 @@ function parseNumstat(output) {
   return lines;
 }
 
+const escapes = { a: 7, b: 8, t: 9, n: 10, v: 11, f: 12, r: 13 };
+
+// git writes a path that holds a quote, a backslash, or a control character
+// as a C string, with octal escapes for bytes.
+function unquote(quoted) {
+  const bytes = [];
+  for (let index = 0; index < quoted.length; index += 1) {
+    const char = quoted[index];
+    if (char !== '\\') {
+      bytes.push(...Buffer.from(char));
+      continue;
+    }
+    const next = quoted[index + 1];
+    if (/[0-7]/u.test(next)) {
+      bytes.push(parseInt(quoted.slice(index + 1, index + 4), 8));
+      index += 3;
+    } else {
+      bytes.push(escapes[next] ?? next.charCodeAt(0));
+      index += 1;
+    }
+  }
+  return Buffer.from(bytes).toString('utf8');
+}
+
+// git ends the path with a tab when it contains a space, quoted or not.
+function headerPath(line) {
+  const name = line.slice(4).replace(/\t$/u, '');
+  const path = name.startsWith('"') ? unquote(name.slice(1, -1)) : name;
+  return path.startsWith('b/') ? path.slice(2) : null;
+}
+
 function parseAddedLines(output) {
   const added = new Map();
   let current = null;
@@ -64,10 +95,7 @@ function parseAddedLines(output) {
     if (line.startsWith('diff --git ')) header = true;
     else if (header && line.startsWith('@@')) header = false;
     else if (header && line.startsWith('+++ ')) {
-      // git ends the path with a tab when it contains a space.
-      current = line.startsWith('+++ b/')
-        ? line.slice(6).replace(/\t$/u, '')
-        : null;
+      current = headerPath(line);
       if (current && !added.has(current)) added.set(current, []);
     } else if (current && line.startsWith('+')) {
       added.get(current).push(line.slice(1));
