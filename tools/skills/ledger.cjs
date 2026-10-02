@@ -89,6 +89,9 @@ function ledgerProblems(root, ledger) {
 }
 
 function lessonsFor(ledger, change) {
+  const paths = change.files.flatMap(file =>
+    [file.path, file.from].filter(Boolean),
+  );
   const lessons = [];
   const enforced = [];
   for (const entry of ledger.lessons) {
@@ -96,9 +99,6 @@ function lessonsFor(ledger, change) {
       enforced.push(entry.id);
       continue;
     }
-    const paths = change.files.flatMap(file =>
-      [file.path, file.from].filter(Boolean),
-    );
     const patterns = entry.paths?.map(globPattern);
     const files = patterns
       ? paths.filter(path => patterns.some(glob => glob.test(path)))
