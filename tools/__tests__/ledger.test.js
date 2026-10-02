@@ -55,7 +55,7 @@ beforeAll(() => {
   );
   write(
     'tests/sizes.test.ts',
-    "test('a named case', () => {});\ntest('a type case', () => {});\n",
+    "test('a named case', () => {});\nit('a type case', () => {});\n// test('a commented case', () => {});\ntest.skip('a skipped case', () => {});\nexport const label = 'a string case';\n",
   );
   write('docs/decision.md', '# Keep this as guidance\n');
   git(repository, ['add', '--all']);
@@ -103,6 +103,9 @@ test('fails on repeated unlinked guidance, stale enforcement, bad links, and dup
     lesson('gone-rule', { kind: 'lint', rule: 'project/retired' }),
     lesson('off-rule', { kind: 'lint', rule: 'project/off' }),
     lesson('gone-test', { kind: 'test', ...sizes('a renamed case') }),
+    lesson('commented-test', { kind: 'test', ...sizes('a commented case') }),
+    lesson('skipped-test', { kind: 'test', ...sizes('a skipped case') }),
+    lesson('string-type', { kind: 'type', ...sizes('a string case') }),
     lesson('gone-file', {
       kind: 'type',
       file: 'tests/gone.test.ts',
@@ -121,6 +124,9 @@ test('fails on repeated unlinked guidance, stale enforcement, bad links, and dup
       'gone-rule names lint rule project/retired, which .oxlintrc.json does not enable.',
       'off-rule names lint rule project/off, which .oxlintrc.json does not enable.',
       "gone-test names test 'a renamed case', which tests/sizes.test.ts does not contain.",
+      "commented-test names test 'a commented case', which tests/sizes.test.ts does not contain.",
+      "skipped-test names test 'a skipped case', which tests/sizes.test.ts does not contain.",
+      "string-type names test 'a string case', which tests/sizes.test.ts does not contain.",
       "gone-file names test 'x', which tests/gone.test.ts does not contain.",
       'draft links docs/draft.md, which is neither an https URL nor a tracked file.',
       'repeated appears twice.',

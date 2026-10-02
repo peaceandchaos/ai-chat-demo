@@ -1,5 +1,6 @@
 const { existsSync, readFileSync } = require('node:fs');
 const { join } = require('node:path');
+const ts = require('typescript');
 const { z } = require('zod');
 const { git } = require('../verification/snapshot.cjs');
 const { changeSubject, globPattern } = require('./routing.cjs');
@@ -32,6 +33,26 @@ function readLedger(root) {
   );
 }
 
+function isNamedTest(node, name) {
+  if (!ts.isCallExpression(node) || !ts.isIdentifier(node.expression))
+    return false;
+  const [title] = node.arguments;
+  return (
+    ['test', 'it'].includes(node.expression.text) &&
+    title !== undefined &&
+    ts.isStringLiteralLike(title) &&
+    title.text === name
+  );
+}
+
+function definesTest(path, name) {
+  const visit = node => isNamedTest(node, name) || ts.forEachChild(node, visit);
+  const text = readFileSync(path, 'utf8');
+  return Boolean(
+    visit(ts.createSourceFile(path, text, ts.ScriptTarget.Latest)),
+  );
+}
+
 function enforcementProblem(root, { enforcement: rule }) {
   if (rule.kind === 'guidance') return null;
   if (rule.kind === 'check') {
@@ -52,8 +73,7 @@ function enforcementProblem(root, { enforcement: rule }) {
       : `names lint rule ${rule.rule}, which .oxlintrc.json does not enable`;
   }
   const path = join(root, rule.file);
-  return existsSync(path) &&
-    readFileSync(path, 'utf8').includes(`'${rule.name}'`)
+  return existsSync(path) && definesTest(path, rule.name)
     ? null
     : `names test '${rule.name}', which ${rule.file} does not contain`;
 }
