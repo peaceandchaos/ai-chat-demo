@@ -138,14 +138,8 @@ export function ChatScreen({ onOpenRecents, openCount }: ChatScreenProps) {
     [messagesLength, send, scrollMessageToEnd],
   );
 
-  // A chat opened from Recents starts at its newest message. The list stays
-  // mounted across chats: remounting it while Recents freezes this page left
-  // the header and composer showing the wrong SF Symbols, because
-  // react-native-nitro-symbols 0.0.8 keeps a recycled view's symbol
-  // (ios/HybridSymbolView.swift: `prepareForRecycle() {}`) and sets a symbol
-  // only when the prop changed
-  // (nitrogen/generated/ios/c++/views/HybridSymbolViewComponent.mm:
-  // `symbolName.isDirty = false`).
+  // The list stays mounted across chats because remounting it while Recents
+  // froze this page left react-native-nitro-symbols 0.0.8 showing wrong icons.
   useEffect(() => {
     listRef.current?.scrollToEnd({ animated: false });
   }, [chatId, openCount]);
