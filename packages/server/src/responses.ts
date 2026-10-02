@@ -168,7 +168,7 @@ export class ResponsesClient {
             context_management: [
               {
                 type: 'compaction',
-                compact_threshold: models[model].threshold,
+                compact_threshold: models[model].compactThreshold,
               },
             ],
           }),

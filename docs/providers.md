@@ -42,6 +42,15 @@ socket. No previous-response id is required for recovery. After a regular respon
 the saved working window can drop items before its last compaction item. The
 standalone `/responses/compact` result is kept as its full canonical window.
 
+Both GPT models send `compact_threshold: 200_000` tokens (owner decision H9,
+2026-10-01). OpenAI bills a request above 272,000 input tokens at its
+long-context rate, and the request that crosses the threshold still carries the
+new message and any images. OpenAI publishes no recommended value; its
+compaction guide uses `200_000` in every example. The server's own
+working-context `threshold` stays at 800,000 and is a separate setting. Usage
+records should confirm after acceptance that no GPT request exceeded 272,000
+input tokens.
+
 Kimi's method is adapted from
 [Kimi CLI at `9ab1286b8fe4e6bcd116949a27ce5e0ac3389c82`](https://github.com/MoonshotAI/kimi-cli/tree/9ab1286b8fe4e6bcd116949a27ce5e0ac3389c82):
 `src/kimi_cli/soul/compaction.py`, `src/kimi_cli/config.py`, and its compact prompt.

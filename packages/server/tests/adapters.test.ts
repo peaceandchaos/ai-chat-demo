@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { WebSocketServer } from 'ws';
 import type { ResponseInputItem } from '../../../shared/contracts';
 import { textItem } from '../src/compaction/context';
@@ -170,10 +171,25 @@ test('Responses uses a real socket, store:false, and receives official compactio
         return Promise.resolve();
       },
     );
-    expect(requests).toHaveLength(1);
+    await client.generate('gpt-6-astra', input, signal, before, () =>
+      Promise.resolve(),
+    );
+    expect(requests).toHaveLength(2);
     expect(requests[0]).toContain('"store":false');
-    expect(requests[0]).toContain('"context_management"');
     expect(requests[0]).not.toContain('previous_response_id');
+    // The owner's H9 decision: OpenAI compacts both GPT models at 200,000
+    // tokens, below the 272,000-token long-context price boundary.
+    expect(
+      requests.map(raw => {
+        const sent = z
+          .object({ model: z.string(), context_management: z.unknown() })
+          .parse(JSON.parse(raw));
+        return [sent.model, sent.context_management];
+      }),
+    ).toEqual([
+      ['gpt-6.1-sol', [{ type: 'compaction', compact_threshold: 200_000 }]],
+      ['gpt-6-astra', [{ type: 'compaction', compact_threshold: 200_000 }]],
+    ]);
     expect(result[0]).toEqual({
       type: 'compaction',
       encrypted_content: 'opaque',
