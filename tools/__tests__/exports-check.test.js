@@ -72,7 +72,24 @@ beforeAll(() => {
   write('app/lazy.ts', 'export const later = 1;\nexport const never = 2;\n');
   write('app/loaded.ts', 'export const loaded = true;\n');
   write('app/plain.ts', 'const hidden = 1;\nconsole.log(hidden);\n');
+  write(
+    'app/tool.ts',
+    'export const runTool = () => 1;\nexport const spareTool = () => 2;\n',
+  );
+  write('app/helper.ts', 'export const help = 1;\nexport const more = 2;\n');
+  write(
+    'scripts/run.mjs',
+    "import { runTool } from '../app/tool.ts';\nrunTool();\n",
+  );
+  write(
+    'scripts/load.cjs',
+    "const helper = require('../app/helper');\nconsole.log(helper);\n",
+  );
   git(repository, ['add', '--all']);
+  write(
+    'scripts/untracked.mjs',
+    "import { spareTool } from '../app/tool.ts';\nspareTool();\n",
+  );
   write(
     'app/untracked.ts',
     "import { never } from './lazy';\nexport const x = never;\n",
@@ -87,6 +104,7 @@ test('passes when every tracked export is imported or listed with a reason', () 
     [
       { file: 'app/lazy.ts', name: 'never', reason: 'Kept for a branch.' },
       { file: 'app/shapes.ts', name: 'unit', reason: 'Kept for a branch.' },
+      { file: 'app/tool.ts', name: 'spareTool', reason: 'Kept for a branch.' },
     ],
   );
   const result = check();
@@ -124,6 +142,7 @@ test('reports unused exports and stale entries', () => {
       'app/main.ts: label is exported but never imported.',
       'app/main.ts: load is exported but never imported.',
       'app/shapes.ts: unit is exported but never imported.',
+      'app/tool.ts: spareTool is exported but never imported.',
       '',
     ].join('\n'),
   );

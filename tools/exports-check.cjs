@@ -1,5 +1,5 @@
 const { readFileSync } = require('node:fs');
-const { join, relative } = require('node:path');
+const { dirname, join, posix, relative } = require('node:path');
 const ts = require('typescript');
 const { z } = require('zod');
 const { git } = require('./verification/snapshot.cjs');
@@ -80,6 +80,37 @@ function importedNames(node) {
   return ['*'];
 }
 
+function addImports(imported, from, node) {
+  if (!imported.has(from)) imported.set(from, new Set());
+  for (const name of importedNames(node)) imported.get(from).add(name);
+}
+
+// JavaScript tools import TypeScript source by relative path, outside every project.
+function addJavaScriptImports(root, tracked, exported, imported) {
+  for (const path of tracked) {
+    if (!/\.[cm]?js$/u.test(path)) continue;
+    const file = ts.createSourceFile(
+      path,
+      readFileSync(join(root, path), 'utf8'),
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.JS,
+    );
+    const visit = node => {
+      const specifier = moduleSpecifier(node)?.text;
+      if (specifier?.startsWith('.')) {
+        const target = posix.join(dirname(path), specifier);
+        const from = ['', '.ts', '.tsx', '/index.ts', '/index.tsx']
+          .map(suffix => target + suffix)
+          .find(candidate => exported.has(candidate));
+        if (from) addImports(imported, from, node);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(file);
+  }
+}
+
 function readModules(root, projects) {
   const tracked = new Set(git(root, ['ls-files']).split('\n'));
   const exported = new Map();
@@ -108,15 +139,13 @@ function readModules(root, projects) {
       );
       const visit = node => {
         const from = target(moduleSpecifier(node));
-        if (from) {
-          if (!imported.has(from)) imported.set(from, new Set());
-          for (const name of importedNames(node)) imported.get(from).add(name);
-        }
+        if (from) addImports(imported, from, node);
         ts.forEachChild(node, visit);
       };
       visit(file);
     }
   }
+  addJavaScriptImports(root, tracked, exported, imported);
   return { exported, imported };
 }
 
