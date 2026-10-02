@@ -1,6 +1,8 @@
 # Personal iOS chat: foundation checkpoint
 
-This repository extends the [Margelo chat demo](https://blog.margelo.com/building-native-llm-chat-app-with-rag). The inherited demo screens now run on the saved-chat session and reach providers only through the chat server. The demo's direct provider connection, document search, and embedded keys are removed. Recents still shows the inherited mocked list.
+This repository extends the [Margelo chat demo](https://blog.margelo.com/building-native-llm-chat-app-with-rag). The inherited demo screens now run on the saved-chat session and reach providers only through the chat server. The demo's direct provider connection, document search, and key settings are removed from the source. Recents still shows the inherited mocked list.
+
+Builds made before that removal embedded any real keys from `config.ts` in their bundle, and the native socket prewarmer stored the OpenAI socket request, key included, on the device. An install upgraded from such a build sends that stored request once on its first launch, before JavaScript runs and clears the queue. Rotate any key that was ever in a built app.
 
 The user owns the UI. Current engineering scope is iOS and shared app/server code. Android sources remain inherited material outside this milestone.
 
@@ -15,7 +17,7 @@ npm ci
 cp packages/app/src/config.example.ts packages/app/src/config.ts
 ```
 
-Set `PROXY_BASE_URL` in `config.ts` to your chat server's origin, and keep the example value for static checks. The app holds no provider credentials; they stay on the server. Native builds require Xcode, CocoaPods, and `pod install` in `packages/app/ios`. Xcode license acceptance and native build verification remain pending; the current local checks do not establish device behavior.
+Set `PROXY_BASE_URL` in `config.ts` to your chat server's origin, and keep the example value for static checks. The app source holds no provider credentials; they stay on the server. `npm run build:ios-js` stops before bundling when `config.ts` holds anything but the names `config.example.ts` exports; the Xcode build does not run that check. Native builds require Xcode, CocoaPods, and `pod install` in `packages/app/ios`. Xcode license acceptance and native build verification remain pending; the current local checks do not establish device behavior.
 
 ```sh
 npm start                    # Metro
