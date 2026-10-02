@@ -54,11 +54,12 @@ function npm(directory, args) {
 }
 
 function checkRange(root, base, head) {
+  // root has HEAD installed, and the types check covers HEAD.
+  const installed = git(root, ['rev-parse', 'HEAD']);
   const commits = git(root, ['rev-list', '--reverse', `${base}..${head}`])
     .split('\n')
-    .filter(commit => commit && commit !== head);
-  // The head is installed in root, and the types check covers it.
-  const installs = new Map([[installKey(root, head), root]]);
+    .filter(commit => commit && commit !== installed);
+  const installs = new Map([[installKey(root, installed), root]]);
   const scratch = mkdtempSync(join(tmpdir(), 'range-typecheck-'));
   const lines = [];
   let failed = false;
@@ -75,11 +76,11 @@ function checkRange(root, base, head) {
           symlinkSync(join(source, path), join(directory, path));
       } else {
         install = 'own install';
-        const installed = npm(directory, ['ci', '--no-audit', '--no-fund']);
-        if (installed.status !== 0) {
+        const result = npm(directory, ['ci', '--no-audit', '--no-fund']);
+        if (result.status !== 0) {
           lines.push(
             `${commit.slice(0, 12)} ${subject(root, commit)}: install FAIL`,
-            installed.stdout + installed.stderr,
+            result.stdout + result.stderr,
           );
           failed = true;
           continue;
@@ -113,7 +114,7 @@ function main([baseRef, headRef = 'HEAD']) {
   const result = checkRange(root, base, head);
   console.log(
     [
-      `Typecheck of ${result.commits} commits before ${head.slice(0, 12)} since ${base.slice(0, 12)}:`,
+      `Typecheck of ${result.commits} commits other than HEAD in ${base.slice(0, 12)}..${head.slice(0, 12)}:`,
       ...result.lines,
     ].join('\n'),
   );
