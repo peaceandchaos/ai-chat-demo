@@ -53,6 +53,9 @@ function renderRecents(): () => string[] {
     newChat: () => undefined,
     openChat: () => undefined,
     loadOlder: () => undefined,
+    draftText: () => '',
+    saveDraftAfterPause: () => undefined,
+    saveDraftsNow: () => undefined,
   }));
   let renderer!: ReactTestRenderer;
   act(() => {

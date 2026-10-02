@@ -1,17 +1,22 @@
-import { useCallback, useState } from 'react';
-import { type Attachment } from '../state/chatStore';
+import { useCallback, useEffect, useState } from 'react';
+import { type Attachment, useChatStore } from '../state/chatStore';
 
 export type Draft = { text: string; attachments: Attachment[] };
 export type ChangeDraft = (change: (draft: Draft) => Draft) => void;
 
 const empty: Draft = { text: '', attachments: [] };
 
-// The composer's unsent text and photos for each chat, kept in memory for
-// this launch, so switching chats shows that chat's own draft.
 export function useDraft(chatId: string): [Draft, ChangeDraft] {
+  const savedText = useChatStore(state => state.draftText);
+  const saveDraftAfterPause = useChatStore(state => state.saveDraftAfterPause);
   const [drafts, setDrafts] = useState<ReadonlyMap<string, Draft>>(
     () => new Map(),
   );
+  const draft = drafts.get(chatId);
+  if (draft === undefined)
+    setDrafts(
+      new Map(drafts).set(chatId, { ...empty, text: savedText(chatId) }),
+    );
   const changeDraft = useCallback<ChangeDraft>(
     change =>
       setDrafts(previous =>
@@ -19,5 +24,9 @@ export function useDraft(chatId: string): [Draft, ChangeDraft] {
       ),
     [chatId],
   );
-  return [drafts.get(chatId) ?? empty, changeDraft];
+  const text = draft?.text;
+  useEffect(() => {
+    if (text !== undefined) saveDraftAfterPause(chatId, text);
+  }, [chatId, text, saveDraftAfterPause]);
+  return [draft ?? empty, changeDraft];
 }

@@ -2,7 +2,10 @@ import React from 'react';
 import { TextInput, View } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
+import { createStore } from 'zustand/vanilla';
 import { Composer, type SendResult } from '../src/components/Composer';
+import { ChatStoreContext } from '../src/state/chatStore';
+import type { ChatViewState } from '../src/state/chatView';
 
 jest.mock('react-native-reanimated', () => ({
   __esModule: true,
@@ -30,19 +33,46 @@ jest.mock('../src/components/Glass', () => ({
 }));
 jest.mock('../src/components/Icon', () => ({ Icon: () => null }));
 
+function chatStore(draftsOnDisk: Record<string, string> = {}) {
+  const saveDraftAfterPause = jest.fn<void, [string, string]>();
+  const store = createStore<ChatViewState>()(() => ({
+    chatId: 'chat',
+    messages: [],
+    isStreaming: false,
+    recents: [],
+    send: () => null,
+    stop: () => undefined,
+    newChat: () => undefined,
+    openChat: () => undefined,
+    loadOlder: () => undefined,
+    draftText: chatId => draftsOnDisk[chatId] ?? '',
+    saveDraftAfterPause,
+    saveDraftsNow: () => undefined,
+  }));
+  const wrap = (element: React.ReactElement) => (
+    <ChatStoreContext.Provider value={store}>
+      {element}
+    </ChatStoreContext.Provider>
+  );
+  return { saveDraftAfterPause, wrap };
+}
+
 function renderComposer(result: SendResult) {
   const onSubmit = jest.fn(() => result);
+  const { wrap } = chatStore();
   let renderer!: ReactTestRenderer;
   act(() => {
     renderer = create(
-      <Composer
-        chatId="chat"
-        onSubmit={onSubmit}
-        onStop={() => undefined}
-        streaming={false}
-        composerRef={React.createRef<View>()}
-        onLayout={() => undefined}
-      />,
+      wrap(
+        <Composer
+          chatId="chat"
+          onSubmit={onSubmit}
+          onStop={() => undefined}
+          streaming={false}
+          composerRef={React.createRef<View>()}
+          onLayout={() => undefined}
+        />,
+      ),
     );
   });
   const input = () => renderer.root.findByType(TextInput);
@@ -70,16 +100,18 @@ test('the composer clears its text once the message is saved', () => {
 
 test('each chat keeps its own draft text and photos, and switching back restores them', async () => {
   const onSubmit = jest.fn((): SendResult => 'saved');
-  const composer = (chatId: string) => (
-    <Composer
-      chatId={chatId}
-      onSubmit={onSubmit}
-      onStop={() => undefined}
-      streaming={false}
-      composerRef={React.createRef<View>()}
-      onLayout={() => undefined}
-    />
-  );
+  const { wrap } = chatStore();
+  const composer = (chatId: string) =>
+    wrap(
+      <Composer
+        chatId={chatId}
+        onSubmit={onSubmit}
+        onStop={() => undefined}
+        streaming={false}
+        composerRef={React.createRef<View>()}
+        onLayout={() => undefined}
+      />,
+    );
   let renderer!: ReactTestRenderer;
   act(() => {
     renderer = create(composer('a'));
@@ -121,4 +153,36 @@ test('each chat keeps its own draft text and photos, and switching back restores
   expect(input().props.value).toBe('Draft B');
   send();
   expect(onSubmit).toHaveBeenLastCalledWith('Draft B', []);
+});
+
+test('each chat opens with the draft text saved before the relaunch, and every text change goes to the store', () => {
+  const { saveDraftAfterPause, wrap } = chatStore({ a: 'Saved A' });
+  const composer = (chatId: string) =>
+    wrap(
+      <Composer
+        chatId={chatId}
+        onSubmit={() => 'saved'}
+        onStop={() => undefined}
+        streaming={false}
+        composerRef={React.createRef<View>()}
+        onLayout={() => undefined}
+      />,
+    );
+  let renderer!: ReactTestRenderer;
+  act(() => {
+    renderer = create(composer('a'));
+  });
+  const input = () => renderer.root.findByType(TextInput);
+  expect(input().props.value).toBe('Saved A');
+
+  act(() => renderer.update(composer('b')));
+  expect(input().props.value).toBe('');
+  act(() => {
+    input().props.onChangeText('Draft B');
+  });
+  expect(saveDraftAfterPause).toHaveBeenLastCalledWith('b', 'Draft B');
+  act(() => {
+    input().props.onChangeText('');
+  });
+  expect(saveDraftAfterPause).toHaveBeenLastCalledWith('b', '');
 });

@@ -132,6 +132,13 @@ network and server errors, and stop on other refusals until the app reopens.
 `nativeSession.ts` forwards React Native `AppState` to the session;
 backgrounding detaches readers without cancelling server work.
 
+Each chat's unsent composer text is saved with the chats, under that chat's
+id, 500 ms after typing pauses, and at once when the app leaves the
+foreground. It comes back when the chat opens after a relaunch. Sending or
+clearing the text deletes it. A draft that cannot be read or saved is dropped
+without blocking typing or sending. Limitation: photos added to a draft are
+kept in memory only and are lost when the app is killed.
+
 Integration tests in `packages/server/tests/session-*.test.ts` run the real
 archive, `ServerTransport`, and session against `handleRequest` and the socket
 route's `SocketConnection` over PGlite, with the real worker and scripted fake

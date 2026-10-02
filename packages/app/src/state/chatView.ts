@@ -32,9 +32,13 @@ export type ChatViewState = {
   newChat: () => void;
   openChat: (chatId: string) => void;
   loadOlder: () => void;
+  draftText: (chatId: string) => string;
+  saveDraftAfterPause: (chatId: string, text: string) => void;
+  saveDraftsNow: () => void;
 };
 
 export const historyPage = 50;
+export const draftPauseMs = 500;
 
 export type ChatStore = StoreApi<ChatViewState>;
 
@@ -106,6 +110,23 @@ export function createChatView(
 ): ChatStore {
   const rows = new Map<string, { saved: SavedMessage; view: Message }>();
   const sentImages = new Map<string, string[]>();
+  const storedDrafts = new Map<string, string>();
+  const pendingDrafts = new Map<
+    string,
+    { text: string; timer: ReturnType<typeof setTimeout> }
+  >();
+
+  const cancelPendingDraft = (chatId: string): void => {
+    clearTimeout(pendingDrafts.get(chatId)?.timer);
+    pendingDrafts.delete(chatId);
+  };
+  const storeDraft = (chatId: string, text: string): void => {
+    cancelPendingDraft(chatId);
+    try {
+      archive.saveDraft(chatId, text);
+      storedDrafts.set(chatId, text);
+    } catch {}
+  };
 
   function attempt<T>(action: () => T, invalid = unavailable): T | null {
     try {
@@ -179,6 +200,7 @@ export function createChatView(
         'These images can’t be sent.',
       );
       if (!reply) return null;
+      storeDraft(chatId, '');
       const userId = reply.parentId;
       if (userId && attachments.length > 0)
         sentImages.set(
@@ -217,6 +239,26 @@ export function createChatView(
         const older = session.path(oldest.parentId, historyPage);
         store.setState({ messages: [...older.map(view), ...messages] });
       }),
+    draftText: chatId => {
+      const known = pendingDrafts.get(chatId)?.text ?? storedDrafts.get(chatId);
+      if (known !== undefined) return known;
+      try {
+        const text = archive.draft(chatId);
+        storedDrafts.set(chatId, text);
+        return text;
+      } catch {
+        return '';
+      }
+    },
+    saveDraftAfterPause: (chatId, text) => {
+      cancelPendingDraft(chatId);
+      if (storedDrafts.get(chatId) === text) return;
+      const timer = setTimeout(() => storeDraft(chatId, text), draftPauseMs);
+      pendingDrafts.set(chatId, { text, timer });
+    },
+    saveDraftsNow: () => {
+      for (const [chatId, { text }] of pendingDrafts) storeDraft(chatId, text);
+    },
   }));
 
   const opened = archive.metadata().currentChatId ?? archive.createChat().id;

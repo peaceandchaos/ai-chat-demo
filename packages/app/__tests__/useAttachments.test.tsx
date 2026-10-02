@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { Alert } from 'react-native';
 import { launchImageLibrary, type Asset } from 'react-native-image-picker';
 import { act, create } from 'react-test-renderer';
 import { imageSchema } from '../../../shared/contracts';
 import { useAttachments } from '../src/hooks/useAttachments';
-import { useDraft, type Draft } from '../src/hooks/useDraft';
+import type { ChangeDraft, Draft } from '../src/hooks/useDraft';
 
 jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(),
@@ -79,7 +80,8 @@ async function pick(assets: Asset[]) {
   let hook!: ReturnType<typeof useAttachments>;
   let draft!: Draft;
   function Probe() {
-    const [current, changeDraft] = useDraft('chat');
+    const [current, setDraft] = useState<Draft>({ text: '', attachments: [] });
+    const changeDraft: ChangeDraft = setDraft;
     draft = current;
     hook = useAttachments(changeDraft);
     return null;

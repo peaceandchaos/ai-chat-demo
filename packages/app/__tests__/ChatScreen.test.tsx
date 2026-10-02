@@ -92,6 +92,9 @@ function chatState(isStreaming: boolean): ChatViewState {
     newChat: () => undefined,
     openChat: () => undefined,
     loadOlder: () => undefined,
+    draftText: () => '',
+    saveDraftAfterPause: () => undefined,
+    saveDraftsNow: () => undefined,
   };
 }
 

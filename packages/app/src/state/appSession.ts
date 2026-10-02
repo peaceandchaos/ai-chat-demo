@@ -1,4 +1,4 @@
-import { Alert } from 'react-native';
+import { Alert, AppState } from 'react-native';
 import { PROXY_BASE_URL } from '../config';
 import { loadDeviceId } from '../device';
 import { ServerTransport } from '../network/client';
@@ -29,6 +29,9 @@ export async function startAppSession(): Promise<ChatStore> {
       Alert.alert('Something went wrong', message),
     );
     followAppState(session);
+    AppState.addEventListener('change', state => {
+      if (state !== 'active') store.getState().saveDraftsNow();
+    });
     return store;
   })();
   try {
