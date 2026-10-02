@@ -120,6 +120,27 @@ test.each([
   expect(result.stdout).toContain('project(no-type-assertion)');
 });
 
+test.each([
+  [
+    'a next-line',
+    "// oxlint-disable-next-line project/no-type-assertion -- Trusted value.\nexport const value = JSON.parse('1') as number;",
+  ],
+  [
+    'a file-wide eslint',
+    "/* eslint-disable project/no-type-assertion -- Trusted file. */\nexport const value = JSON.parse('1') as number;",
+  ],
+  [
+    'a combined',
+    "// oxlint-disable project/require-disable-reason, project/no-type-assertion -- Trusted file.\nexport const value = JSON.parse('1') as number;",
+  ],
+])('rejects %s disable of project/no-type-assertion', (_kind, source) => {
+  const result = lint(source);
+  expect(result.status).toBe(1);
+  expect(result.stdout).toContain(
+    "List a reviewed boundary file in project/no-type-assertion's allow option",
+  );
+});
+
 test('allows const assertions, and assertions in a listed boundary file', () => {
   expect(lint("export const modes = ['a', 'b'] as const;").status).toBe(0);
   const config = require('../../.oxlintrc.json');

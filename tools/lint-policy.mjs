@@ -20,6 +20,8 @@ export default eslintCompatPlugin({
         messages: {
           missing:
             'Name the disabled rules and explain the exception after --.',
+          assertion:
+            "List a reviewed boundary file in project/no-type-assertion's allow option instead of disabling the rule inline.",
         },
       },
       create(context) {
@@ -40,6 +42,8 @@ export default eslintCompatPlugin({
                 );
               if (!match || !match[1].trim() || !match[2].trim()) {
                 context.report({ loc: comment.loc, messageId: 'missing' });
+              } else if (/\bproject\/no-type-assertion\b/u.test(match[1])) {
+                context.report({ loc: comment.loc, messageId: 'assertion' });
               }
             }
           },
