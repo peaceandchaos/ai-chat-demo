@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import type { ReplyLabel } from '../../../../shared/provider-events';
-import type { ChatArchive, SavedMessage } from './archive';
+import type { ChatArchive, ChatRecord, SavedMessage } from './archive';
 import type { AttemptActivity, ChatSession } from './session';
 
 export type MessageRole = 'user' | 'assistant';
@@ -21,12 +21,23 @@ export type Message = {
 
 export type ChatViewState = {
   chatId: string;
+  // The newest part of the chat's path. loadOlder() adds earlier messages.
   messages: Message[];
+  hasOlder: boolean;
+  // True when the last change to messages added older history above them. The
+  // list keeps the rows on screen in place only for that change.
+  addedOlder: boolean;
   isStreaming: boolean;
+  // Chats with a sent message, most recently updated first.
+  recents: ChatRecord[];
   send: (text: string, attachments?: Attachment[]) => SendResult;
   stop: () => void;
   newChat: () => void;
+  openChat: (chatId: string) => void;
+  loadOlder: () => void;
 };
+
+export const historyPage = 50;
 
 export type SendResult = 'saved' | 'unsaved';
 
@@ -129,12 +140,26 @@ export function createChatView(
   const streaming = (messages: Message[]): boolean =>
     messages.at(-1)?.status === 'streaming';
   const show = (chatId: string, messages: Message[]): void =>
-    store.setState({ chatId, messages, isStreaming: streaming(messages) });
+    store.setState({
+      chatId,
+      messages,
+      addedOlder: false,
+      isStreaming: streaming(messages),
+    });
 
-  const rebuild = (chatId: string): void => {
-    const path = session.path(archive.chat(chatId).leafId);
+  // Walks the newest `limit` messages again. Only actions that move the chat's
+  // leaf or switch chats call this.
+  const rebuild = (chatId: string, limit = historyPage): void => {
+    const path = session.path(archive.chat(chatId).leafId, limit);
     rows.clear();
-    show(chatId, path.map(view));
+    const messages = path.map(view);
+    store.setState({
+      chatId,
+      messages,
+      hasOlder: Boolean(path[0]?.parentId),
+      addedOlder: false,
+      isStreaming: streaming(messages),
+    });
   };
 
   const refresh = (): void => {
@@ -153,7 +178,10 @@ export function createChatView(
   const store = createStore<ChatViewState>()(() => ({
     chatId: '',
     messages: [],
+    hasOlder: false,
+    addedOlder: false,
     isStreaming: false,
+    recents: [],
     send: (text, attachments = []) => {
       const { chatId } = store.getState();
       // Only a new turn's images can fail the saved-message schema.
@@ -176,6 +204,7 @@ export function createChatView(
       const user = userId ? attempt(() => session.message(userId)) : null;
       const turn = user ? [user, reply] : [reply];
       show(chatId, [...store.getState().messages, ...turn.map(view)]);
+      attempt(() => store.setState({ recents: archive.recents() }));
       return 'saved';
     },
     stop: () => {
@@ -187,9 +216,29 @@ export function createChatView(
         const current = archive.chat(store.getState().chatId);
         if (current.leafId !== null) rebuild(archive.createChat().id);
       }),
+    openChat: chatId =>
+      attempt(() => {
+        if (chatId === store.getState().chatId) return;
+        archive.openChat(chatId);
+        rebuild(chatId);
+      }),
+    // Reads only the next page, starting above the oldest message shown.
+    loadOlder: () =>
+      attempt(() => {
+        const { messages } = store.getState();
+        const oldest = rows.get(messages[0]?.id ?? '')?.saved;
+        if (!oldest?.parentId) return;
+        const older = session.path(oldest.parentId, historyPage);
+        store.setState({
+          messages: [...older.map(view), ...messages],
+          hasOlder: Boolean(older[0]?.parentId),
+          addedOlder: true,
+        });
+      }),
   }));
 
   rebuild(archive.metadata().currentChatId ?? archive.createChat().id);
+  store.setState({ recents: archive.recents() });
   session.subscribe(refresh);
   return store;
 }

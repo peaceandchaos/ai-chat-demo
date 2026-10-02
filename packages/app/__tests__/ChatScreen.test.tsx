@@ -63,10 +63,15 @@ function chatState(isStreaming: boolean): ChatViewState {
         status: isStreaming ? 'streaming' : 'done',
       },
     ],
+    hasOlder: false,
+    addedOlder: false,
     isStreaming,
+    recents: [],
     send: () => 'saved',
     stop: () => undefined,
     newChat: () => undefined,
+    openChat: () => undefined,
+    loadOlder: () => undefined,
   };
 }
 
