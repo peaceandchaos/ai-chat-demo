@@ -51,7 +51,7 @@ The 13 selected anti-slop rules remain errors. Their source and license are in `
 
 Every high/critical dependency advisory blocks acceptance, regardless of exposure. Moderate/low findings have dated dispositions in `tools/verification/dependency-dispositions.json`; new or expired findings need review. No update or override is automatic.
 
-The scanner excludes Android-specific files and scans the remaining app. Stream and tool arguments receive schema validation; raw network errors are not logged. Reply links require HTTP/HTTPS, structural validation, and OS support. Checks exercise React Native's actual JavaScript URL implementation. The fresh scanner run reports no shared-code findings and six medium dependency entries. The separate dependency gate checks their advisory dispositions. Any other scanner finding fails unless `tools/verification/security-dispositions.json` records a current, reasoned disposition for it. Neither check proves native networking safety. All six native patches and the Metro patch must apply during `npm ci`.
+The scanner excludes Android-specific files and scans the remaining app. Stream and tool arguments receive schema validation; raw network errors are not logged. Reply links require HTTP/HTTPS, structural validation, and OS support. Checks exercise React Native's actual JavaScript URL implementation. The fresh scanner run reports no shared-code findings and six medium dependency entries. The separate dependency gate checks their advisory dispositions. Any other scanner finding fails unless `tools/verification/security-dispositions.json` records a current, reasoned disposition for it. Neither check proves native networking safety. All seven native patches and the Metro patch must apply during `npm ci`.
 
 ## Test review
 
