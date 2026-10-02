@@ -35,7 +35,7 @@ The example config has no live credentials. Never copy personal config or enviro
 
 Before you edit, run `npm run skills:required -- --plan <path>...` for the files you plan to touch. Read and apply every `SKILL.md` it lists. On a branch, run `npm run skills:required -- origin/main`. Set the skill roots first, as `docs/skills.md` describes. `tools/skills/routing.json` decides what is required; changes to it need owner review.
 
-Before you push, run `npm run skills:record -- <change-id> origin/main`, write each skill's findings with the fixing commit or the reason none was needed, and commit the record. `verify:commit` fails until the record covers every required skill. A passing check shows that each skill was claimed and each recorded finding resolved, not that the skill was applied well.
+Before you push, run `npm run skills:record -- <change-id> origin/main`, write each skill's findings with the fixing commit or the reason none was needed, and commit the record. `verify:commit` fails until the record covers every required skill. A passing check shows that each skill was claimed and that each recorded finding has a resolution, not that the skill was applied well.
 
 ## Checks and repairs
 
