@@ -26,7 +26,7 @@ test('network input rejects malformed JSON, unknown models and an old contract',
 test('ancestry validation rejects context from a sibling branch', () => {
   const input = submission();
   input.checkpoints.push({
-    model: 'gpt-6',
+    model: 'gpt-6.1-sol',
     throughMessageId: randomUUID(),
     method: 'openai-compaction',
     items: [],

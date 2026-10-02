@@ -155,9 +155,9 @@ test('Auto saves the chosen model over the socket; a failed choice stays visible
     phone.network.requests.filter(request => request === 'POST /v1/chat'),
   ).toHaveLength(1);
 
-  phone.archive.setPicker(chat.id, 'gpt-6');
+  phone.archive.setPicker(chat.id, 'gpt-6.1-sol');
   const inherited = phone.archive.createChat();
-  expect(inherited.picker).toBe('gpt-6');
+  expect(inherited.picker).toBe('gpt-6.1-sol');
   const gpt = phone.session.send(inherited.id, 'Socket', []);
   server.providers.script(gpt.id).text('Respon', 'ses');
   await until(
@@ -167,8 +167,8 @@ test('Auto saves the chosen model over the socket; a failed choice stays visible
   server.providers.script(gpt.id).end();
   await settled(phone, gpt.id);
   expect(phone.archive.message(gpt.id)).toMatchObject({
-    picker: 'gpt-6',
-    actualModel: 'gpt-6',
+    picker: 'gpt-6.1-sol',
+    actualModel: 'gpt-6.1-sol',
     text: 'Responses',
   });
 });

@@ -112,7 +112,7 @@ test('switching providers rebuilds from originals; same-provider checkpoints inc
   ]);
   input.userTurnId = input.history[4].id;
   input.checkpoints = [
-    makeCheckpoint('gpt-6', input.history[1].id, [
+    makeCheckpoint('gpt-6.1-sol', input.history[1].id, [
       { type: 'compaction', encrypted_content: 'GPT ONLY' },
     ]),
   ];
@@ -126,7 +126,7 @@ test('switching providers rebuilds from originals; same-provider checkpoints inc
   );
   const gpt = await prepareContext(
     input,
-    'gpt-6',
+    'gpt-6.1-sol',
     signal,
     before,
     services(calls),
@@ -157,7 +157,7 @@ test('oversized original text is processed in bounded windows without deleting i
   const original = input.history[0].text;
   const prepared = await prepareContext(
     input,
-    'gpt-6',
+    'gpt-6.1-sol',
     signal,
     before,
     services(calls),
@@ -189,7 +189,7 @@ test('an empty or ineffective compaction fails without silently truncating histo
   await expect(
     prepareContext(
       input,
-      'gpt-6',
+      'gpt-6.1-sol',
       signal,
       before,
       {

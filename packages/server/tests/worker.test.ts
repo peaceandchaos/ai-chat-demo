@@ -85,13 +85,13 @@ test('manual choices and known-model Retry skip Jev', async () => {
   const manual = { ...submission(), picker: 'kimi' as const };
   await jobs.submit(owner, manual, async () => 'manual');
   await execute(manual.attemptId);
-  const retry = { ...submission(), retryModel: 'gpt-6' as const };
+  const retry = { ...submission(), retryModel: 'gpt-6.1-sol' as const };
   await jobs.submit(owner, retry, async () => 'retry');
   await execute(retry.attemptId);
   expect(selectionCalls).toBe(0);
   expect(generationCalls).toBe(2);
   expect((await jobs.get(owner, retry.attemptId)).snapshot.actualModel).toBe(
-    'gpt-6',
+    'gpt-6.1-sol',
   );
 });
 
@@ -123,7 +123,7 @@ test('Stop during selection cancels evaluation and prevents a later provider lau
         { once: true },
       ),
     );
-    return 'gpt-6';
+    return 'gpt-6.1-sol';
   };
   await jobs.submit(owner, input, async () => 'run');
   await execute(input.attemptId);

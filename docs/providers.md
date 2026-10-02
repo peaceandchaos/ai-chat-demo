@@ -4,17 +4,25 @@ Model ids were checked against the official provider and Gateway model pages on
 2026-09-28. Account access and live behavior still require approved provider calls.
 The server owns this allowlist. Phone requests cannot supply model URLs or ids.
 
-| Picker   | Upstream id                    | Transport                         | Configured context window |
-| -------- | ------------------------------ | --------------------------------- | ------------------------- |
-| Kimi     | `moonshotai/kimi-k3`           | Gateway Chat Completions HTTP/SSE | 1,000,000                 |
-| DeepSeek | `deepseek/deepseek-v4.1-flash` | Gateway Chat Completions HTTP/SSE | 1,000,000                 |
-| GPT-5.6  | `gpt-5.6-sol`                  | OpenAI Responses WebSocket        | 1,050,000                 |
-| GPT-6    | `gpt-6-sol`                    | OpenAI Responses WebSocket        | 1,050,000                 |
+| Picker      | Upstream id                    | Transport                         | Configured context window |
+| ----------- | ------------------------------ | --------------------------------- | ------------------------- |
+| Kimi        | `moonshotai/kimi-k3`           | Gateway Chat Completions HTTP/SSE | 1,000,000                 |
+| DeepSeek    | `deepseek/deepseek-v4.1-flash` | Gateway Chat Completions HTTP/SSE | 1,000,000                 |
+| GPT-6.1 Sol | `gpt-6.1-sol`                  | OpenAI Responses WebSocket        | 1,050,000                 |
+| GPT-6 Astra | `gpt-6-astra`                  | OpenAI Responses WebSocket        | 1,050,000                 |
 
 Sources: [Kimi](https://vercel.com/ai-gateway/models/kimi-k3),
 [DeepSeek](https://vercel.com/ai-gateway/models/deepseek-v4.1-flash),
-[GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
-[GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol).
+[GPT-6.1 Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol),
+[GPT-6 Astra](https://developers.openai.com/api/docs/models/gpt-6-astra).
+
+GPT-6.1 Sol is the default GPT; GPT-6 Astra is the strongest and most expensive
+option. On 2026-10-01 the owner ran one Responses WebSocket call and one Responses
+HTTP-stream control call per model with the server's `response.create` payload
+(`store: false`, encrypted reasoning, `context_management` compaction,
+`max_output_tokens: 512`). All four calls completed. This shows account access
+and transport acceptance for a short request only; long-context compaction is
+still unverified live.
 
 The initial application output budget is 32,768 tokens per call. This is a chosen
 request budget, not a claim about the models' maximum output. A length-limited

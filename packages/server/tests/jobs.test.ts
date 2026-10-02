@@ -87,11 +87,11 @@ test('completion remains retrievable after a reader closes and until durable rec
   const input = submission();
   await jobs.submit(owner, input, dispatch);
   await jobs.claim(owner, input.attemptId, 'run_1', 'claim');
-  const checkpoint = makeCheckpoint('gpt-6', input.userTurnId, [
+  const checkpoint = makeCheckpoint('gpt-6.1-sol', input.userTurnId, [
     { type: 'compaction', encrypted_content: 'opaque' },
   ]);
   await jobs.update(owner, input.attemptId, 'claim', {
-    actualModel: 'gpt-6',
+    actualModel: 'gpt-6.1-sol',
     status: 'generating',
     checkpoint,
   });
@@ -103,7 +103,7 @@ test('completion remains retrievable after a reader closes and until durable rec
   const reopened = new JobRepository(database);
   const final = (await reopened.get(owner, input.attemptId)).snapshot;
   expect(final.text).toBe('The original answer.');
-  expect(final.actualModel).toBe('gpt-6');
+  expect(final.actualModel).toBe('gpt-6.1-sol');
   expect(final.checkpoint).toEqual(checkpoint);
   const { events: replay } = await reopened.poll(
     owner,

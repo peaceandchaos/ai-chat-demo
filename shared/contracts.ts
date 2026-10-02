@@ -2,7 +2,12 @@ import { z } from 'zod';
 
 export const contractVersion = 1;
 export const idSchema = z.uuid();
-export const modelSchema = z.enum(['kimi', 'deepseek', 'gpt-5.6', 'gpt-6']);
+export const modelSchema = z.enum([
+  'kimi',
+  'deepseek',
+  'gpt-6.1-sol',
+  'gpt-6-astra',
+]);
 export const pickerSchema = z.enum(['auto', ...modelSchema.options]);
 export type ModelKey = z.infer<typeof modelSchema>;
 export type Picker = z.infer<typeof pickerSchema>;
@@ -10,8 +15,8 @@ export type Picker = z.infer<typeof pickerSchema>;
 export const modelLabels: Record<ModelKey, string> = {
   kimi: 'Kimi K3',
   deepseek: 'DeepSeek V4.1 Flash',
-  'gpt-5.6': 'GPT-5.6 Sol',
-  'gpt-6': 'GPT-6 Sol',
+  'gpt-6.1-sol': 'GPT-6.1 Sol',
+  'gpt-6-astra': 'GPT-6 Astra',
 };
 
 export const imageSchema = z

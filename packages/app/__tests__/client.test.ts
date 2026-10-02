@@ -217,7 +217,7 @@ test.each(['kimi', 'deepseek'] as const)(
   },
 );
 
-test.each(['auto', 'gpt-5.6', 'gpt-6'] as const)(
+test.each(['auto', 'gpt-6.1-sol', 'gpt-6-astra'] as const)(
   '%s sends through the shared socket without a separate selection request',
   async picker => {
     const fixture = setup();
@@ -253,7 +253,7 @@ test('parallel socket replies stay isolated and detaching one never sends Stop',
     firstAbort.signal,
   );
   const b = fixture.transport.submit(
-    input('gpt-6', otherAttempt),
+    input('gpt-6.1-sol', otherAttempt),
     value => second.push(value),
     new AbortController().signal,
   );
@@ -302,7 +302,7 @@ test('a socket error naming no attempt fails open readers as a connection loss, 
     new AbortController().signal,
   );
   const second = fixture.transport.submit(
-    input('gpt-6', otherAttempt),
+    input('gpt-6.1-sol', otherAttempt),
     () => undefined,
     new AbortController().signal,
   );

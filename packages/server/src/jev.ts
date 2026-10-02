@@ -46,10 +46,10 @@ export class JevClient {
             deepseek:
               'Lowest-cost default: DeepSeek V4.1 Flash. Routine requests and straightforward technical work.',
             kimi: 'Kimi K3. Open-model choice for complex writing, image understanding, and longer synthesis.',
-            'gpt-5.6':
-              'GPT-5.6 Sol. Explicit GPT-5.6 requests or demanding reasoning suited to this model.',
-            'gpt-6':
-              'GPT-6 Sol. Most demanding reasoning or explicit GPT-6 requests.',
+            'gpt-6.1-sol':
+              'GPT-6.1 Sol. Default GPT for demanding reasoning or explicit GPT requests that do not name another GPT model.',
+            'gpt-6-astra':
+              'GPT-6 Astra. Strongest and most expensive option. Only the most demanding reasoning or explicit GPT-6 Astra requests.',
           },
         },
       },

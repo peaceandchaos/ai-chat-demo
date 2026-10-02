@@ -55,15 +55,15 @@ test('new chats inherit then independently remember the current picker across re
   archive.recover();
   const a = archive.createChat();
   expect(archive.recents()).toHaveLength(0);
-  archive.setPicker(a.id, 'gpt-6');
+  archive.setPicker(a.id, 'gpt-6.1-sol');
   const aReply = archive.createTurn(a.id, 'Chat A', []);
   const b = archive.createChat();
-  expect(b.picker).toBe('gpt-6');
+  expect(b.picker).toBe('gpt-6.1-sol');
   archive.setPicker(b.id, 'kimi');
   const bReply = archive.createTurn(b.id, 'Chat B', []);
   const restored = new ChatArchive(storage, randomUUID);
   restored.recover();
-  expect(restored.chat(a.id).picker).toBe('gpt-6');
+  expect(restored.chat(a.id).picker).toBe('gpt-6.1-sol');
   expect(restored.chat(b.id).picker).toBe('kimi');
   expect(restored.pendingJobs().map(job => job.id)).toEqual([
     aReply.id,
@@ -120,7 +120,7 @@ test('only the busy path is blocked and partial answers are marked incomplete in
       ...first,
       text: 'Partial answer',
       status: 'stopped',
-      actualModel: 'gpt-6',
+      actualModel: 'gpt-6.1-sol',
     },
   ]);
   const next = archive.createTurn(a.id, 'Continue', []);
@@ -228,7 +228,7 @@ test('a checkpoint after a fork cannot enter a sibling retry or continuation', (
     {
       ...archive.message(first.id),
       checkpoint: {
-        model: 'gpt-6',
+        model: 'gpt-6.1-sol',
         throughMessageId: first.id,
         method: 'openai-compaction',
         items: [{ type: 'compaction', encrypted_content: 'only first branch' }],
