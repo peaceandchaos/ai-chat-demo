@@ -87,6 +87,29 @@ Records live in the repository, so `verify:commit` checks the same commit offlin
 
 Records stay in the tree after merge, and git history keeps every version. The check ignores records that a range does not change, so old records cost one small file per change and never affect later checks. Remove old records only by owner decision.
 
+## Quality ledger
+
+`tools/skills/ledger.json` records each finding that should not recur. Each lesson has:
+
+- `id` and `lesson`: a name and the rule to follow.
+- `seen`: one line per sighting, naming the commit, branch, or PR. The count is the number of lines.
+- `enforcement`: what stops the finding now. `guidance` means nothing does. `type` and `test` name a test `file` and its exact title in `name`. `lint` names a `rule`. `check` names a `check` from `tools/verification/checks.cjs`.
+- `paths` (optional): globs for guidance that applies only to some files. Without paths, a lesson applies to every change.
+- `link` (optional): an https issue URL or a tracked decision file.
+
+`npm run skills:required` prints the guidance lessons that match the change after the required skills, and names the enforced lessons it leaves out. Apply each listed lesson the same way you apply a skill.
+
+When a finding recurs, add a line to its `seen` list, or add a lesson the first time. `npm run skills:ledger` runs in the verify suite as `quality-ledger`. It fails when:
+
+- a guidance lesson has been seen twice or more and has no `link`;
+- an enforcement names a check the suite does not run, a lint rule that `.oxlintrc.json` does not turn on, or a test title its file does not contain;
+- a `link` is neither an https URL nor a tracked file;
+- two lessons share an id.
+
+To promote a lesson, add the type, test, lint rule, or check in its own commit, with a fixture that fails without it. Then change the lesson's `enforcement` to name it. The routing script stops listing the lesson, and the ledger check fails if that check, rule, or test is later removed or renamed. To keep a repeated lesson as guidance, link the issue or decision that explains why.
+
+The check confirms that the named enforcement exists. It does not prove that the enforcement catches the finding; the promotion commit's failing fixture shows that. A title match is textual, and the counts are only as complete as the sightings people add.
+
 ## Limits
 
 The routing lists skills. It cannot tell whether an agent read or applied one. `security-review` is a Claude Code command with no skill file, so the catalog leaves it out.

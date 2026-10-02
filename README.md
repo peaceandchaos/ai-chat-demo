@@ -38,6 +38,7 @@ npm run build:ios-js          # release JS bundle; not native compilation
 npm run react-compiler-check # report; not proof of native compilation
 npm run skills:required -- origin/main # skills this branch must apply
 npm run skills:check -- origin/main # the branch's skill record covers them
+npm run skills:ledger         # repeated guidance is enforced or linked to a decision
 npm run verify:commit -- HEAD
 ```
 
@@ -63,7 +64,7 @@ The scanner excludes Android-specific files and scans the remaining app. Stream 
 
 ## Skill routing
 
-`tools/skills/routing.json` maps paths, file statuses, removed exports, added lines, commit subjects, and change size to required skills. `npm run skills:required` prints each required skill with the rule and file that require it. Each change commits a skill record under `tools/skills/records/`, and `verify:commit` fails when the record misses a required skill or has a finding without a resolution. [Skill routing](docs/skills.md) describes the rules, the skill roots, and the record format.
+`tools/skills/routing.json` maps paths, file statuses, removed exports, added lines, commit subjects, and change size to required skills. `npm run skills:required` prints each required skill with the rule and file that require it. Each change commits a skill record under `tools/skills/records/`, and `verify:commit` fails when the record misses a required skill or has a finding without a resolution. `tools/skills/ledger.json` lists recurring findings and what enforces each. The required-skills output includes the lessons that only guidance covers, and `verify:commit` fails when a guidance lesson recurs without enforcement or a linked decision. [Skill routing](docs/skills.md) describes the rules, the skill roots, the record format, and the ledger.
 
 ## Test review
 
