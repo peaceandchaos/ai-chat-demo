@@ -228,4 +228,4 @@ function readPlan(entries) {
   return { kind: 'plan', files };
 }
 
-module.exports = { readRange, readPlan, exportNames };
+module.exports = { readRange, readPlan };

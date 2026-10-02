@@ -250,7 +250,6 @@ module.exports = {
   routingPath,
   changeSubject,
   parseRouting,
-  matchesAny,
   requiredSkills,
   resolveSkill,
 };
