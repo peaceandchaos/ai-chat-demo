@@ -2,7 +2,7 @@ import { createMMKV } from 'react-native-mmkv';
 import { secureId } from '../device';
 import { ChatArchive, type ArchiveStorage } from './archive';
 
-export function openArchive(): ChatArchive {
+export function openArchive(now: () => number = Date.now): ChatArchive {
   const mmkv = createMMKV({
     id: 'personal-chat.archive.v1',
     recoveryStrategy: 'recover-on-error',
@@ -15,7 +15,7 @@ export function openArchive(): ChatArchive {
       mmkv.remove(key);
     },
   };
-  const archive = new ChatArchive(storage, secureId);
+  const archive = new ChatArchive(storage, secureId, now);
   archive.recover();
   return archive;
 }
