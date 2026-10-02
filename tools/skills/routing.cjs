@@ -238,7 +238,7 @@ function resolveSkill(routing, skill, env, repository) {
     throw new Error(
       `Skill ${skill} has no SKILL.md in root ${root} (${file}).`,
     );
-  const name = /^---\n(?:.*\n)*?name:\s*(\S+)\s*\n/u.exec(
+  const name = /^---\n(?:(?!---\n).*\n)*?name:\s*(\S+)\s*\n/u.exec(
     readFileSync(file, 'utf8'),
   );
   if (name?.[1] !== skill)

@@ -360,6 +360,10 @@ test('fails clearly when a skill root is missing or a skill file is wrong', () =
     const renamed = skills(['catalog']);
     expect(renamed.status).toBe(1);
     expect(renamed.stderr).toBe(`${file} does not declare name: fix-care.\n`);
+    writeFileSync(file, '---\ndescription: x\n---\nname: fix-care\n');
+    const bodyName = skills(['catalog']);
+    expect(bodyName.stderr).toBe(`${file} does not declare name: fix-care.\n`);
+    expect(bodyName.status).toBe(1);
   } finally {
     writeFileSync(file, '---\nname: fix-care\n---\n');
   }
