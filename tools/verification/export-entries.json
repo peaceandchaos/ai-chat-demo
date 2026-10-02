@@ -2,10 +2,6 @@
   "projects": ["packages/app/tsconfig.json", "packages/server/tsconfig.json"],
   "files": [
     {
-      "path": "packages/app/App.tsx",
-      "reason": "packages/app/index.js registers the default export, and JavaScript files are outside the TypeScript programs."
-    },
-    {
       "path": "packages/app/src/config.example.ts",
       "reason": "The template for the untracked config.ts that the app imports."
     },
