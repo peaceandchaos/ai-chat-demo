@@ -81,7 +81,7 @@ function errorResponse(error: Error | Response): Response {
   );
 }
 
-async function executeCommand(
+export async function executeCommand(
   owner: string,
   command: SocketCommand,
   services: ApiServices,
