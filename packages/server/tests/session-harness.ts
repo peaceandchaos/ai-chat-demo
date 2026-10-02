@@ -57,6 +57,7 @@ export class MemoryStorage implements ArchiveStorage {
 }
 
 type Step =
+  | { kind: 'item'; type: 'reasoning' | 'message' }
   | { kind: 'text'; text: string }
   | { kind: 'end'; checkpoint: ContextCheckpoint | null }
   | { kind: 'fail' };
@@ -65,6 +66,11 @@ type Step =
 export class Script {
   private readonly steps: Step[] = [];
   private wake: (() => void) | null = null;
+  // A Responses output item starting, before any of its text.
+  item(type: 'reasoning' | 'message'): this {
+    this.push({ kind: 'item', type });
+    return this;
+  }
   text(...pieces: string[]): this {
     for (const text of pieces) this.push({ kind: 'text', text });
     return this;
@@ -161,7 +167,17 @@ export class FakeProviders implements Providers {
       if (step.kind === 'end') return { checkpoint: step.checkpoint };
       if (step.kind === 'fail')
         throw new ProviderFailure('The provider stopped responding.', true);
-      await onChunk(providerChunk(model, step.text));
+      await onChunk(
+        step.kind === 'item'
+          ? {
+              wire: 'responses',
+              raw: JSON.stringify({
+                type: 'response.output_item.added',
+                item: { type: step.type },
+              }),
+            }
+          : providerChunk(model, step.text),
+      );
     }
   }
 }

@@ -88,7 +88,6 @@
   "overrides": [
     {
       "files": [
-        "packages/app/App.tsx",
         "packages/app/__tests__/App.test.tsx",
         "packages/app/babel.config.js",
         "packages/app/index.js",
@@ -115,7 +114,6 @@
         "packages/app/src/screens/ChatScreen.tsx",
         "packages/app/src/screens/RecentsScreen.tsx",
         "packages/app/src/screens/RootDrawer.tsx",
-        "packages/app/src/state/chatStore.ts",
         "packages/app/src/theme.ts"
       ],
       "rules": {

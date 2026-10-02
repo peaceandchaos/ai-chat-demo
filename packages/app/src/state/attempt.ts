@@ -7,6 +7,7 @@ import {
   parseGatewayEvent,
   parseResponsesEvent,
   type ParsedProviderEvent,
+  type ReplyLabel,
 } from '../../../../shared/provider-events';
 import type { SavedMessage } from './archive';
 
@@ -53,7 +54,7 @@ export function phaseOf(message: SavedMessage): AttemptPhase {
 
 export type Applied =
   | { kind: 'ignored' }
-  | { kind: 'progress'; message: SavedMessage }
+  | { kind: 'progress'; message: SavedMessage; label?: ReplyLabel }
   // Acceptance, a final result, or a confirmed receipt: save before continuing.
   | { kind: 'durable'; message: SavedMessage }
   // A missing or unreadable update. A fresh snapshot repairs it.
@@ -137,6 +138,8 @@ export function applyEvent(message: SavedMessage, event: JobEvent): Applied {
   } catch {
     return { kind: 'reattach', error: 'A reply update could not be read.' };
   }
+  if (parsed.kind === 'status')
+    return { kind: 'progress', message: next, label: parsed.label };
   if (parsed.kind === 'delta') next.text += parsed.text;
   if (parsed.kind === 'reasoning') next.reasoning += parsed.text;
   return { kind: 'progress', message: next };

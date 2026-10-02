@@ -56,9 +56,6 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   const listRef = useRef<LegendListRef>(null);
   const composerRef = useRef<View>(null);
   const [reasoning, setReasoning] = useState<string | null>(null);
-  // Once the reply overflows the reserved space, follow the tail
-  const [following, setFollowing] = useState(false);
-  const hasOverflowedRef = useRef(false);
 
   const openReasoning = useCallback((text: string) => {
     setReasoning(text);
@@ -72,6 +69,17 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   );
 
   const [anchorIndex, setAnchorIndex] = useState<number | undefined>(undefined);
+  // A sent reply is followed once it overflows the reserved space. A reply
+  // already streaming when the chat opened, as after a relaunch, has no
+  // anchored turn and is followed from the start. A drag pauses either.
+  const [overflowed, setOverflowed] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [resumed, setResumed] = useState(false);
+  if (isStreaming && anchorIndex == null && !resumed) {
+    setResumed(true);
+  }
+  const tracking = overflowed || resumed;
+  const following = tracking && !paused;
 
   // Image messages are taller than the text cap; leave them uncapped so the top
   // of the image lands at the anchor offset instead of being clipped above it.
@@ -96,11 +104,16 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   const onSubmit = useCallback(
     (text: string, attachments: Attachment[]) => {
       const isFirstMessage = messagesLength === 0;
-      hasOverflowedRef.current = false;
-      setFollowing(false);
+      const result = send(text, attachments);
+      if (result === 'unsaved') {
+        return result;
+      }
+      setOverflowed(false);
+      setResumed(false);
+      setPaused(false);
       setAnchorIndex(messagesLength);
-      send(text, attachments);
       scrollMessageToEnd({ animated: !isFirstMessage, closeKeyboard: true });
+      return result;
     },
     [messagesLength, send, scrollMessageToEnd],
   );
@@ -108,21 +121,24 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   const keyboardOffset = { opened: insets.bottom };
 
   // The chevron shows whenever the bottom of the conversation isn't visible.
-  const onEndVisible = useCallback((visible: boolean) => {
-    setShowScrollDown(!visible);
-    // Back at the bottom after a manual scroll-up: re-arm tail-follow
-    if (visible && hasOverflowedRef.current) {
-      setFollowing(true);
-    }
-  }, []);
+  const onEndVisible = useCallback(
+    (visible: boolean) => {
+      setShowScrollDown(!visible);
+      // Back at the bottom after a manual scroll-up: re-arm tail-follow
+      if (visible && tracking) {
+        setPaused(false);
+      }
+    },
+    [tracking],
+  );
 
   // A manual drag while the reply streams pauses tail-follow so the user can
   // scroll up (e.g. to read a table)
   const onScrollBeginDrag = useCallback(() => {
-    if (hasOverflowedRef.current) {
-      setFollowing(false);
+    if (tracking) {
+      setPaused(true);
     }
-  }, []);
+  }, [tracking]);
 
   const scrollToBottom = () => {
     scrollMessageToEnd({ animated: true, closeKeyboard: false });
@@ -141,6 +157,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
             renderItem={renderMessage}
             // Let the bottom contentInset / anchored end-space area still catch scroll touches (RN 0.81+ hit-test bug, facebook/react-native#54123).
             applyWorkaroundForContentInsetHitTestBug
+            initialScrollAtEnd
             maintainVisibleContentPosition={
               Platform.OS !== 'android'
                 ? undefined
@@ -158,9 +175,8 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
                     anchorMaxSize: anchorHasImage ? undefined : ANCHOR_MAX_SIZE,
                     anchorOffset: insets.top + 56,
                     onSizeChanged: size => {
-                      if (size <= 0 && !hasOverflowedRef.current) {
-                        hasOverflowedRef.current = true;
-                        setFollowing(true);
+                      if (size <= 0) {
+                        setOverflowed(true);
                       }
                     },
                   }

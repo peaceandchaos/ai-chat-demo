@@ -20,10 +20,10 @@ index 1724ac5..4c047db 100644
 - 
 \ No newline at end of file
 +
-+// Recyclable so the glyph survives react-freeze.
++// Recyclable so the glyph survives a display:none reveal.
 +extension HybridSymbolView: RecyclableView {
 +    // Don't reset symbolName: there's no reload path on reuse, so clearing would
-+    // blank the glyph on a react-freeze reveal.
++    // blank the glyph on a display:none reveal.
 +    func prepareForRecycle() {}
 +}
 diff --git a/node_modules/react-native-nitro-symbols/ios/NativeSymbolSwiftUIView.swift b/node_modules/react-native-nitro-symbols/ios/NativeSymbolSwiftUIView.swift
