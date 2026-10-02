@@ -36,10 +36,14 @@ const findingSchema = z
       .regex(/^[0-9a-f]{40}$/u)
       .optional(),
     none: z.string().min(1).optional(),
+    open: z.string().min(1).optional(),
   })
   .refine(
-    finding => (finding.commit === undefined) !== (finding.none === undefined),
-    'needs exactly one resolution: "commit" with the fixing commit, or "none" with the reason',
+    finding =>
+      [finding.commit, finding.none, finding.open].filter(
+        status => status !== undefined,
+      ).length === 1,
+    'needs exactly one status: "commit" with the fixing commit, "none" with the reason none was needed, or "open" with what is left to do',
   )
   .refine(
     finding => finding.patch === undefined || finding.commit !== undefined,
@@ -207,9 +211,14 @@ function citationProblems(section, lock) {
     );
 }
 
-function findingProblems(section, commits) {
+function findingProblems(section, commits, pullRequest) {
   const problems = [];
-  for (const { finding, commit: cited, patch } of section.entry.findings) {
+  for (const { finding, commit: cited, patch, open } of section.entry
+    .findings) {
+    if (pullRequest && open !== undefined)
+      problems.push(
+        `${labelOf(section)} finding "${finding}" is open: ${open} A pull request needs every finding fixed or closed with "none".`,
+      );
     if (cited === undefined) continue;
     const citation = `${labelOf(section)} finding "${finding}" cites ${cited}`;
     const bySha = [...commits.keys()].filter(commit =>
@@ -275,7 +284,7 @@ function checkRecords(root, routing, change, { pullRequest }) {
     seen.add(id);
     problems.push(
       ...entryProblems(section, routing, required),
-      ...findingProblems(section, commits),
+      ...findingProblems(section, commits, pullRequest),
       ...(lock ? citationProblems(section, lock) : []),
     );
   }

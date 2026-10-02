@@ -495,7 +495,7 @@ test('fails closed without a committed public key or lock, and still checks cita
   );
 });
 
-test('rejects a finding without exactly one resolution and a record named for another change', () => {
+test('rejects a finding without exactly one status and a record named for another change', () => {
   recordOn('unresolved', [
     {
       change: 'unresolved',
@@ -533,7 +533,7 @@ test('rejects a finding without exactly one resolution and a record named for an
   const result = skills(['check', base]);
   expect(result.status).toBe(1);
   const resolution =
-    'needs exactly one resolution: "commit" with the fixing commit, or "none" with the reason';
+    'needs exactly one status: "commit" with the fixing commit, "none" with the reason none was needed, or "open" with what is left to do';
   expect(result.stderr).toBe(
     [
       `Skill records for ${range(head, 3)} fail:`,
@@ -544,6 +544,56 @@ test('rejects a finding without exactly one resolution and a record named for an
       'source-care is required by source for src/a.ts, but no skill record covers it.',
       noAuthorReceipt('always'),
       noAuthorReceipt('source-care'),
+      '',
+    ].join('\n'),
+  );
+});
+
+test('an open finding keeps its record whole and fails only a pull request run', () => {
+  const open = { finding: 'Not fixed.', cites: 'Steps', open: 'Needs a fix.' };
+  const head = recordOn('open-finding', [
+    {
+      change: 'open-finding',
+      skills: [
+        {
+          skill: 'always',
+          files: ['<change>'],
+          findings: [open],
+          receipts: [receipt.always],
+        },
+        {
+          skill: 'source-care',
+          files: ['src/**'],
+          findings: [looked()],
+          receipts: [receipt.source],
+        },
+      ],
+      review: {
+        skills: [
+          {
+            skill: 'always',
+            findings: [looked()],
+            receipts: [receipt.reviewAlways],
+          },
+          {
+            skill: 'source-care',
+            findings: [looked()],
+            receipts: [receipt.reviewSource],
+          },
+        ],
+      },
+    },
+  ]);
+  const local = skills(['check', base]);
+  expect([local.stderr, local.status]).toEqual(['', 0]);
+  const pullRequest = skills(['check', base], {
+    GITHUB_EVENT_NAME: 'pull_request',
+  });
+  expect(pullRequest.status).toBe(1);
+  expect(pullRequest.stderr).toBe(
+    [
+      `Skill records for ${range(head, 2)} fail:`,
+      'tools/skills/records/open-finding.json: always finding "Not fixed." is open: Needs a fix. A pull request needs every finding fixed or closed with "none".',
       '',
     ].join('\n'),
   );

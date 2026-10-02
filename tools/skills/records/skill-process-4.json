@@ -668,7 +668,8 @@
         "findings": [
           {
             "finding": "Open, Low. tools/skills/ledger.cjs:62 tests rule.check in checks, and ledger.cjs:70 reads config.rules[rule.rule], both through the object prototype. A ledger entry that names check \"constructor\" or \"toString\", or lint rule \"constructor\", counts as enforced. Probe: review-evidence/ledger-prototype-probe.log accepts constructor and toString and rejects only \"retired\". Object.hasOwn would fix both lines.",
-            "cites": "Fix Root Causes"
+            "cites": "Fix Root Causes",
+            "open": "The reviewed range does not fix it."
           }
         ],
         "receipts": [
@@ -729,7 +730,8 @@
         "findings": [
           {
             "finding": "Open, Low. tools/skills/ledger.cjs:62 accepts a range check as enforcement. tools/skills/ledger.json:4-12 does this today: lesson commit-types names check commit-types, the typecheck:range range check. Hosted CI runs verify:current without --base, so range checks do not run there, and the lesson counts as enforced by a check that no hosted job runs. Scenario: a range edit that leaves an earlier commit uncompilable recurs in a hosted run, and the ledger still reports the lesson as enforced.",
-            "cites": "Prove It Works"
+            "cites": "Prove It Works",
+            "open": "The reviewed range does not fix it."
           },
           {
             "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
@@ -831,7 +833,8 @@
         "findings": [
           {
             "finding": "Open, Low. definesTest at tools/skills/ledger.cjs:48-54 accepts a test call anywhere in the file, including inside describe.skip, and does not check that Jest discovers the file. Probe: review-evidence/ledger-describe-skip-probe.log reports no problem for a named test inside describe.skip. The jest/no-disabled-tests lint rule covers files in the test glob, but a file outside Jest discovery passes with no test ever running.",
-            "cites": "Test behavior, not implementation"
+            "cites": "Test behavior, not implementation",
+            "open": "The reviewed range does not fix it."
           },
           {
             "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",

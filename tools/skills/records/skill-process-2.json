@@ -876,7 +876,8 @@
         "findings": [
           {
             "finding": "Open, High. Coverage is checked across all records together. tools/skills/records.cjs:288-295 passes every author entry of every record in the range to coverageProblems (records.cjs:232-249, from 18891e1), against the skills the whole range requires. A record that covers none of its own PR's skills passes when any other record covers them. Probe: record 5d reduced to one stub unslop entry with no receipts still passes skills:check (review-evidence/gap/probe-stub-record.log, commit 6d6378b6). Today every record covers its own PR range (review-evidence/own-ranges.txt), so the gap is latent, but the check does not enforce it.",
-            "cites": "Prove It Works"
+            "cites": "Prove It Works",
+            "open": "The reviewed range does not fix it."
           },
           {
             "finding": "This entry's receipt is from agent ad1b4f1b47d1a5c1a, which I cannot identify, at head 9f62d28. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
@@ -1014,7 +1015,8 @@
         "findings": [
           {
             "finding": "Open, Medium. The finding schema at tools/skills/records.cjs:40-43 requires exactly one of \"commit\" or \"none\". An open defect has no valid form, so a reviewer must either mark it resolved or make the record fail to parse. Scenario: this review records open defects without a resolution, and readRecords drops each such record, which then also reports coverage and receipt problems that are not real. A discriminated finding status (open, fixed with a commit, or none with a reason) would represent the state the review needs.",
-            "cites": "Type System Discipline"
+            "cites": "Type System Discipline",
+            "open": "The reviewed range does not fix it."
           }
         ],
         "receipts": [

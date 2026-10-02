@@ -477,7 +477,8 @@
         "findings": [
           {
             "finding": "Open, High. The pull request review rule is checked across all records together. records.cjs:282-287 checks only that each record has a review section. receiptProblems at tools/skills/receipts.cjs:106-114 then asks whether any record holds a non-author review receipt for each skill. A record whose review entries hold only its own author's receipts passes when another record's review has a reviewer receipt for the same skill. Probe: with four 5d review entries holding only the 5d author's own receipts, a pull request run passes and prints \"with independent review\" (review-evidence/gap/probe-review-own-author.log, commit 3c9cf622).",
-            "cites": "Prove It Works"
+            "cites": "Prove It Works",
+            "open": "The reviewed range does not fix it."
           },
           {
             "finding": "The 5d author receipts were made at 13:21:55 to 13:22:00Z on 8ac891b, after all 5d code commits, and the Skill tool answered \"already loaded\". They prove a Skill call bound to a range commit, not a fresh read at that head. The earlier loads were bound to 6424990, outside the range. The 5d report discloses this; the record does not.",
@@ -574,7 +575,8 @@
         "findings": [
           {
             "finding": "Open, Medium. README.md:65 says verify:commit fails when \"the record\" misses a required skill or \"lacks a signed receipt for a required skill\". AGENTS.md:38 says verify:commit \"fails until the record covers every required skill with a valid receipt\". Both came from 9e55391. The check aggregates coverage and receipts across all records in the range, so a single record can miss both and pass (review-evidence/gap/).",
-            "cites": "Voice and repo specifics"
+            "cites": "Voice and repo specifics",
+            "open": "The reviewed range does not fix it."
           }
         ],
         "receipts": [
@@ -666,7 +668,8 @@
         "findings": [
           {
             "finding": "Open, Medium. AGENTS.md:38 is always loaded, and it tells agents that the check enforces per-record coverage and receipts. An agent that trusts it can skip loading skills for one record of a multi-record range and still see the check pass. The line should state what the check enforces today.",
-            "cites": "Context pointers"
+            "cites": "Context pointers",
+            "open": "The reviewed range does not fix it."
           }
         ],
         "receipts": [
