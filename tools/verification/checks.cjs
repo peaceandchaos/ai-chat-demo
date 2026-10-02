@@ -3,6 +3,7 @@ const checks = {
   lint: ['run', 'lint'],
   format: ['run', 'format:check'],
   types: ['run', 'typecheck'],
+  'unused-exports': ['run', 'exports:check'],
   tests: ['run', 'test:verified'],
   credentials: ['run', 'secrets'],
   security: ['run', 'security'],
