@@ -248,8 +248,6 @@ function coverageProblems(required, entries) {
   return problems;
 }
 
-// A pull request needs an independent review of every record. Elsewhere, a
-// review is checked only when a record has one, so an author's own run passes.
 function checkRecords(root, routing, change, { pullRequest }) {
   const required = new Map(
     requiredSkills(routing, change).required.map(({ skill, reasons }) => [
@@ -295,6 +293,8 @@ function checkRecords(root, routing, change, { pullRequest }) {
         .map(({ entry }) => entry),
     ),
   );
+  const reviewRequired =
+    pullRequest || sections.some(({ role }) => role === 'review');
   const key = readPublicKey(read);
   if (checked && lock && !key) problems.push(missingKey());
   if (checked && lock && key)
@@ -303,7 +303,7 @@ function checkRecords(root, routing, change, { pullRequest }) {
         sections,
         [...required.keys()],
         { key, lock, routing, change, commits },
-        pullRequest || sections.some(({ role }) => role === 'review'),
+        reviewRequired,
       ),
     );
   return {
