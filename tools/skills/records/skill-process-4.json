@@ -94,6 +94,11 @@
         {
           "finding": "The check and its seed land first, the lesson output second, and the docs third. Each commit passed verify:staged.",
           "none": "No reordering needed."
+        },
+        {
+          "finding": "verify:commit on the first PR4b head (d07bdb5) failed: the spaced-path test from PR1b had no ledger in its fixture, and dd9450c made skills:required read one.",
+          "commit": "6076564",
+          "patch": "375cde8a78956467b84f325fd3e6eabccc445800"
         }
       ]
     },
