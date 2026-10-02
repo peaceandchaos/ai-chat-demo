@@ -50,16 +50,6 @@ export const models = {
   },
 } satisfies Record<ModelKey, ModelConfig>;
 
-export type ResponsesModelKey = {
-  [Key in ModelKey]: (typeof models)[Key]['wire'] extends 'responses'
-    ? Key
-    : never;
-}[ModelKey];
-
-export function isResponsesModel(model: ModelKey): model is ResponsesModelKey {
-  return models[model].wire === 'responses';
-}
-
 export function checkpointMethod(model: ModelKey) {
   if (model === 'kimi') return 'kimi-summary';
   if (model === 'deepseek') return 'deepseek-summary';

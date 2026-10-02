@@ -8,7 +8,7 @@ import {
 } from '../../../shared/contracts';
 import { parseResponsesEvent } from '../../../shared/provider-events';
 import { ProviderFailure } from './errors';
-import { models, type ResponsesModelKey } from './models';
+import { models, type ModelConfig } from './models';
 import type { BeforePaidCall, ProviderChunk } from './provider';
 
 // Strip API-only fields (annotations, item status) while preserving every replay item.
@@ -114,7 +114,7 @@ export class ResponsesClient {
   }
 
   async generate(
-    model: ResponsesModelKey,
+    config: Extract<ModelConfig, { wire: 'responses' }>,
     input: ResponseInputItem[],
     signal: AbortSignal,
     beforeCall: BeforePaidCall,
@@ -159,16 +159,16 @@ export class ResponsesClient {
         socket.send(
           JSON.stringify({
             type: 'response.create',
-            model: models[model].id,
+            model: config.id,
             input,
             store: false,
-            max_output_tokens: models[model].maxOutput,
+            max_output_tokens: config.maxOutput,
             include: ['reasoning.encrypted_content'],
             reasoning: { summary: 'auto' },
             context_management: [
               {
                 type: 'compaction',
-                compact_threshold: models[model].compactThreshold,
+                compact_threshold: config.compactThreshold,
               },
             ],
           }),

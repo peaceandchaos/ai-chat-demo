@@ -2,7 +2,7 @@ import type { ModelKey, Submission } from '../../../shared/contracts';
 import { makeCheckpoint, prepareContext, textItem } from './compaction/context';
 import type { GatewayClient } from './gateway';
 import type { JevClient } from './jev';
-import { isResponsesModel } from './models';
+import { models } from './models';
 import type {
   BeforePaidCall,
   PreparedContext,
@@ -51,9 +51,10 @@ export class LiveProviders implements Providers {
     onChunk: (chunk: ProviderChunk) => Promise<void>,
     beforeCall: BeforePaidCall,
   ): Promise<ProviderCompletion> {
-    if (isResponsesModel(model)) {
+    const config = models[model];
+    if (config.wire === 'responses') {
       const items = await this.responses.generate(
-        model,
+        config,
         context.items,
         signal,
         beforeCall,
