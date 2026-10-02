@@ -204,10 +204,12 @@ function chatWith(chats: Record<string, Message[]>, open: string) {
   const screen = () => (
     <ChatScreen onOpenRecents={() => undefined} openCount={openCount} />
   );
-  let renderer!: ReactTestRenderer;
+  const rendered = React.createRef<ReactTestRenderer>();
   act(() => {
-    renderer = create(screen());
+    rendered.current = create(screen());
   });
+  const renderer = rendered.current;
+  if (!renderer) throw new Error('The test renderer was not created.');
   return {
     sendShowing: (userId: string, rows: Message[]) => {
       sent = { userId, rows };

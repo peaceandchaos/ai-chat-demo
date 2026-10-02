@@ -2,10 +2,7 @@ import { imageSchema } from '../../../../shared/contracts';
 
 // Encodes the picked image as JPEG bytes at `scale` of its size and `quality`
 // from 0 to 100.
-export type EncodeJpeg = (
-  scale: number,
-  quality: number,
-) => Promise<ArrayBuffer>;
+type EncodeJpeg = (scale: number, quality: number) => Promise<ArrayBuffer>;
 
 const jpegSteps = [
   { scale: 1, quality: 80 },

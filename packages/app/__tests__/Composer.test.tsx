@@ -60,9 +60,9 @@ function chatStore(draftsOnDisk: Record<string, string> = {}) {
 function renderComposer(result: SendResult) {
   const onSubmit = jest.fn(() => result);
   const { wrap } = chatStore();
-  let renderer!: ReactTestRenderer;
+  const rendered = React.createRef<ReactTestRenderer>();
   act(() => {
-    renderer = create(
+    rendered.current = create(
       wrap(
         <Composer
           chatId="chat"
@@ -75,6 +75,8 @@ function renderComposer(result: SendResult) {
       ),
     );
   });
+  const renderer = rendered.current;
+  if (!renderer) throw new Error('The test renderer was not created.');
   const input = () => renderer.root.findByType(TextInput);
   act(() => {
     input().props.onChangeText('Draft');
@@ -112,10 +114,12 @@ test('each chat keeps its own draft text and photos, and switching back restores
         onLayout={() => undefined}
       />,
     );
-  let renderer!: ReactTestRenderer;
+  const rendered = React.createRef<ReactTestRenderer>();
   act(() => {
-    renderer = create(composer('a'));
+    rendered.current = create(composer('a'));
   });
+  const renderer = rendered.current;
+  if (!renderer) throw new Error('The test renderer was not created.');
   const input = () => renderer.root.findByType(TextInput);
   const open = (chatId: string) => act(() => renderer.update(composer(chatId)));
   const send = () =>
@@ -168,10 +172,12 @@ test('each chat opens with the draft text saved before the relaunch, and every t
         onLayout={() => undefined}
       />,
     );
-  let renderer!: ReactTestRenderer;
+  const rendered = React.createRef<ReactTestRenderer>();
   act(() => {
-    renderer = create(composer('a'));
+    rendered.current = create(composer('a'));
   });
+  const renderer = rendered.current;
+  if (!renderer) throw new Error('The test renderer was not created.');
   const input = () => renderer.root.findByType(TextInput);
   expect(input().props.value).toBe('Saved A');
 

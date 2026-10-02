@@ -64,10 +64,12 @@ test('a failed start hides the splash and offers Retry, and Retry opens the save
     });
   const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
 
-  let renderer!: ReactTestRenderer;
+  const rendered = React.createRef<ReactTestRenderer>();
   await act(async () => {
-    renderer = create(<App />);
+    rendered.current = create(<App />);
   });
+  const renderer = rendered.current;
+  if (!renderer) throw new Error('The test renderer was not created.');
   expect(BootSplash.hide).toHaveBeenCalled();
   expect(alert).toHaveBeenCalledTimes(1);
   const [title, message, buttons] = alert.mock.calls[0];

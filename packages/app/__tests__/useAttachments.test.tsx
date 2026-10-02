@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { createRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { launchImageLibrary, type Asset } from 'react-native-image-picker';
 import { act, create } from 'react-test-renderer';
@@ -77,21 +77,25 @@ function decodeBase64(text: string): Uint8Array {
 
 async function pick(assets: Asset[]) {
   jest.mocked(launchImageLibrary).mockResolvedValue({ assets });
-  let hook!: ReturnType<typeof useAttachments>;
-  let draft!: Draft;
+  const seenHook = createRef<ReturnType<typeof useAttachments>>();
+  const seenDraft = createRef<Draft>();
   function Probe() {
     const [current, setDraft] = useState<Draft>({ text: '', attachments: [] });
     const changeDraft: ChangeDraft = setDraft;
-    draft = current;
-    hook = useAttachments(changeDraft);
+    seenDraft.current = current;
+    seenHook.current = useAttachments(changeDraft);
     return null;
   }
   act(() => {
     create(<Probe />);
   });
+  const hook = seenHook.current;
+  if (!hook) throw new Error('The probe did not render.');
   await act(async () => {
     await hook.pickImages();
   });
+  const draft = seenDraft.current;
+  if (!draft) throw new Error('The probe did not render.');
   return draft.attachments.map(attachment => attachment.dataUrl);
 }
 

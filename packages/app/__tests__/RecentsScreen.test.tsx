@@ -57,9 +57,9 @@ function renderRecents(): () => string[] {
     saveDraftAfterPause: () => undefined,
     saveDraftsNow: () => undefined,
   }));
-  let renderer!: ReactTestRenderer;
+  const rendered = React.createRef<ReactTestRenderer>();
   act(() => {
-    renderer = create(
+    rendered.current = create(
       <ChatStoreContext.Provider value={store}>
         <RecentsScreen
           onNewChat={() => undefined}
@@ -68,6 +68,8 @@ function renderRecents(): () => string[] {
       </ChatStoreContext.Provider>,
     );
   });
+  const renderer = rendered.current;
+  if (!renderer) throw new Error('The test renderer was not created.');
   return () =>
     renderer.root
       .findAllByType(Text)
