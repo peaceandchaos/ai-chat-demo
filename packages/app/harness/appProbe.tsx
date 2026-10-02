@@ -28,11 +28,17 @@ type Report =
     }
   | ({ kind: 'frames'; over20: number } & Quantiles);
 
-const post = (body: Report) =>
+function post(body: Report) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
   void fetch(reportUrl, {
     method: 'POST',
     body: JSON.stringify({ at: Date.now(), ...body }),
-  }).catch(() => undefined);
+    signal: controller.signal,
+  })
+    .catch(() => undefined)
+    .finally(() => clearTimeout(timer));
+}
 
 function quantiles(values: number[]): Quantiles {
   const sorted = [...values].sort((a, b) => a - b);
