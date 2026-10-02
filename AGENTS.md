@@ -33,7 +33,7 @@ The example config has no live credentials. Never copy personal config or enviro
 
 ## Skills
 
-Before you edit, run `npm run skills:required -- --plan <path>...` for the files you plan to touch. Read and apply every `SKILL.md` it lists. On a branch, run `npm run skills:required -- origin/main`. Set the skill roots first, as `docs/skills.md` describes. `tools/skills/routing.json` decides what is required; changes to it need owner review. The same output lists unenforced lessons from `tools/skills/ledger.json`; apply them too. When a finding recurs, add a sighting to its lesson. `npm run skills:ledger` fails when guidance is seen twice without enforcement or a linked decision.
+Before you edit, run `npm run skills:required -- --plan <path>...` for the files you plan to touch. Read and apply every `SKILL.md` it lists. On a branch, run `npm run skills:required -- origin/main`. Set the skill roots first, as `docs/skills.md` describes. `tools/skills/routing.json` decides what is required; changes to it need owner review. The same output lists the unenforced lessons from `tools/skills/ledger.json`. Apply them too. When a review finding recurs, add the sighting to its lesson, or add a lesson the first time.
 
 Before you push, run `npm run skills:record -- <change-id> origin/main`, write each skill's findings with the fixing commit or the reason none was needed, and commit the record. `verify:commit` fails until the record covers every required skill. A passing check shows that each skill was claimed and that each recorded finding has a resolution, not that the skill was applied well.
 

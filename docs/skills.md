@@ -101,14 +101,14 @@ Records stay in the tree after merge, and git history keeps every version. The c
 
 When a finding recurs, add a line to its `seen` list, or add a lesson the first time. `npm run skills:ledger` runs in the verify suite as `quality-ledger`. It fails when:
 
-- a guidance lesson has been seen twice or more and has no `link`;
-- an enforcement names a check the suite does not run, a lint rule that `.oxlintrc.json` does not turn on, or a test title its file does not contain;
-- a `link` is neither an https URL nor a tracked file;
+- a guidance lesson has been seen twice or more and has no `link`.
+- an enforcement names a check the suite does not run, a lint rule that `.oxlintrc.json` does not turn on, or a test title its file does not contain.
+- a `link` is neither an https URL nor a tracked file.
 - two lessons share an id.
 
 To promote a lesson, add the type, test, lint rule, or check in its own commit, with a fixture that fails without it. Then change the lesson's `enforcement` to name it. The routing script stops listing the lesson, and the ledger check fails if that check, rule, or test is later removed or renamed. To keep a repeated lesson as guidance, link the issue or decision that explains why.
 
-The check confirms that the named enforcement exists. It does not prove that the enforcement catches the finding; the promotion commit's failing fixture shows that. A title match is textual, and the counts are only as complete as the sightings people add.
+The check confirms that the named enforcement exists. It does not prove that the enforcement catches the finding. The failing fixture in the promotion commit shows that. A title match is textual, and the counts are only as complete as the sightings people add.
 
 ## Limits
 
