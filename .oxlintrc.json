@@ -90,7 +90,6 @@
       "files": [
         "packages/app/__tests__/App.test.tsx",
         "packages/app/babel.config.js",
-        "packages/app/index.js",
         "packages/app/jest.config.js",
         "packages/app/metro.config.js",
         "packages/app/src/components/AttachmentMenu.tsx",
@@ -104,7 +103,6 @@
         "packages/app/src/components/ReasoningSheet.tsx",
         "packages/app/src/components/ScrollToBottomButton.tsx",
         "packages/app/src/components/ShimmerText.tsx",
-        "packages/app/src/config.example.ts",
         "packages/app/src/hooks/useAttachments.ts",
         "packages/app/src/markdownStyle.ts",
         "packages/app/src/notImplemented.ts",
