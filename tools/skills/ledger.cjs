@@ -59,7 +59,8 @@ function enforcementProblem(root, { enforcement: rule }) {
     const { checks, rangeChecks } = require(
       join(root, 'tools/verification/checks.cjs'),
     );
-    return rule.check in checks || rule.check in rangeChecks
+    return Object.hasOwn(checks, rule.check) ||
+      Object.hasOwn(rangeChecks, rule.check)
       ? null
       : `names check ${rule.check}, which tools/verification/checks.cjs does not run`;
   }
@@ -67,7 +68,9 @@ function enforcementProblem(root, { enforcement: rule }) {
     const config = JSON.parse(
       readFileSync(join(root, '.oxlintrc.json'), 'utf8'),
     );
-    const setting = [config.rules[rule.rule]].flat()[0];
+    const setting = Object.hasOwn(config.rules, rule.rule)
+      ? [config.rules[rule.rule]].flat()[0]
+      : undefined;
     return setting !== undefined && setting !== 'off' && setting !== 0
       ? null
       : `names lint rule ${rule.rule}, which .oxlintrc.json does not enable`;
