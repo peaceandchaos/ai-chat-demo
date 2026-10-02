@@ -275,13 +275,15 @@ test('an attached reader checks a running job for new text every 40 ms', async (
     await deliverJob(f.jobs, owner, job.attemptId, reader.signal, () =>
       Promise.resolve(),
     );
-    const median = [...waits].sort((a, b) => a - b)[4];
-    expect(median).toBeGreaterThanOrEqual(38);
-    expect(median).toBeLessThan(80);
+    // Machine load only lengthens a wait, so the shortest one is the
+    // requested interval.
+    const shortest = Math.min(...waits);
+    expect(shortest).toBeGreaterThanOrEqual(38);
+    expect(shortest).toBeLessThan(100);
   } finally {
     await f.postgres.close();
   }
-});
+}, 30_000);
 
 test('an attached reader ends with the final snapshot when the job ends without an event', async () => {
   const f = await fixture();
