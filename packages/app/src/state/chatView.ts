@@ -1,5 +1,5 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
-import { isActive, type ChatArchive, type SavedMessage } from './archive';
+import type { ChatArchive, SavedMessage } from './archive';
 import type { AttemptActivity, ChatSession } from './session';
 
 export type MessageRole = 'user' | 'assistant';
@@ -117,10 +117,8 @@ export function createChatView(
     return kept;
   };
 
-  const leafActive = (): boolean => {
-    const leaf = sources.get(ids.at(-1) ?? '');
-    return leaf ? isActive(leaf) : false;
-  };
+  const streaming = (messages: Message[]): boolean =>
+    messages.at(-1)?.status === 'streaming';
 
   // Walks the path again. Only actions that move the chat's leaf call this.
   const rebuild = (chatId: string): void => {
@@ -132,11 +130,8 @@ export function createChatView(
         sources.delete(id);
         views.delete(id);
       }
-    store.setState({
-      chatId,
-      messages: path.map(view),
-      isStreaming: leafActive(),
-    });
+    const messages = path.map(view);
+    store.setState({ chatId, messages, isStreaming: streaming(messages) });
   };
 
   // Runs once per session notify, at most once per frame while replies stream.
@@ -149,7 +144,7 @@ export function createChatView(
       if (next !== message) changed = true;
       return next;
     });
-    const isStreaming = leafActive();
+    const isStreaming = streaming(messages);
     if (changed || isStreaming !== store.getState().isStreaming)
       store.setState({ messages, isStreaming });
   };
@@ -189,12 +184,18 @@ export function createChatView(
           reply.parentId,
           attachments.map(attachment => attachment.uri),
         );
-      guarded(() => rebuild(chatId));
+      guarded(() => {
+        const user = reply.parentId ? [session.message(reply.parentId)] : [];
+        const turn = [...user, reply].map(view);
+        ids = [...ids, ...turn.map(message => message.id)];
+        const messages = [...store.getState().messages, ...turn];
+        store.setState({ messages, isStreaming: streaming(messages) });
+      });
       return true;
     },
     stop: () => {
-      const leaf = sources.get(ids.at(-1) ?? '');
-      if (leaf && isActive(leaf)) guarded(() => session.stop(leaf.id));
+      const leaf = store.getState().messages.at(-1);
+      if (leaf?.status === 'streaming') guarded(() => session.stop(leaf.id));
     },
     newChat: () =>
       guarded(() => {

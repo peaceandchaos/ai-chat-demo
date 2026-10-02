@@ -260,3 +260,45 @@ test('a rejected send reports why, saves nothing, and returns false so the compo
   expect(state().messages.map(message => message.text)).toEqual(['One', '']);
   expect(phone.archive.metadata().jobIds).toEqual([state().messages[1].id]);
 });
+
+test('a send that saved shows its turn even when the chat path cannot be read again', () => {
+  const phone = openPhone(server);
+  createChat(phone, 'kimi');
+  const { errors, state } = openView(phone);
+  jest.spyOn(phone.session, 'path').mockImplementation(() => {
+    throw new Error('Saved chats are unavailable.');
+  });
+  expect(state().send('Question')).toBe(true);
+  expect(errors).toEqual([]);
+  expect(state().messages).toMatchObject([
+    { role: 'user', text: 'Question', status: 'done' },
+    { role: 'assistant', status: 'streaming' },
+  ]);
+  expect(state().isStreaming).toBe(true);
+});
+
+test('a halted reply shows its error and the composer offers Send, then it streams again after resume', async () => {
+  const phone = openPhone(server);
+  createChat(phone, 'kimi');
+  const { state } = openView(phone);
+  state().send('Question');
+  const reply = state().messages[1];
+  phone.storage.failing = true;
+  await until(
+    'the reply is halted',
+    () => phone.session.activity(reply.id).kind === 'halted',
+  );
+  expect(phone.session.message(reply.id).status).toBe('accepted');
+  expect(state().messages[1].status).toBe('error');
+  expect(state().isStreaming).toBe(false);
+
+  phone.storage.failing = false;
+  phone.session.setLifecycle('background');
+  phone.session.setLifecycle('active');
+  await until('the reply streams again', () => state().isStreaming);
+  expect(state().messages[1].status).toBe('streaming');
+  server.providers.script(reply.id).text('Answer').end();
+  await settled(phone, reply.id);
+  await until('the view settles', () => !state().isStreaming);
+  expect(state().messages[1]).toMatchObject({ text: 'Answer', status: 'done' });
+});
