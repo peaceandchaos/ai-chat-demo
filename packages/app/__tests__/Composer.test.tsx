@@ -2,6 +2,7 @@ import React from 'react';
 import { TextInput, View } from 'react-native';
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { Composer } from '../src/components/Composer';
+import type { SendResult } from '../src/state/chatStore';
 
 jest.mock('react-native-reanimated', () => ({
   __esModule: true,
@@ -25,8 +26,8 @@ jest.mock('../src/components/Glass', () => ({
 }));
 jest.mock('../src/components/Icon', () => ({ Icon: () => null }));
 
-function renderComposer(saved: boolean) {
-  const onSubmit = jest.fn(() => saved);
+function renderComposer(result: SendResult) {
+  const onSubmit = jest.fn(() => result);
   let renderer!: ReactTestRenderer;
   act(() => {
     renderer = create(
@@ -53,11 +54,11 @@ function renderComposer(saved: boolean) {
 }
 
 test('the composer keeps its text when the message was not saved', () => {
-  const { onSubmit, text } = renderComposer(false);
+  const { onSubmit, text } = renderComposer('unsaved');
   expect(onSubmit).toHaveBeenCalledWith('Draft', []);
   expect(text).toBe('Draft');
 });
 
 test('the composer clears its text once the message is saved', () => {
-  expect(renderComposer(true).text).toBe('');
+  expect(renderComposer('saved').text).toBe('');
 });

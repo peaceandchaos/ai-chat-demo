@@ -10,7 +10,8 @@ import { LogBox } from 'react-native';
 import BootSplash from 'react-native-bootsplash';
 import performance from 'react-native-performance';
 import '../index';
-import { chatView } from '../src/state/appSession';
+import { startAppSession } from '../src/state/appSession';
+import type { ChatStore } from '../src/state/chatView';
 
 LogBox.ignoreAllLogs();
 
@@ -47,19 +48,7 @@ function quantiles(values: number[]): Quantiles {
   return { count: sorted.length, p50: at(0.5), p95: at(0.95), max: at(1) };
 }
 
-function chatStore() {
-  try {
-    return chatView().store;
-  } catch {
-    return null;
-  }
-}
-
-let watching = false;
-function watchReplies() {
-  const store = chatStore();
-  if (!store || watching) return;
-  watching = true;
+function watchReplies(store: ChatStore) {
   let sentAt: number | null = null;
   let firstText: number | null = null;
   let lastCommit = 0;
@@ -107,8 +96,8 @@ function frame(time: number) {
   if (!launchReported && !BootSplash.isVisible()) {
     launchReported = true;
     post({ kind: 'launch' });
+    startAppSession().then(watchReplies, () => undefined);
   }
-  watchReplies();
   if (last) intervals.push(time - last);
   last = time;
   if (Date.now() - windowStart >= 2000) {

@@ -3,10 +3,7 @@ import type { ChatSession } from './session';
 
 // Inactive saves partial replies; background also detaches readers without
 // cancelling server work; active reconnects every unsettled reply.
-export function followAppState(session: ChatSession): () => void {
+export function followAppState(session: ChatSession): void {
   session.setLifecycle(AppState.currentState);
-  const subscription = AppState.addEventListener('change', state =>
-    session.setLifecycle(state),
-  );
-  return () => subscription.remove();
+  AppState.addEventListener('change', state => session.setLifecycle(state));
 }

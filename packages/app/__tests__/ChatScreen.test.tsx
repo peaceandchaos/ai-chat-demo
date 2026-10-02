@@ -64,7 +64,7 @@ function openChat(isStreaming: boolean) {
       },
     ],
     isStreaming,
-    send: () => true,
+    send: () => 'saved',
     stop: () => undefined,
     newChat: () => undefined,
   };

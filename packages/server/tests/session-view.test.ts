@@ -21,10 +21,10 @@ afterEach(() => shutdown(server));
 
 function openView(phone: Phone) {
   const errors: string[] = [];
-  const view = createChatView(phone.archive, phone.session, error =>
+  const store = createChatView(phone.archive, phone.session, error =>
     errors.push(error),
   );
-  return { errors, state: () => view.store.getState(), store: view.store };
+  return { errors, state: () => store.getState(), store };
 }
 
 test('a sent turn streams into the view without storage reads and keeps settled rows as the same objects', async () => {
@@ -37,7 +37,7 @@ test('a sent turn streams into the view without storage reads and keeps settled 
     isStreaming: false,
   });
 
-  expect(state().send('Question')).toBe(true);
+  expect(state().send('Question')).toBe('saved');
   expect(state().messages).toMatchObject([
     { role: 'user', text: 'Question', status: 'done' },
     { role: 'assistant', text: '', status: 'streaming' },
@@ -248,12 +248,12 @@ test('a rejected send reports why, saves nothing, and returns false so the compo
   const phone = openPhone(server);
   createChat(phone, 'kimi');
   const { errors, state } = openView(phone);
-  expect(state().send('   ')).toBe(false);
+  expect(state().send('   ')).toBe('unsaved');
   expect(errors).toEqual(['Write a message or choose an image.']);
   expect(state().messages).toEqual([]);
 
-  expect(state().send('One')).toBe(true);
-  expect(state().send('Two')).toBe(false);
+  expect(state().send('One')).toBe('saved');
+  expect(state().send('Two')).toBe('unsaved');
   expect(errors.at(-1)).toBe(
     'Wait for this reply or stop it before sending another message.',
   );
@@ -268,7 +268,7 @@ test('a send that saved shows its turn even when the chat path cannot be read ag
   jest.spyOn(phone.session, 'path').mockImplementation(() => {
     throw new Error('Saved chats are unavailable.');
   });
-  expect(state().send('Question')).toBe(true);
+  expect(state().send('Question')).toBe('saved');
   expect(errors).toEqual([]);
   expect(state().messages).toMatchObject([
     { role: 'user', text: 'Question', status: 'done' },
@@ -311,7 +311,7 @@ test('an image the contract rejects is reported in plain words and nothing is sa
     uri: 'file:///tmp/a.heic',
     dataUrl: 'data:image/heic;base64,AAAA',
   };
-  expect(state().send('Look', [heic])).toBe(false);
+  expect(state().send('Look', [heic])).toBe('unsaved');
   expect(errors).toEqual(['These images can’t be sent.']);
   expect(state().messages).toEqual([]);
   expect(phone.archive.metadata().jobIds).toEqual([]);

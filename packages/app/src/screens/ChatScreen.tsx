@@ -101,14 +101,15 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   const onSubmit = useCallback(
     (text: string, attachments: Attachment[]) => {
       const isFirstMessage = messagesLength === 0;
-      if (!send(text, attachments)) {
-        return false;
+      const result = send(text, attachments);
+      if (result === 'unsaved') {
+        return result;
       }
       setOverflowed(false);
       setPaused(false);
       setAnchorIndex(messagesLength);
       scrollMessageToEnd({ animated: !isFirstMessage, closeKeyboard: true });
-      return true;
+      return result;
     },
     [messagesLength, send, scrollMessageToEnd],
   );

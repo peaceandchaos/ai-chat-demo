@@ -108,17 +108,9 @@ export const MessageBubble = memo(function ({
           style={styles.statusRow}
           entering={FadeIn.delay(450).duration(300)}
         >
-          <Icon
-            name={
-              (message.statusLabel ?? 'Thinking') === 'Responding'
-                ? 'text.bubble'
-                : 'sparkles'
-            }
-            size={15}
-            color={theme.textSecondary}
-          />
+          <Icon name="sparkles" size={15} color={theme.textSecondary} />
           <ShimmerText
-            text={message.statusLabel ?? 'Thinking'}
+            text="Thinking"
             width={140}
             fontSize={16}
             maxLines={1}

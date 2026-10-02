@@ -17,7 +17,7 @@ import { AttachmentMenu } from './AttachmentMenu';
 import { Glass } from './Glass';
 import { Icon } from './Icon';
 import { useAttachments } from '../hooks/useAttachments';
-import type { Attachment } from '../state/chatStore';
+import type { Attachment, SendResult } from '../state/chatStore';
 import { theme } from '../theme';
 
 const INPUT_MAX_HEIGHT = 120;
@@ -27,8 +27,7 @@ const INPUT_MAX_HEIGHT = 120;
 const THUMBS_ANIM_MS = 220;
 
 type ComposerProps = {
-  // Returns whether the message was saved; the input clears only then.
-  onSubmit: (text: string, attachments: Attachment[]) => boolean;
+  onSubmit: (text: string, attachments: Attachment[]) => SendResult;
   onStop: () => void;
   streaming: boolean;
   composerRef: React.RefObject<View | null>;
@@ -52,7 +51,7 @@ export const Composer = React.memo(function ({
     if (!canSend) {
       return;
     }
-    if (!onSubmit(value, attachments)) {
+    if (onSubmit(value, attachments) === 'unsaved') {
       return;
     }
     setValue('');

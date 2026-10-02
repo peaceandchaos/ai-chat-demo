@@ -8,23 +8,19 @@ import {
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { RootDrawer } from './src/screens/RootDrawer';
 import { startAppSession } from './src/state/appSession';
+import { ChatStoreContext } from './src/state/chatStore';
+import type { ChatStore } from './src/state/chatView';
 
 function App() {
-  // The splash stays up until ChatScreen draws, so waiting here shows nothing new.
-  const [ready, setReady] = useState(false);
+  const [store, setStore] = useState<ChatStore | null>(null);
   useEffect(() => {
     const start = (): void => {
-      startAppSession().then(
-        () => setReady(true),
-        () => {
-          void BootSplash.hide({ fade: true });
-          Alert.alert(
-            'Something went wrong',
-            'Your chats could not be opened.',
-            [{ text: 'Retry', onPress: start }],
-          );
-        },
-      );
+      startAppSession().then(setStore, () => {
+        void BootSplash.hide({ fade: true });
+        Alert.alert('Something went wrong', 'Your chats could not be opened.', [
+          { text: 'Retry', onPress: start },
+        ]);
+      });
     };
     start();
   }, []);
@@ -33,7 +29,11 @@ function App() {
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <KeyboardProvider>
         <StatusBar barStyle="light-content" backgroundColor="transparent" />
-        {ready ? <RootDrawer /> : null}
+        {store ? (
+          <ChatStoreContext value={store}>
+            <RootDrawer />
+          </ChatStoreContext>
+        ) : null}
       </KeyboardProvider>
     </SafeAreaProvider>
   );
