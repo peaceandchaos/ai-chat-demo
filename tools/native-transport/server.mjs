@@ -335,7 +335,7 @@ function acceptSocket(req, socket, head) {
       await jobs.update(owner, attemptId, 'fixture', {
         text: 'RESPONSE-BODY-MARKER socket',
         status: 'completed',
-        actualModel: 'gpt-6',
+        actualModel: 'gpt-6.1-sol',
       });
       for (const event of await jobs.events(owner, attemptId, sequence))
         client.send(JSON.stringify({ kind: 'event', event }));

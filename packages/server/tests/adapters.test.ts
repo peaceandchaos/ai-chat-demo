@@ -161,7 +161,7 @@ test('Responses uses a real socket, store:false, and receives official compactio
     });
     const received: ProviderChunk[] = [];
     const result = await client.generate(
-      'gpt-6',
+      'gpt-6.1-sol',
       input,
       signal,
       before,
@@ -194,7 +194,9 @@ test('standalone compaction keeps its entire canonical replacement window', asyn
     apiKey: 'example-key',
     fetcher: () => Promise.resolve(Response.json({ output })),
   });
-  expect(await client.compact('gpt-6', input, signal, before)).toEqual(output);
+  expect(await client.compact('gpt-6.1-sol', input, signal, before)).toEqual(
+    output,
+  );
   expect(trimCompacted([...input, ...output])).toEqual(output.slice(1));
 });
 

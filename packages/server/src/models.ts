@@ -24,15 +24,15 @@ export const models: Record<ModelKey, ModelConfig> = {
     maxOutput: 32_768,
     threshold: 800_000,
   },
-  'gpt-5.6': {
-    id: 'gpt-5.6-sol',
+  'gpt-6.1-sol': {
+    id: 'gpt-6.1-sol',
     wire: 'responses',
     window: 1_050_000,
     maxOutput: 32_768,
     threshold: 800_000,
   },
-  'gpt-6': {
-    id: 'gpt-6-sol',
+  'gpt-6-astra': {
+    id: 'gpt-6-astra',
     wire: 'responses',
     window: 1_050_000,
     maxOutput: 32_768,
