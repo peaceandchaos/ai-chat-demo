@@ -1,4 +1,14 @@
+import { relative, sep } from 'node:path';
 import { eslintCompatPlugin } from '@oxlint/plugins';
+
+function isConstAssertion(node) {
+  const type = node.typeAnnotation;
+  return (
+    type.type === 'TSTypeReference' &&
+    type.typeName.type === 'Identifier' &&
+    type.typeName.name === 'const'
+  );
+}
 
 export default eslintCompatPlugin({
   meta: { name: 'project' },
@@ -32,6 +42,59 @@ export default eslintCompatPlugin({
                 context.report({ loc: comment.loc, messageId: 'missing' });
               }
             }
+          },
+        };
+      },
+    },
+    'no-type-assertion': {
+      meta: {
+        type: 'problem',
+        schema: [
+          {
+            type: 'object',
+            properties: {
+              allow: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    file: { type: 'string', minLength: 1 },
+                    reason: { type: 'string', minLength: 1 },
+                  },
+                  required: ['file', 'reason'],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ['allow'],
+            additionalProperties: false,
+          },
+        ],
+        messages: {
+          assertion:
+            "Parse or narrow the value instead of asserting its type. A reviewed boundary file may be listed in this rule's allow option with a reason.",
+        },
+      },
+      create(context) {
+        const file = relative(context.cwd, context.filename)
+          .split(sep)
+          .join('/');
+        if (context.options[0].allow.some(entry => entry.file === file))
+          return {};
+        const report = node => context.report({ node, messageId: 'assertion' });
+        return {
+          TSAsExpression(node) {
+            if (!isConstAssertion(node)) report(node);
+          },
+          TSTypeAssertion(node) {
+            if (!isConstAssertion(node)) report(node);
+          },
+          TSNonNullExpression: report,
+          VariableDeclarator(node) {
+            if (node.definite) report(node);
+          },
+          PropertyDefinition(node) {
+            if (node.definite) report(node);
           },
         };
       },

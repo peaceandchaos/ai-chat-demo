@@ -41,19 +41,12 @@ afterAll(() => {
   if (!fixturesExisted) rmdirSync(fixtures);
 });
 
-function lint(source) {
+function lint(source, config = configFile) {
   const file = join(directory, 'input.ts');
   writeFileSync(file, source);
   return spawnSync(
     process.execPath,
-    [
-      executable,
-      '--config',
-      configFile,
-      '--deny-warnings',
-      '--no-ignore',
-      file,
-    ],
+    [executable, '--config', config, '--deny-warnings', '--no-ignore', file],
     {
       cwd: app,
       encoding: 'utf8',
@@ -113,6 +106,54 @@ test.each([
   const result = lint(source);
   expect(result.status).toBe(1);
   expect(result.stdout + result.stderr).toContain(rule);
+});
+
+test.each([
+  ['an as', "export const value = JSON.parse('1') as number;"],
+  ['an angle-bracket', "export const value = <number>JSON.parse('1');"],
+  ['a non-null', 'export const first = [1].at(0)!;'],
+  ['a definite-assignment', 'export let value!: number;'],
+  ['a definite-property', 'export class Box { value!: number; }'],
+])('rejects %s type assertion', (_kind, source) => {
+  const result = lint(source);
+  expect(result.status).toBe(1);
+  expect(result.stdout).toContain('project(no-type-assertion)');
+});
+
+test('allows const assertions, and assertions in a listed boundary file', () => {
+  expect(lint("export const modes = ['a', 'b'] as const;").status).toBe(0);
+  const config = require('../../.oxlintrc.json');
+  const listed = join(app, '.lint-policy-allow-test.json');
+  writeFileSync(
+    listed,
+    JSON.stringify({
+      ...config,
+      ignorePatterns: [],
+      rules: {
+        ...config.rules,
+        'anti-slop/require-safety-comment-for-type-assertion': 'off',
+        'project/no-type-assertion': [
+          'error',
+          {
+            allow: [
+              {
+                file: 'tools/fixtures/lint-policy/input.ts',
+                reason: 'Fixture boundary.',
+              },
+            ],
+          },
+        ],
+      },
+    }),
+  );
+  try {
+    const source =
+      'export function widen(value: number) { return value as number | string; }';
+    expect(lint(source).stdout).toContain('project(no-type-assertion)');
+    expect(lint(source, listed).status).toBe(0);
+  } finally {
+    rmSync(listed, { force: true });
+  }
 });
 
 test('allows a documented raw-input decoder exception', () => {
