@@ -673,7 +673,8 @@
           {
             "finding": "Open, Low. tools/skills/ledger.cjs:62 tests rule.check in checks, and ledger.cjs:70 reads config.rules[rule.rule], both through the object prototype. A ledger entry that names check \"constructor\" or \"toString\", or lint rule \"constructor\", counts as enforced. Probe: review-evidence/ledger-prototype-probe.log accepts constructor and toString and rejects only \"retired\". Object.hasOwn would fix both lines.",
             "cites": "Fix Root Causes",
-            "open": "The reviewed range does not fix it."
+            "commit": "735942b8e0478a4a105811deda24c2c58bf036b0",
+            "patch": "dddf7d6c5ac7f2b48c775ac100f093ca70afdf86"
           }
         ],
         "receipts": [
@@ -735,7 +736,7 @@
           {
             "finding": "Open, Low. tools/skills/ledger.cjs:62 accepts a range check as enforcement. tools/skills/ledger.json:4-12 does this today: lesson commit-types names check commit-types, the typecheck:range range check. Hosted CI runs verify:current without --base, so range checks do not run there, and the lesson counts as enforced by a check that no hosted job runs. Scenario: a range edit that leaves an earlier commit uncompilable recurs in a hosted run, and the ledger still reports the lesson as enforced.",
             "cites": "Prove It Works",
-            "open": "The reviewed range does not fix it."
+            "open": "Counts once the CI patch lands. work/skill-process-evidence/ci-range-checks.patch makes hosted CI pass --base (the pull request base, or github.event.before on push, failing closed when it is all zeros). Until the owner applies it, hosted CI runs no range check, so commit-types still counts as enforced by a check no hosted job runs."
           },
           {
             "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
@@ -838,7 +839,8 @@
           {
             "finding": "Open, Low. definesTest at tools/skills/ledger.cjs:48-54 accepts a test call anywhere in the file, including inside describe.skip, and does not check that Jest discovers the file. Probe: review-evidence/ledger-describe-skip-probe.log reports no problem for a named test inside describe.skip. The jest/no-disabled-tests lint rule covers files in the test glob, but a file outside Jest discovery passes with no test ever running.",
             "cites": "Test behavior, not implementation",
-            "open": "The reviewed range does not fix it."
+            "commit": "e6091a624e5e9f121e6533426f847be93ffa8071",
+            "patch": "813592f1cc524d0ec0fc8a767a0be45b670ee05f"
           },
           {
             "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",

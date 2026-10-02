@@ -700,7 +700,8 @@
           {
             "finding": "Open, Low. tools/skills/routing.cjs:241 matches name: on any line after the opening ---, because (?:.*\\n)*? can cross the closing ---. Scenario: a SKILL.md whose frontmatter has no name, and whose body has the line \"name: deslop\", passes resolveSkill for deslop. The hash lock still pins the file content, so the effect is a wrong error message, not a forged receipt.",
             "cites": "Boundary Discipline",
-            "open": "The reviewed range does not fix it."
+            "commit": "644fab0072d30a73c2eb2035093cd25e3249e259",
+            "patch": "03910c5425410a9ead10dfd7334d09d7d2f76dd9"
           }
         ],
         "receipts": [
@@ -731,7 +732,8 @@
           {
             "finding": "Open, Low. tools/skills/change.cjs:66-71 reads only headers that start with \"+++ b/\". With core.quotePath=false, git still quotes a path that holds a double quote, a backslash, or a control character, and prints +++ \"b/a\\\"b.js\" (review-evidence/quote-probe.log). parseAddedLines then sets current to null and drops every added line of that file, so no addedLines rule fires for it. Scenario: a file named a\"b.ts adds a fetch call, and the fetch-timeout lesson is not required. 8113bfe fixed the spaced-path instance of this pattern, but not the quoted one.",
             "cites": "Fix Root Causes",
-            "open": "The reviewed range does not fix it."
+            "commit": "c7667dece603111287e3f668b1c10a817aed5ce5",
+            "patch": "9ec15626664a1817b669f610f81a300b3554468b"
           }
         ],
         "receipts": [

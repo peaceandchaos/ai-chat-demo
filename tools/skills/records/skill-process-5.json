@@ -604,7 +604,8 @@
           {
             "finding": "Open, Low. I applied this skill inline and did not dispatch the comment-sicko agent, because this review session may not spawn agents. The comment at tools/skills/records.cjs:364-365 says an author's receipt never stands in for a reviewer's. The code excludes only actors in this record's own author section (records.cjs:371), so another record's author receipt does stand in. The comment states a guarantee the code does not have.",
             "cites": "Steps",
-            "open": "The reviewed range does not fix it."
+            "commit": "06e4a3d48d93ab845391f903d75e3b21c319d317",
+            "patch": "ee3de23c9f0fa67c5a2f2980839dff52f15a955e"
           },
           {
             "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
@@ -671,12 +672,13 @@
           {
             "finding": "Open, High. skills:record --review fills each review entry with the earliest valid receipt from any actor that is not in this record's author section (tools/skills/records.cjs:366-389, tools/skills/receipts.cjs:121-135). It does not prefer, or require, the reviewer running the command. In this review it put another agent's receipt into 50 of 103 review entries: the 5d author a42657a13c0275804 in records 1 to 5, and the unidentified ad1b4f1b47d1a5c1a in records 1 to 3 (review-evidence/review-pull-1-2-3.txt, review-pull-4-5-5d.txt). Scenario: a reviewer who loads no skill runs the command in a clone where any non-author agent loaded the skills on a range commit, and the review section fills with receipts the reviewer never made.",
             "cites": "Prove It Works",
-            "open": "The reviewed range does not fix it."
+            "open": "The review pull now skips every pair with a receipt on the author side and never edits the author section (06e4a3d), but it still cannot prefer or require the reviewer who runs it. The command has no reliable way to know the invoking agent: Claude Code passes agent_id to the hook, not to Bash subprocesses, and every agent in a session shares the session id. Owner decision needed: a self-declared --agent flag (any agent can forge it), binding to the worktree cwd hash (binds a worktree, not an agent), a separate reviewer session, or harness support that exposes the agent id to subprocesses."
           },
           {
             "finding": "Open, High. Author receipts are checked across all records together. receiptProblems at tools/skills/receipts.cjs:100-105 asks only whether some record holds a valid author receipt for each required skill. Probe: record 5d with every receipt removed still passes skills:check (review-evidence/gap/probe-empty-receipts.log, commit 51589257). A record's receipts do not have to belong to that record's author.",
             "cites": "Prove It Works",
-            "open": "The reviewed range does not fix it."
+            "commit": "6e186e2a17c69c25cd3b91dae02c84c34a4f39a7",
+            "patch": "e861ecb23ab7ce6081efaec0a8b3326f843a2b2c"
           },
           {
             "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
@@ -748,7 +750,8 @@
           {
             "finding": "Open, Medium. skills:record --review still runs the author scaffold (tools/skills/records.cjs:339-354 via writeRecord at 401). It adds empty author entries and extra files whenever the review base differs from the author's base. Running it on skill-process-1 from e22c06d added 7 author entries (review-evidence/record-1-e22c06d-summary.txt). A reviewer then edits the author's claims by accident, or must restore them by hand, as I did. The review run should leave the author section alone.",
             "cites": "Subtract Before You Add",
-            "open": "The reviewed range does not fix it."
+            "commit": "06e4a3d48d93ab845391f903d75e3b21c319d317",
+            "patch": "ee3de23c9f0fa67c5a2f2980839dff52f15a955e"
           }
         ],
         "receipts": [
@@ -815,7 +818,8 @@
           {
             "finding": "Open, Medium. docs/skills.md:167 says \"A receipt proves that the agent loaded the skill text\". The hook signs a receipt for every Skill tool call (tools/skills/receipt-hook.mjs:153-157) and hashes the file on disk, without reading the tool response. A call that the Skill tool answers with \"already loaded\" still yields a receipt, as in the 5d author pass. docs/skills.md:97 says the check proves \"an agent loaded each required skill while working on the change\", but the check accepts any record's receipt on any range commit (see principle-prove-it-works).",
             "cites": "Voice and repo specifics",
-            "open": "The reviewed range does not fix it."
+            "commit": "8e1afe338a36cac7e07712775bcfea2b58f1dd0c",
+            "patch": "9df3aa5adb8836f7f7c70ac37dadf05aff05b552"
           },
           {
             "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
@@ -851,7 +855,7 @@
           {
             "finding": "Open, Low. routing.json:30 maps test-prune to the repository root, but the Skill tool loads it as glow-guides:test-prune, which tools/skills/receipt-hook.mjs:111-127 resolves to the plugin copy. The receipts verify only because both copies hash to 807f9139 today. If either copy changes, every test-prune receipt fails against the lock until the other copy matches.",
             "cites": "Review questions",
-            "open": "The reviewed range does not fix it."
+            "open": "Left open for an owner decision. AGENTS.md names the repository test-prune copy, and routing.json maps it to the repository root, but the Skill tool loads glow-guides:test-prune and the hook hashes the plugin copy. Both hash to 807f9139 today, and a drift fails closed against the lock, so no receipt can be forged. Which copy is canonical, and whether routing should name the plugin, is an owner choice that changes a control."
           },
           {
             "finding": "This entry's receipt is from agent a42657a13c0275804, the 5d author, at head 8ac891b. It is not mine. skills:record --review copied the earliest valid receipt from any actor outside this record's author section. My own receipt for this skill, at d6c52c9, is in the skill-process-5d review.",
@@ -887,7 +891,8 @@
           {
             "finding": "Open, Low. tools/skills/install-receipt-hook.mjs:103-146 is a 44-line LCS diff over normalized JSON, to show the settings change. plannedSettings at 78-101 already knows every change it makes: the entry it adds and the spike entries it removes. Printing that list would delete the diff function. Proposed for owner review, not applied.",
             "cites": "Non-Negotiable Additional Standards 0",
-            "open": "The reviewed range does not fix it."
+            "commit": "25c6e4a5d456bcd00c01fb5bde00954f6d12a07f",
+            "patch": "b9e2deb6aff6a05d77599aa4530477fed3df92b6"
           }
         ],
         "receipts": [

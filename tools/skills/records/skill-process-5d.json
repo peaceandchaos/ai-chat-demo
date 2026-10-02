@@ -137,6 +137,11 @@
           "finding": "Before, after, and mutation runs are kept as logs a reviewer can rerun.",
           "cites": "Script the check when you can",
           "none": "Logs are in work/skill-process-evidence/pr5d/."
+        },
+        {
+          "finding": "Disclosure, added by the PR 5e author. Every author receipt in this record is a late reload. The 5d author made all ten Skill calls from 13:21:55 to 13:22:00Z on 8ac891b, after the last 5d code commit, and the independent review reports that the Skill tool answered them \"already loaded\" (skill-process-evidence/review/report.md, \"5d late reloads\"). These receipts show a signed Skill call while the locked text was on disk. They do not show that the author read the skills before writing the 5d code.",
+          "cites": "Prove It Works",
+          "none": "A receipt cannot be remade for work that is already done, and another load now would only add a later receipt. The 5d report disclosed this, and the record now states it too."
         }
       ],
       "receipts": [
@@ -482,7 +487,8 @@
           {
             "finding": "Open, High. The pull request review rule is checked across all records together. records.cjs:282-287 checks only that each record has a review section. receiptProblems at tools/skills/receipts.cjs:106-114 then asks whether any record holds a non-author review receipt for each skill. A record whose review entries hold only its own author's receipts passes when another record's review has a reviewer receipt for the same skill. Probe: with four 5d review entries holding only the 5d author's own receipts, a pull request run passes and prints \"with independent review\" (review-evidence/gap/probe-review-own-author.log, commit 3c9cf622).",
             "cites": "Prove It Works",
-            "open": "The reviewed range does not fix it."
+            "commit": "6e186e2a17c69c25cd3b91dae02c84c34a4f39a7",
+            "patch": "e861ecb23ab7ce6081efaec0a8b3326f843a2b2c"
           },
           {
             "finding": "The 5d author receipts were made at 13:21:55 to 13:22:00Z on 8ac891b, after all 5d code commits, and the Skill tool answered \"already loaded\". They prove a Skill call bound to a range commit, not a fresh read at that head. The earlier loads were bound to 6424990, outside the range. The 5d report discloses this; the record does not.",
@@ -580,7 +586,8 @@
           {
             "finding": "Open, Medium. README.md:65 says verify:commit fails when \"the record\" misses a required skill or \"lacks a signed receipt for a required skill\". AGENTS.md:38 says verify:commit \"fails until the record covers every required skill with a valid receipt\". Both came from 9e55391. The check aggregates coverage and receipts across all records in the range, so a single record can miss both and pass (review-evidence/gap/).",
             "cites": "Voice and repo specifics",
-            "open": "The reviewed range does not fix it."
+            "commit": "8e1afe338a36cac7e07712775bcfea2b58f1dd0c",
+            "patch": "9df3aa5adb8836f7f7c70ac37dadf05aff05b552"
           }
         ],
         "receipts": [
@@ -673,7 +680,8 @@
           {
             "finding": "Open, Medium. AGENTS.md:38 is always loaded, and it tells agents that the check enforces per-record coverage and receipts. An agent that trusts it can skip loading skills for one record of a multi-record range and still see the check pass. The line should state what the check enforces today.",
             "cites": "Context pointers",
-            "open": "The reviewed range does not fix it."
+            "commit": "8e1afe338a36cac7e07712775bcfea2b58f1dd0c",
+            "patch": "9df3aa5adb8836f7f7c70ac37dadf05aff05b552"
           }
         ],
         "receipts": [
