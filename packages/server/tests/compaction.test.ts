@@ -177,7 +177,7 @@ test('text that JSON escapes heavily is still split into pieces below the thresh
   const calls: ResponseInputItem[][] = [];
   const prepared = await prepareContext(
     input,
-    'gpt-6',
+    'gpt-6.1-sol',
     signal,
     before,
     services(calls),
