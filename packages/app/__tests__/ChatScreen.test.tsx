@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, create } from 'react-test-renderer';
+import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { ChatScreen } from '../src/screens/ChatScreen';
 import type { ChatViewState } from '../src/state/chatView';
 
@@ -51,8 +51,8 @@ jest.mock('../src/state/chatStore', () => ({
 
 const followTail = { on: { dataChange: true, itemLayout: true } };
 
-function openChat(isStreaming: boolean) {
-  mockState = {
+function chatState(isStreaming: boolean): ChatViewState {
+  return {
     chatId: 'chat',
     messages: [
       { id: 'question', role: 'user', text: 'Question', status: 'done' },
@@ -68,13 +68,25 @@ function openChat(isStreaming: boolean) {
     stop: () => undefined,
     newChat: () => undefined,
   };
+}
+
+function openChat(isStreaming: boolean) {
+  mockState = chatState(isStreaming);
+  const screen = () => <ChatScreen onOpenRecents={() => undefined} />;
+  let renderer!: ReactTestRenderer;
   act(() => {
-    create(<ChatScreen onOpenRecents={() => undefined} />);
+    renderer = create(screen());
   });
+  return {
+    finish: () => {
+      mockState = chatState(false);
+      act(() => renderer.update(screen()));
+    },
+  };
 }
 
 test('a reply still streaming when its chat opens, as after a relaunch, is followed to the end, and a drag pauses it', () => {
-  openChat(true);
+  const chat = openChat(true);
   expect(mockList.props?.initialScrollAtEnd).toBe(true);
   expect(mockList.props?.maintainScrollAtEnd).toEqual(followTail);
 
@@ -82,6 +94,10 @@ test('a reply still streaming when its chat opens, as after a relaunch, is follo
   expect(mockList.props?.maintainScrollAtEnd).toBeUndefined();
 
   act(() => mockList.props?.onEndVisible(true));
+  expect(mockList.props?.maintainScrollAtEnd).toEqual(followTail);
+
+  // The finished reply's action row is followed into view too.
+  chat.finish();
   expect(mockList.props?.maintainScrollAtEnd).toEqual(followTail);
 });
 

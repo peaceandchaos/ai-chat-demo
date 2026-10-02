@@ -74,7 +74,10 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   // anchored turn and is followed from the start. A drag pauses either.
   const [overflowed, setOverflowed] = useState(false);
   const [paused, setPaused] = useState(false);
-  const resumed = isStreaming && anchorIndex == null;
+  const [resumed, setResumed] = useState(false);
+  if (isStreaming && anchorIndex == null && !resumed) {
+    setResumed(true);
+  }
   const tracking = overflowed || resumed;
   const following = tracking && !paused;
 
@@ -106,6 +109,7 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
         return result;
       }
       setOverflowed(false);
+      setResumed(false);
       setPaused(false);
       setAnchorIndex(messagesLength);
       scrollMessageToEnd({ animated: !isFirstMessage, closeKeyboard: true });
