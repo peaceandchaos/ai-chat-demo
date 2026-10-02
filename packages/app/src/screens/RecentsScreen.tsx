@@ -1,5 +1,18 @@
-import React, { useCallback, useDeferredValue, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import {
+  AppState,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import {
   LegendList,
   type LegendListRenderItemProps,
@@ -12,6 +25,26 @@ import { useChatStore } from '../state/chatStore';
 import { filterRecents, recentTime, type Recent } from '../state/recents';
 import { theme } from '../theme';
 
+// The time the day labels count from. It moves at the next midnight and when
+// the app comes back to the foreground, where timers may not have run.
+function useNow(): number {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const refresh = () => setNow(Date.now());
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const timer = setTimeout(refresh, midnight.getTime() - now);
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') refresh();
+    });
+    return () => {
+      clearTimeout(timer);
+      subscription.remove();
+    };
+  }, [now]);
+  return now;
+}
+
 type RecentsScreenProps = {
   onNewChat: () => void;
   onOpenChat: (chatId: string) => void;
@@ -23,14 +56,16 @@ export function RecentsScreen({ onNewChat, onOpenChat }: RecentsScreenProps) {
   const [query, setQuery] = useState('');
   // Typing stays responsive while a long list filters.
   const deferredQuery = useDeferredValue(query);
-  const recents = useMemo(() => {
-    const now = Date.now();
-    return filterRecents(chats, deferredQuery).map((chat): Recent => ({
-      id: chat.id,
-      title: chat.title,
-      time: recentTime(chat.updatedAt, now),
-    }));
-  }, [chats, deferredQuery]);
+  const now = useNow();
+  const recents = useMemo(
+    () =>
+      filterRecents(chats, deferredQuery).map((chat): Recent => ({
+        id: chat.id,
+        title: chat.title,
+        time: recentTime(chat.updatedAt, now),
+      })),
+    [chats, deferredQuery, now],
+  );
 
   const renderRecent = useCallback(
     ({ item }: LegendListRenderItemProps<Recent>) => (
