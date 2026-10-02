@@ -150,6 +150,8 @@ The Skill tool reports only the skill name. The hook finds the `SKILL.md` throug
 
 The command reads only receipts made in this clone, matched by the hash of the git common dir. It keeps each entry's valid receipts and adds the earliest valid receipt to an entry that has none. The author side skips the reviewer's receipts, and the review side skips the author's. It names each required skill that still has no receipt.
 
+A `--review` run needs the author's record, and its `<base>` must be the record's `base` or a commit with the same patch-id. It writes only the `review` section. It never changes `base`, the author entries, or their findings.
+
 ### Which receipts count
 
 The check verifies each receipt with the committed public key. A receipt is valid when:
@@ -171,6 +173,7 @@ This rule survives a cherry-pick and a rebase that keep the patches, because a c
 - A receipt made on the base by another change in the same clone also counts for this change. `skills:record` reads only this clone's receipts, but CI cannot check the clone, because the common-dir hash differs in CI.
 - The deny rules stop an agent that names the key, the hook, or the receipts. A program that opens those files without naming them can still read the key and sign a receipt. The receipts stop lazy and mistaken claims. They do not stop deliberate forgery by a process running as the same user.
 - A subagent that the author's session starts has its own agent id, so its receipts count as a reviewer's. The check cannot tell an independent reviewer from the author's helper. Review policy decides who may review.
+- `skills:record --review` cannot tell which agent runs it. The hook reads the agent id from the payload that Claude Code passes to it. A command that an agent runs gets the session id in `CLAUDE_CODE_SESSION_ID`, which every agent in the session shares, and no agent id. A review run can therefore pull a receipt that another agent made. Before you commit a review, confirm that each pulled receipt is from your own load, by its `cwd` hash when you work in your own worktree.
 - The pull request rule applies only where the skill-record check runs. Hosted CI runs `verify:current` without `--base`, so it skips the range checks, and the rule has no effect there yet. It takes effect when the workflow fetches history and passes the pull request's base as `--base`.
 - The rule reads `GITHUB_EVENT_NAME`. A run without that value applies the author rule, so only the protected CI check can enforce review.
 - A push run on `main` checks no range. After a merge, the merge base of `main` and `origin/main` is the pushed commit, so the range is empty. `verify:current` lists the range checks under `notRun`, and `verify:commit` fails until it gets an earlier `--base`.

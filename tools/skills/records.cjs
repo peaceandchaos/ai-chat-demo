@@ -486,7 +486,7 @@ function citePatch(root, commits, finding) {
   if (!inRange && copy) finding.commit = copy[0].slice(0, 12);
 }
 
-function scaffold(record, required, review) {
+function scaffoldAuthor(record, required) {
   for (const { skill, reasons } of required) {
     let entry = record.skills.find(candidate => candidate.skill === skill);
     if (!entry) {
@@ -502,7 +502,9 @@ function scaffold(record, required, review) {
     entry.files.sort();
   }
   record.skills.sort((a, b) => (a.skill < b.skill ? -1 : 1));
-  if (!review) return;
+}
+
+function scaffoldReview(record, required) {
   record.review ??= { skills: [] };
   for (const { skill } of required) {
     if (!record.review.skills.some(entry => entry.skill === skill))
@@ -511,8 +513,9 @@ function scaffold(record, required, review) {
   record.review.skills.sort((a, b) => (a.skill < b.skill ? -1 : 1));
 }
 
-// Pulls receipts for one side of the record. The other side's sessions are
-// excluded, so an author's receipt never stands in for a reviewer's.
+// Pulls receipts for one side of the record, skipping every session and agent
+// pair that holds a receipt on the other side. The command cannot tell which
+// pair runs it, so a review run may pull another non-author agent's receipt.
 function pullSection(record, start, scope, pull) {
   const own = record.review ? record.review.skills : [];
   const [entries, others] = pull.review
@@ -535,18 +538,43 @@ function pullSection(record, start, scope, pull) {
   return missing;
 }
 
+// A review run needs the author's record and its base, and writes only the
+// review section.
+function reviewedRecord(root, change, path, id) {
+  const relativePath = `${recordsDirectory}/${id}.json`;
+  if (!existsSync(path))
+    throw new Error(
+      `${relativePath} does not exist. The author runs npm run skills:record -- ${id} <base> first.`,
+    );
+  const record = recordSchema.parse(JSON.parse(readFileSync(path, 'utf8')));
+  const { commit, patch } = record.base;
+  if (
+    commit !== change.base &&
+    (!patch || baseOf(root, change.base).patch !== patch)
+  )
+    throw new Error(
+      `${relativePath} has base ${commit.slice(0, 12)}, but this run's base is ${change.base.slice(0, 12)}. Run the review with the record's base.`,
+    );
+  return record;
+}
+
 // `pull` holds { review, candidates, key, lock, routing }, read from the
-// working tree and the receipts file. Returns the path and the skills that
-// still have no receipt.
+// working tree and the receipts file. An author run writes the base and the
+// author section, and a review run writes only the review section. Returns the
+// path and the skills that still have no receipt.
 function writeRecord(root, change, id, pull) {
   if (!changeId.test(id))
     throw new Error('Name the change in lowercase-with-dashes.');
   const directory = join(root, recordsDirectory);
   const path = join(directory, `${id}.json`);
-  const record = existsSync(path)
-    ? recordSchema.parse(JSON.parse(readFileSync(path, 'utf8')))
-    : { change: id, skills: [] };
-  record.base = baseOf(root, change.base);
+  let record;
+  if (pull.review) record = reviewedRecord(root, change, path, id);
+  else {
+    record = existsSync(path)
+      ? recordSchema.parse(JSON.parse(readFileSync(path, 'utf8')))
+      : { change: id, skills: [] };
+    record.base = baseOf(root, change.base);
+  }
   const others = existsSync(directory)
     ? readdirSync(directory)
         .filter(file => file.endsWith('.json') && file !== `${id}.json`)
@@ -560,15 +588,11 @@ function writeRecord(root, change, id, pull) {
   );
   const end = rangeEnd(root, change.base, starts, change.head);
   const scope = recordScope(root, pull.routing, change.base, end, change.head);
-  scaffold(
-    record,
-    requiredSkills(pull.routing, scope.own).required,
-    pull.review,
-  );
-  for (const finding of [
-    ...record.skills,
-    ...(record.review?.skills ?? []),
-  ].flatMap(entry => entry.findings))
+  const required = requiredSkills(pull.routing, scope.own).required;
+  if (pull.review) scaffoldReview(record, required);
+  else scaffoldAuthor(record, required);
+  const section = pull.review ? record.review.skills : record.skills;
+  for (const finding of section.flatMap(entry => entry.findings))
     citePatch(root, scope.later, finding);
   const missing = pull.lock
     ? pullSection(record, change.base, scope, pull)

@@ -1,5 +1,6 @@
 const { spawnSync } = require('node:child_process');
 const {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -867,6 +868,57 @@ test('names the skills that still have no receipt', () => {
       '',
     ].join('\n'),
   );
+});
+
+test('a review run changes only the review section, and needs the record and its base', () => {
+  git(repository, ['checkout', '--quiet', '-B', 'review-only', work]);
+  git(repository, ['clean', '--force', '-d', '--quiet']);
+  const path = join(repository, 'tools/skills/records/review-only.json');
+  writeRecords([
+    {
+      change: 'review-only',
+      skills: [
+        {
+          skill: 'always',
+          files: ['README.md'],
+          findings: [
+            { finding: 'Named a fix.', cites: 'Steps 1', commit: work },
+          ],
+          receipts: [],
+        },
+      ],
+    },
+  ]);
+  const before = readFileSync(path, 'utf8');
+  const review = skills(['record', 'review-only', base, '--review']);
+  expect(review.stderr).toBe('');
+  expect(review.status).toBe(0);
+  const { review: section, ...author } = JSON.parse(readFileSync(path, 'utf8'));
+  expect(author).toEqual(JSON.parse(before));
+  expect(section).toEqual({
+    skills: ['always', 'source-care'].map(skill => ({
+      skill,
+      findings: [],
+      receipts: [],
+    })),
+  });
+
+  const reviewed = readFileSync(path, 'utf8');
+  const moved = skills(['record', 'review-only', work, '--review']);
+  expect(moved.stderr).toBe(
+    `tools/skills/records/review-only.json has base ${base.slice(0, 12)}, but this run's base is ${work.slice(0, 12)}. Run the review with the record's base.\n`,
+  );
+  expect(moved.status).toBe(1);
+  expect(readFileSync(path, 'utf8')).toBe(reviewed);
+
+  const absent = skills(['record', 'unwritten', base, '--review']);
+  expect(absent.stderr).toBe(
+    'tools/skills/records/unwritten.json does not exist. The author runs npm run skills:record -- unwritten <base> first.\n',
+  );
+  expect(absent.status).toBe(1);
+  expect(
+    existsSync(join(repository, 'tools/skills/records/unwritten.json')),
+  ).toBe(false);
 });
 
 test('accepts a citation and a receipt whose commit was cherry-picked onto a new base, and the scaffold cites the copy', () => {
