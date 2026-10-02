@@ -61,7 +61,10 @@ function parseAddedLines(output) {
   let current = null;
   for (const line of output.split('\n')) {
     if (line.startsWith('+++ ')) {
-      current = line.startsWith('+++ b/') ? line.slice(6) : null;
+      // git ends the path with a tab when it contains a space.
+      current = line.startsWith('+++ b/')
+        ? line.slice(6).replace(/\t$/u, '')
+        : null;
       if (current && !added.has(current)) added.set(current, []);
     } else if (current && line.startsWith('+')) {
       added.get(current).push(line.slice(1));

@@ -331,3 +331,38 @@ test('the committed routing names only catalogued skills and roots', () => {
   );
   expect(parseRouting(text).rules.length).toBeGreaterThan(0);
 });
+
+test('matches added lines in a file whose path has a space', () => {
+  const repository = join(fixture, 'spaced');
+  mkdirSync(repository);
+  git(repository, ['init', '--quiet']);
+  git(repository, ['config', 'core.hooksPath', '/dev/null']);
+  git(repository, ['config', 'user.name', 'Skills fixture']);
+  git(repository, ['config', 'user.email', 'fixture@example.invalid']);
+  const network = fixtureRouting.rules.find(rule => rule.id === 'network');
+  write(
+    repository,
+    'tools/skills/routing.json',
+    JSON.stringify({ ...fixtureRouting, rules: [network] }),
+  );
+  const start = commit(repository, 'Base');
+  write(
+    repository,
+    'src/my client.ts',
+    "export const load = () => fetch('/');\n",
+  );
+  commit(repository, 'feat: load the page');
+  const result = spawnSync(process.execPath, [cli, 'required', start], {
+    cwd: repository,
+    encoding: 'utf8',
+    env,
+  });
+  expect(result.stderr).toBe('');
+  expect(result.stdout.split('\n').slice(2)).toEqual([
+    'network-care',
+    read('roots', 'network-care'),
+    '  network: Network.',
+    '    src/my client.ts',
+    '',
+  ]);
+});
