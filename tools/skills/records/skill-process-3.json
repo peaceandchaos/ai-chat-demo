@@ -38,8 +38,22 @@
           "none": "Documented in README.md."
         },
         {
-          "finding": "After rebasing, work/ui-pr3-c imports loadDeviceId, openArchive, followAppState, isActive, ChatRecord, AttemptActivity, MemoryStorage, and uuid, so their entries fail and must be removed there.",
-          "none": "Intended; each entry names the branch."
+          "finding": "work/ui-pr3-d replaces work/ui-pr3-c. On a copy of work/ui-pr3-d (7248857), exports:check finds importers for loadDeviceId, openArchive, followAppState, ChatRecord, AttemptActivity, MemoryStorage, and uuid, and none for isActive.",
+          "commit": "abe3278",
+          "patch": "97d2b4375a89b4e664d163ed372f2973d5fa67b0"
+        },
+        {
+          "finding": "cc6ba67 stopped exporting executeCommand, which tools/native-transport/server.mjs imports. Loading server.mjs failed with \"does not provide an export named 'executeCommand'\".",
+          "commit": "ae5e62f",
+          "patch": "f4d78d219271dbf91afbe869f3394aec2b6413fe"
+        },
+        {
+          "finding": "work/ui-pr3-d adds packages/app/src/state/images.ts with an EncodeJpeg export that nothing imports, so exports:check will fail there after it rebases onto this branch.",
+          "none": "Left to work/ui-pr3-d, which the UI owner owns."
+        },
+        {
+          "finding": "No tracked file disables project/no-type-assertion inline, so rejecting those comments breaks nothing (git grep finds none).",
+          "none": "Evidence."
         }
       ]
     },
@@ -49,6 +63,10 @@
       "findings": [
         {
           "finding": "Checked the new tools for wrappers, defensive branches, and names that restate types.",
+          "none": "None found."
+        },
+        {
+          "finding": "Checked the PR3b fixes: the JavaScript import scan, the disable rejection, the default options, and the narrowing on wire.",
           "none": "None found."
         }
       ]
@@ -60,6 +78,10 @@
         {
           "finding": "Three comments were added: the install-input rule and the HEAD rule in range-typecheck.cjs, and the compact_threshold meaning in models.ts, which moved from the old type.",
           "none": "Each states a constraint the code cannot show."
+        },
+        {
+          "finding": "PR3b adds two comments: why exports-check.cjs reads JavaScript files, and that typecheck enforces the compactThreshold test. comment-sicko was not spawned; this session spawns no subagents, so the check was by hand.",
+          "none": "Both state a reason the code cannot show."
         }
       ]
     },
@@ -74,6 +96,10 @@
         {
           "finding": "The changes to client.ts, api.ts, and contracts.ts only remove export keywords; parsing at those boundaries is unchanged.",
           "none": "No boundary changed."
+        },
+        {
+          "finding": "The rule options are config input; meta.defaultOptions lets oxlint merge them before schema validation, so the rule body reads a complete option.",
+          "none": "No new boundary."
         }
       ]
     },
@@ -83,7 +109,23 @@
       "findings": [
         {
           "finding": "Root cause: ModelConfig made compactThreshold optional for every model, so a Responses entry without it typechecked and sent compact_threshold: undefined. The compaction tests built exactly that config. The fix makes the field required by the union on wire. With the field optional again, the @ts-expect-error fixture fails the typecheck.",
-          "commit": "bca97be"
+          "commit": "fe53dbd877a9",
+          "patch": "228da3202295d5764927f59c705d199995817d68"
+        },
+        {
+          "finding": "Root cause of the executeCommand removal: exports:check read only the TypeScript projects, so the import in tools/native-transport/server.mjs was invisible. The check now reads relative imports in tracked .js, .mjs, and .cjs files. With all 23 un-exported names exported again, it reports 22, so executeCommand was the only one with a JavaScript importer.",
+          "commit": "873285a",
+          "patch": "d23acd7875e1fdfb7bd0d49a009e56b5a21737dc"
+        },
+        {
+          "finding": "project/require-disable-reason accepted a disable comment for any named rule, so an inline disable could skip the reviewed allow list of project/no-type-assertion.",
+          "commit": "cfe7441",
+          "patch": "ed18de52653be787ad1269997bf675310a3f332b"
+        },
+        {
+          "finding": "project/no-type-assertion read context.options[0].allow with no default, so enabling it as plain \"error\" crashed the plugin.",
+          "commit": "abf1864",
+          "patch": "70d3044cbf7ddf57dfa8bccfde8923aa86b08e83"
         }
       ]
     },
@@ -105,6 +147,10 @@
         {
           "finding": "typecheck:range writes only into a fresh temporary directory, which it removes.",
           "none": "Reruns start clean."
+        },
+        {
+          "finding": "skills:record now rewrites a cited SHA to its in-range copy; running it twice over the same range writes the same record.",
+          "none": "Checked by running it twice."
         }
       ]
     },
@@ -127,8 +173,14 @@
       ],
       "findings": [
         {
-          "finding": "Every un-exported name has no importer on main or on any local work/ui-* branch, which the measurement checked.",
-          "none": "No callers to migrate."
+          "finding": "The earlier claim that no un-exported name had an importer was false: the measurement read only TypeScript, and tools/native-transport/server.mjs imports executeCommand. With the JavaScript scan, the other 22 names have no importer in tracked files here or on work/ui-pr3-d.",
+          "commit": "ae5e62f",
+          "patch": "f4d78d219271dbf91afbe869f3394aec2b6413fe"
+        },
+        {
+          "finding": "ResponsesModelKey and isResponsesModel had callers in providers.ts, responses.ts, and adapters.test.ts. All three now use the config narrowed on wire, and both names are deleted.",
+          "commit": "644b792",
+          "patch": "a7c0517e3e889aef6de3aff110283ebac63df963"
         }
       ]
     },
@@ -160,6 +212,10 @@
         {
           "finding": "typecheck:range on work/image-context-2 fails 91d9451, dd3430e, and 08dab07; 08dab07 still called a removed model id in compaction.test.ts.",
           "none": "Evidence."
+        },
+        {
+          "finding": "PR3b mutations that failed a test or the typecheck: inline disable allowed, only next-line disables rejected, no default options, compactThreshold optional (Unused @ts-expect-error), a provider condition that does not narrow. The JavaScript-importer fixtures failed before 873285a. Logs are in the PR evidence.",
+          "none": "Evidence."
         }
       ]
     },
@@ -169,6 +225,10 @@
       "findings": [
         {
           "finding": "The un-export commits come before the export check, so each commit passes lint and typecheck; typecheck:range over this range passes every commit.",
+          "none": "Evidence."
+        },
+        {
+          "finding": "Each PR3b fix is its own commit on top of the cherry-picked PR3 commits, and each new fixture ran red before its fix.",
           "none": "Evidence."
         }
       ]
@@ -187,6 +247,11 @@
         {
           "finding": "A deletion of modelLabels was considered because nothing reads it.",
           "none": "Kept as an entry: it holds the display names, and the UI owner decides."
+        },
+        {
+          "finding": "The App.tsx file entry and the isActive export entry are gone: index.js imports App, and nothing imports isActive.",
+          "commit": "abe3278",
+          "patch": "97d2b4375a89b4e664d163ed372f2973d5fa67b0"
         }
       ]
     },
@@ -195,6 +260,7 @@
       "files": [
         ".oxlintrc.json",
         "package.json",
+        "packages/server/tests/adapters.test.ts",
         "packages/server/tests/compaction.test.ts",
         "packages/server/tests/models.test.ts",
         "packages/server/tests/session-harness.ts",
@@ -210,7 +276,18 @@
       "findings": [
         {
           "finding": "typecheck:range keyed the shared install to the named head, but the root holds HEAD; a test now names a head that is not HEAD.",
-          "commit": "5a0a3d0"
+          "commit": "3364853a99fc",
+          "patch": "bbcedac776bff71a57553852f752cdc4eae3e1db"
+        },
+        {
+          "finding": "The compactThreshold test asserted that a literal it had just written had wire responses, which nothing could break. The typecheck is the check.",
+          "commit": "5e5e0fb",
+          "patch": "1d3e3e103f22977e059f01b6ce3eb71cacc9d834"
+        },
+        {
+          "finding": "The export fixture had no JavaScript importer, so no test could catch the missed server.mjs import. The fixture now has an .mjs and a .cjs importer and an untracked one.",
+          "commit": "873285a",
+          "patch": "d23acd7875e1fdfb7bd0d49a009e56b5a21737dc"
         }
       ]
     },
@@ -230,6 +307,7 @@
         "packages/server/src/providers.ts",
         "packages/server/src/responses.ts",
         "packages/server/src/worker.ts",
+        "packages/server/tests/adapters.test.ts",
         "packages/server/tests/compaction.test.ts",
         "packages/server/tests/models.test.ts",
         "packages/server/tests/session-harness.ts",
@@ -238,11 +316,13 @@
       "findings": [
         {
           "finding": "ModelConfig allowed a Responses model without its threshold.",
-          "commit": "bca97be"
+          "commit": "fe53dbd877a9",
+          "patch": "228da3202295d5764927f59c705d199995817d68"
         },
         {
-          "finding": "isResponsesModel is a type predicate, which the compiler does not verify.",
-          "none": "Its body is the discriminant test itself, so it cannot drift from the table."
+          "finding": "isResponsesModel is a type predicate, which the compiler does not verify. Narrowing models[model] on wire replaces it.",
+          "commit": "644b792",
+          "patch": "a7c0517e3e889aef6de3aff110283ebac63df963"
         }
       ]
     },
@@ -257,6 +337,10 @@
       "findings": [
         {
           "finding": "client.ts, archive.ts, attempt.ts, and session.ts only lose export keywords on types.",
+          "none": "No runtime change."
+        },
+        {
+          "finding": "archive.ts loses the isActive export; the function and its two callers are unchanged.",
           "none": "No runtime change."
         }
       ]
@@ -273,6 +357,10 @@
         {
           "finding": "client.ts, archive.ts, attempt.ts, and session.ts only lose export keywords on types.",
           "none": "No runtime change."
+        },
+        {
+          "finding": "archive.ts loses the isActive export; the function and its two callers are unchanged.",
+          "none": "No runtime change."
         }
       ]
     },
@@ -281,14 +369,21 @@
       "files": ["<change>", "README.md"],
       "findings": [
         {
-          "finding": "README.md states each new check, its entry or allow list, and the measured cost.",
-          "none": "No change needed."
+          "finding": "README.md said exports:check fails on \"a tracked export that nothing imports\", which was false. It now names what the check reads and what it does not.",
+          "commit": "03e7bba",
+          "patch": "96d56640cb853b514ce446cd2f5156eb8129e159"
+        },
+        {
+          "finding": "README.md did not say that the allow list is the only exemption from project/no-type-assertion or that it defaults to empty.",
+          "commit": "cfe7441",
+          "patch": "ed18de52653be787ad1269997bf675310a3f332b"
         }
       ]
     },
     {
       "skill": "test-prune",
       "files": [
+        "packages/server/tests/adapters.test.ts",
         "packages/server/tests/compaction.test.ts",
         "packages/server/tests/models.test.ts",
         "packages/server/tests/session-harness.ts",
@@ -300,6 +395,10 @@
         {
           "finding": "Each lint fixture covers a distinct assertion syntax, and each export fixture covers a distinct import form. Dropping the handling of non-null, definite, namespace, import-type, dynamic-import, or re-export cases each failed the tests.",
           "none": "Kept all."
+        },
+        {
+          "finding": "adapters.test.ts now passes models[...] configs to ResponsesClient.generate. The assertions on the sent model id and compact_threshold are unchanged, so they still check the real table.",
+          "none": "Kept."
         }
       ]
     },
@@ -309,7 +408,8 @@
       "findings": [
         {
           "finding": "The shared install for range commits was keyed to the wrong commit.",
-          "commit": "5a0a3d0"
+          "commit": "3364853a99fc",
+          "patch": "bbcedac776bff71a57553852f752cdc4eae3e1db"
         },
         {
           "finding": "Export problems came out in checker order, which made the output unstable.",
@@ -318,6 +418,15 @@
         {
           "finding": "A package.json script edit changes the install key and costs one npm ci.",
           "none": "Kept conservative: a narrower key could reuse an install that npm ci would build differently."
+        },
+        {
+          "finding": "ResponsesModelKey rebuilt from the table what narrowing on wire already gives.",
+          "commit": "644b792",
+          "patch": "a7c0517e3e889aef6de3aff110283ebac63df963"
+        },
+        {
+          "finding": "The JavaScript scan could be its own module.",
+          "none": "Kept in exports-check.cjs: one function and one call, and the file stays near 210 lines."
         }
       ]
     },
@@ -337,6 +446,7 @@
         "packages/server/src/providers.ts",
         "packages/server/src/responses.ts",
         "packages/server/src/worker.ts",
+        "packages/server/tests/adapters.test.ts",
         "packages/server/tests/compaction.test.ts",
         "packages/server/tests/models.test.ts",
         "packages/server/tests/session-harness.ts",
@@ -345,7 +455,13 @@
       "findings": [
         {
           "finding": "responses.ts read an optional field and sent it unchecked.",
-          "commit": "bca97be"
+          "commit": "fe53dbd877a9",
+          "patch": "228da3202295d5764927f59c705d199995817d68"
+        },
+        {
+          "finding": "providers.ts narrowed through a user-defined guard where a discriminant check works.",
+          "commit": "644b792",
+          "patch": "a7c0517e3e889aef6de3aff110283ebac63df963"
         }
       ]
     },
@@ -355,6 +471,10 @@
       "findings": [
         {
           "finding": "Checked the README.md additions for filler and long dashes.",
+          "none": "None found."
+        },
+        {
+          "finding": "Checked the PR3b README sentences and commit messages for filler and long dashes.",
           "none": "None found."
         }
       ]
