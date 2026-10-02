@@ -8,7 +8,7 @@ import {
 } from '../../../shared/contracts';
 import { parseResponsesEvent } from '../../../shared/provider-events';
 import { ProviderFailure } from './errors';
-import { models } from './models';
+import { models, type ResponsesModelKey } from './models';
 import type { BeforePaidCall, ProviderChunk } from './provider';
 
 // Strip API-only fields (annotations, item status) while preserving every replay item.
@@ -114,7 +114,7 @@ export class ResponsesClient {
   }
 
   async generate(
-    model: ModelKey,
+    model: ResponsesModelKey,
     input: ResponseInputItem[],
     signal: AbortSignal,
     beforeCall: BeforePaidCall,

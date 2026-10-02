@@ -22,6 +22,11 @@ const config: ModelConfig = {
   maxOutput: 8192,
   threshold: 40_000,
 };
+const responsesConfig: ModelConfig = {
+  ...config,
+  wire: 'responses',
+  compactThreshold: 20_000,
+};
 
 function history(texts: string[]): HistoryEntry[] {
   let parentId: string | null = null;
@@ -161,7 +166,7 @@ test('oversized original text is processed in bounded windows without deleting i
     signal,
     before,
     services(calls),
-    { ...config, wire: 'responses' },
+    responsesConfig,
   );
   expect(calls.length).toBeGreaterThan(1);
   expect(calls.every(items => contextSize(items) < config.threshold)).toBe(
@@ -181,7 +186,7 @@ test('text that JSON escapes heavily is still split into pieces below the thresh
     signal,
     before,
     services(calls),
-    { ...config, wire: 'responses' },
+    responsesConfig,
   );
   expect(calls.length).toBeGreaterThan(0);
   expect(calls.every(items => contextSize(items) < config.threshold)).toBe(
@@ -215,7 +220,7 @@ test('an empty or ineffective compaction fails without silently truncating histo
         ...services(calls),
         compactOpenAI: (_model, items) => Promise.resolve(items),
       },
-      { ...config, wire: 'responses' },
+      responsesConfig,
     ),
   ).rejects.toThrow('did not free');
 });

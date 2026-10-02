@@ -164,7 +164,7 @@ export async function prepareContext(
   signal: AbortSignal,
   beforeCall: BeforePaidCall,
   services: ContextServices,
-  config = models[model],
+  config: ModelConfig = models[model],
 ): Promise<PreparedContext> {
   const checkpoint = input.checkpoints.find(item => item.model === model);
   let start = 0;
