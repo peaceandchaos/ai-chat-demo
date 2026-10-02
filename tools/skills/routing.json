@@ -118,6 +118,7 @@
       "scope": "file",
       "why": "Added network calls need a timeout or abort path and validated responses.",
       "addedLines": "\\bfetch\\(|new WebSocket\\(|XMLHttpRequest",
+      "excludePaths": ["tools/skills/routing.json", "tools/skills/records/**"],
       "skills": ["principle-boundary-discipline"]
     },
     {
@@ -138,7 +139,11 @@
       "scope": "file",
       "why": "Added lines that mention keys, secrets, tokens, or authorization can leak credentials.",
       "addedLines": "api[_-]?key|secret|password|authorization|bearer",
-      "excludePaths": ["**/*.md", "tools/skills/records/**"],
+      "excludePaths": [
+        "**/*.md",
+        "tools/skills/routing.json",
+        "tools/skills/records/**"
+      ],
       "skills": ["principle-boundary-discipline"]
     },
     {

@@ -247,7 +247,6 @@ function resolveSkill(routing, skill, env, repository) {
 }
 
 module.exports = {
-  globs,
   routingPath,
   changeSubject,
   parseRouting,
