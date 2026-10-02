@@ -37,12 +37,12 @@
     {
       "file": "packages/app/src/state/chatStore.ts",
       "name": "MessageRole",
-      "reason": "work/ui-pr3-d rewrites this legacy file without it."
+      "reason": "work/ui-pr3-d rewrites this UI-owned file and still re-exports it from src/state/chatView.ts with no importer; leave the change to that branch."
     },
     {
       "file": "packages/app/src/state/chatStore.ts",
       "name": "MessageStatus",
-      "reason": "work/ui-pr3-d rewrites this legacy file without it."
+      "reason": "work/ui-pr3-d rewrites this UI-owned file and still re-exports it from src/state/chatView.ts with no importer; leave the change to that branch."
     },
     {
       "file": "packages/app/src/state/nativeArchive.ts",
