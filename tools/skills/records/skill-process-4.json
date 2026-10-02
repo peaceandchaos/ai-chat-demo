@@ -20,6 +20,11 @@
         {
           "finding": "skills:required now reads tools/skills/ledger.json, so a checkout without the ledger cannot list required skills.",
           "none": "The ledger is committed with the reader in 0d381c2, and every later branch inherits it."
+        },
+        {
+          "finding": "Second author pass, looking past grep at what the ledger reads: a test or type enforcement passed when its test file held the quoted title anywhere. A title in a comment, a test.skip() call, or a plain string kept a lesson marked enforced after its test was gone. The new fixture cases failed before the fix with their three problems missing.",
+          "commit": "4e8128a34f65",
+          "patch": "c8f6a0ebe153eeff7629dc4c0cc633163d0d6732"
         }
       ]
     },
@@ -51,6 +56,11 @@
           "finding": "The fetch-timeout lesson claimed the security check enforces every fetch. A server fetch without a timeout passes npm run security, because the scan covers packages/app and shared.",
           "commit": "7bce5fe68941",
           "patch": "11d3b7e672aeab6e289ecdab59bbc2d2fe032c10"
+        },
+        {
+          "finding": "Second author pass: the ledger matched a test by substring, so any text that held the title counted. The check now parses the file with TypeScript and needs a test() or it() call whose first argument is the exact title, instead of filtering lookalike text.",
+          "commit": "4e8128a34f65",
+          "patch": "c8f6a0ebe153eeff7629dc4c0cc633163d0d6732"
         }
       ]
     },
@@ -97,8 +107,12 @@
         },
         {
           "finding": "verify:commit on the first PR4b head (d07bdb5) failed: the spaced-path test from PR1b had no ledger in its fixture, and dd9450c made skills:required read one.",
-          "commit": "6076564",
-          "patch": "375cde8a78956467b84f325fd3e6eabccc445800"
+          "commit": "52787b33912b",
+          "patch": "3fab6ccf1cc86efcb16f8ae8d170202aec4565b2"
+        },
+        {
+          "finding": "Second author pass: cherry-picking 6076564 onto work/skill-process-4c conflicted with nothing, but its hunk context changed, because the PR1c fix made the spaced-path test a test.each table. The copy 52787b3 has a new patch-id, so the citation now names the copy.",
+          "none": "Citation updated in this record. No code change."
         }
       ]
     },
@@ -152,6 +166,11 @@
           "finding": "docs/skills.md said a type lesson names a test, but not that typecheck, not Jest, enforces it. After 5e5e0fb that test has no Jest assertion.",
           "commit": "2a75137",
           "patch": "94ae0553ce9b6bac2b557cd02ca31b2b9ff5dbf8"
+        },
+        {
+          "finding": "Second author pass: docs/skills.md said the check fails on a test title its file does not contain. It now says what counts, a string title in a plain test() or it() call, and what does not.",
+          "commit": "4e8128a34f65",
+          "patch": "c8f6a0ebe153eeff7629dc4c0cc633163d0d6732"
         }
       ]
     },
@@ -165,6 +184,11 @@
         {
           "finding": "A test that ran the ledger check on the committed ledger repeated the quality-ledger check in the verify suite.",
           "none": "Removed before the first commit."
+        },
+        {
+          "finding": "Second author pass: the ledger fixture had no case where the title exists but no test defines it. It now has commented, skipped, and plain-string cases, and the passing case uses it() so both call names are exercised.",
+          "commit": "4e8128a34f65",
+          "patch": "c8f6a0ebe153eeff7629dc4c0cc633163d0d6732"
         }
       ]
     },
