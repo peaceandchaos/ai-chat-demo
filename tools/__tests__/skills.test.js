@@ -332,8 +332,16 @@ test('the committed routing names only catalogued skills and roots', () => {
   expect(parseRouting(text).rules.length).toBeGreaterThan(0);
 });
 
-test('matches added lines in a file whose path has a space', () => {
-  const repository = join(fixture, 'spaced');
+test.each([
+  ['whose path has a space', 'spaced', 'src/my client.ts', ''],
+  [
+    'after an added line that looks like a diff header',
+    'header-lookalike',
+    'src/client.ts',
+    '++ b/elsewhere.ts\n',
+  ],
+])('matches added lines in a file %s', (_, name, path, before) => {
+  const repository = join(fixture, name);
   mkdirSync(repository);
   git(repository, ['init', '--quiet']);
   git(repository, ['config', 'core.hooksPath', '/dev/null']);
@@ -346,11 +354,7 @@ test('matches added lines in a file whose path has a space', () => {
     JSON.stringify({ ...fixtureRouting, rules: [network] }),
   );
   const start = commit(repository, 'Base');
-  write(
-    repository,
-    'src/my client.ts',
-    "export const load = () => fetch('/');\n",
-  );
+  write(repository, path, `${before}export const load = () => fetch('/');\n`);
   commit(repository, 'feat: load the page');
   const result = spawnSync(process.execPath, [cli, 'required', start], {
     cwd: repository,
@@ -362,7 +366,7 @@ test('matches added lines in a file whose path has a space', () => {
     'network-care',
     read('roots', 'network-care'),
     '  network: Network.',
-    '    src/my client.ts',
+    `    ${path}`,
     '',
   ]);
 });

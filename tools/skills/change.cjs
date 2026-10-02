@@ -59,8 +59,11 @@ function parseNumstat(output) {
 function parseAddedLines(output) {
   const added = new Map();
   let current = null;
+  let header = false;
   for (const line of output.split('\n')) {
-    if (line.startsWith('+++ ')) {
+    if (line.startsWith('diff --git ')) header = true;
+    else if (header && line.startsWith('@@')) header = false;
+    else if (header && line.startsWith('+++ ')) {
       // git ends the path with a tab when it contains a space.
       current = line.startsWith('+++ b/')
         ? line.slice(6).replace(/\t$/u, '')
