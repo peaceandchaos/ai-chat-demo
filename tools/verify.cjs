@@ -93,6 +93,20 @@ function mergeBase(commit, base) {
   }
 }
 
+function planRanges(directory, { mode, base, commit }) {
+  const rangeCommits = base
+    ? Number(git(directory, ['rev-list', '--count', `${base}..${commit}`]))
+    : 0;
+  if (mode === 'commit' && !rangeCommits)
+    throw new Error(
+      `${base}..${commit} has no commits, so the range checks would check nothing. Pass --base with a ref that the commit is ahead of.`,
+    );
+  const names = rangeCommits ? Object.keys(rangeChecks) : [];
+  const notRun =
+    mode === 'current' && !rangeCommits ? Object.keys(rangeChecks) : [];
+  return { rangeCommits, ranges: names, notRun };
+}
+
 function verify(directory, provenance, install) {
   const expectedNode = readFileSync(
     join(directory, '.node-version'),
@@ -113,11 +127,7 @@ function verify(directory, provenance, install) {
     provenance.mode === 'staged'
       ? ['lint', 'format', 'credentials']
       : Object.keys(checks);
-  const ranges = provenance.base ? Object.keys(rangeChecks) : [];
-  if (provenance.mode === 'current' && !provenance.base)
-    console.log(
-      `Not run without --base: ${Object.keys(rangeChecks).join(', ')}.`,
-    );
+  const { rangeCommits, ranges, notRun } = planRanges(directory, provenance);
   if (results.every(result => result.passed)) {
     for (const name of names) results.push(run(directory, name, checks[name]));
     for (const name of ranges)
@@ -143,6 +153,7 @@ function verify(directory, provenance, install) {
     ...provenance,
     node: process.versions.node,
     required: [...names, ...ranges],
+    notRun,
     unchanged,
     passed,
     results,
@@ -152,7 +163,7 @@ function verify(directory, provenance, install) {
     JSON.stringify(report, null, 2) + '\n',
   );
   console.log(
-    `${provenance.mode}: commit ${provenance.commit}, tree ${provenance.tree}${provenance.base ? `, base ${provenance.base}` : ''}; ${passed ? 'PASS' : 'FAIL'}`,
+    `${provenance.mode}: commit ${provenance.commit}, tree ${provenance.tree}${provenance.base ? `, base ${provenance.base} (${rangeCommits} commits)` : ''}; ${passed ? 'PASS' : 'FAIL'}${notRun.length ? ` (range checks not run: ${notRun.join(', ')})` : ''}`,
   );
   if (!passed) process.exitCode = 1;
 }

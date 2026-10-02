@@ -77,7 +77,7 @@ A finding names the commit that resolves it, or gives the reason under `none`. W
 - an entry names a skill outside the catalog, appears twice in one record, has no findings, or is not required and has no `reason`
 - the range changes no record
 
-`verify:commit` and the pre-push hook run this check against the merge base with `origin/main`. Pass `--base <ref>` to use another base. `verify:current` runs it only when it gets `--base`, because CI checks out one commit without history.
+`verify:commit` and the pre-push hook run this check against the merge base with `origin/main`. Pass `--base <ref>` to use another base. They fail when the range from the base to the commit has no commits, because the range checks would check nothing. `verify:current` runs the range checks only when it gets `--base` and the range has commits, because CI checks out one commit without history. Otherwise it lists them under `notRun` in `result.json` and ends its summary with `PASS (range checks not run: <names>)`.
 
 The check proves that a change claimed each required skill and that every finding it recorded has a resolution. It does not prove the skill was applied well, or that the findings are complete. Review judges that.
 
