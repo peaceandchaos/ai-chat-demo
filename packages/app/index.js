@@ -3,15 +3,14 @@
  */
 
 import { AppRegistry } from 'react-native';
-import { prewarmOnAppStart } from 'react-native-nitro-websockets';
+import { clearPrewarmQueue } from 'react-native-nitro-websockets';
 import App from './App';
 import { name as appName } from './app.json';
-import { OPENAI_API_KEY, OPENAI_WS_URL } from './src/config';
 
-// Open the OpenAI websocket natively at app start, before the JS bundle loads,
-// so the connection is already warm by the time the first message is sent.
-prewarmOnAppStart(OPENAI_WS_URL, undefined, {
-  Authorization: `Bearer ${OPENAI_API_KEY}`,
-});
+// Earlier builds stored the OpenAI socket and its key for the native prewarmer,
+// which replays them before JavaScript starts on every launch. Clearing the
+// queue stops that from the next launch on and removes the stored key. Remove
+// this call once every install has launched a build that makes it.
+clearPrewarmQueue();
 
 AppRegistry.registerComponent(appName, () => App);
