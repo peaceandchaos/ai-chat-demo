@@ -115,7 +115,6 @@
         "packages/app/src/screens/ChatScreen.tsx",
         "packages/app/src/screens/RecentsScreen.tsx",
         "packages/app/src/screens/RootDrawer.tsx",
-        "packages/app/src/state/chatStore.ts",
         "packages/app/src/theme.ts"
       ],
       "rules": {

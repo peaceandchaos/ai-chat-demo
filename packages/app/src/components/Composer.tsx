@@ -27,7 +27,8 @@ const INPUT_MAX_HEIGHT = 120;
 const THUMBS_ANIM_MS = 220;
 
 type ComposerProps = {
-  onSubmit: (text: string, attachments: Attachment[]) => void;
+  // Returns whether the message was saved; the input clears only then.
+  onSubmit: (text: string, attachments: Attachment[]) => boolean;
   onStop: () => void;
   streaming: boolean;
   composerRef: React.RefObject<View | null>;
@@ -51,7 +52,9 @@ export const Composer = React.memo(function ({
     if (!canSend) {
       return;
     }
-    onSubmit(value, attachments);
+    if (!onSubmit(value, attachments)) {
+      return;
+    }
     setValue('');
     clearAttachments();
   };

@@ -6,6 +6,10 @@
 // tradeoff and talk to OpenAI's WebSocket endpoint directly. For anything real,
 // put a relay server in front and keep the key server-side.
 
+// The chat server's origin. Release builds accept only HTTPS; development
+// builds also accept http://localhost and private network addresses.
+export const PROXY_BASE_URL = 'https://chat.example.com';
+
 export const OPENAI_API_KEY = 'sk-proj-...';
 
 // Endpoint and model verified from OpenAI's WebSocket mode docs:

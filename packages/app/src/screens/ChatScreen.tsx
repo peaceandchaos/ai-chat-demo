@@ -96,11 +96,14 @@ export function ChatScreen({ onOpenRecents }: ChatScreenProps) {
   const onSubmit = useCallback(
     (text: string, attachments: Attachment[]) => {
       const isFirstMessage = messagesLength === 0;
+      if (!send(text, attachments)) {
+        return false;
+      }
       hasOverflowedRef.current = false;
       setFollowing(false);
       setAnchorIndex(messagesLength);
-      send(text, attachments);
       scrollMessageToEnd({ animated: !isFirstMessage, closeKeyboard: true });
+      return true;
     },
     [messagesLength, send, scrollMessageToEnd],
   );
