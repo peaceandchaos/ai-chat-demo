@@ -1,6 +1,6 @@
 # Personal iOS chat: foundation checkpoint
 
-This repository extends the [Margelo chat demo](https://blog.margelo.com/building-native-llm-chat-app-with-rag). The visible app still uses the inherited demo screens and direct-provider connection. The new server, saved-chat archive, and connection client are separate foundations. They are not connected to those screens yet.
+This repository extends the [Margelo chat demo](https://blog.margelo.com/building-native-llm-chat-app-with-rag). The inherited demo screens now run on the saved-chat session and reach providers only through the chat server. The demo's direct provider connection, document search, and embedded keys are removed. Recents still shows the inherited mocked list.
 
 The user owns the UI. Current engineering scope is iOS and shared app/server code. Android sources remain inherited material outside this milestone.
 
@@ -15,7 +15,7 @@ npm ci
 cp packages/app/src/config.example.ts packages/app/src/config.ts
 ```
 
-Keep the example values for static checks. Do not put provider credentials in the app. Native builds require Xcode, CocoaPods, and `pod install` in `packages/app/ios`. Xcode license acceptance and native build verification remain pending; the current local checks do not establish device behavior.
+Set `PROXY_BASE_URL` in `config.ts` to your chat server's origin, and keep the example value for static checks. The app holds no provider credentials; they stay on the server. Native builds require Xcode, CocoaPods, and `pod install` in `packages/app/ios`. Xcode license acceptance and native build verification remain pending; the current local checks do not establish device behavior.
 
 ```sh
 npm start                    # Metro
@@ -73,10 +73,9 @@ large inputs upload acknowledged parts before one commit. This layer never retri
 a submission automatically. Its consumer must persist acceptance, results, and
 cursors before acknowledging them to the server.
 
-This layer is not connected to the app yet. The user owns the UI work. The existing
-screens and mocked Recents list retain their UI. The demo store now validates tool inputs,
-and the old connection no longer logs raw errors. Its native connection behavior is unchanged.
-The native binding and the session controller below are not connected to the screens yet.
+`packages/app/src/state/chatView.ts` connects this layer, the native binding, and the
+session controller below to the existing screens. The user owns the UI work. The
+screens and the mocked Recents list keep their UI.
 
 `packages/app/src/network/nativeDrivers.ts` is the iOS binding for these drivers. It
 uses the Nitro request builder and WebSocket objects directly, so nothing reaches the
@@ -115,7 +114,7 @@ contract evidence. Hosted CI requires a push; local checks are reported separate
 ### Session controller checkpoint
 
 `packages/app/src/state/session.ts` connects the saved-chat archive to the
-transport. It is not connected to the screens yet. `attempt.ts` reads each
+transport. `attempt.ts` reads each
 saved reply into one phase: unsent, accepted, Stop pending, final but not yet
 confirmed to the server, or settled. Each phase has one next operation. Every
 reply has its own runner, so one chat's failure, refusal, or reconnect does not
@@ -160,4 +159,4 @@ This app stands on the shoulders of these projects (thank you to their authors):
 - [react-native-image-picker](https://github.com/react-native-image-picker/react-native-image-picker) - community
 - [react-native-safe-area-context](https://github.com/AppAndFlow/react-native-safe-area-context) - Janic Duplessis
 - [react-native-bootsplash](https://github.com/zoontek/react-native-bootsplash) & [react-native-edge-to-edge](https://github.com/zoontek/react-native-edge-to-edge) - Mathieu Acthernoene
-- Vector database: [Pinecone](https://www.pinecone.io/) · Model API: [OpenAI](https://openai.com/)
+- Model API: [OpenAI](https://openai.com/)
