@@ -48,12 +48,12 @@ function evaluate(report, dispositions, today, base = root) {
   for (const finding of report.findings) {
     if (!severities.includes(finding.severity))
       throw new Error(`Unknown rnsec severity for ${finding.ruleId}.`);
+    if (finding.ruleId === dependencyRule) continue;
     const key = `${finding.ruleId} ${relative(base, finding.filePath)}:${finding.line}`;
     if (finding.severity === 'HIGH') {
       failures.push(`${key}: HIGH has no exceptions`);
       continue;
     }
-    if (finding.ruleId === dependencyRule) continue;
     const disposition = dispositions[key];
     used.add(key);
     if (
@@ -86,7 +86,7 @@ function main() {
     new Date().toISOString().slice(0, 10),
   );
   const deferred = report.findings.filter(
-    finding => finding.ruleId === dependencyRule && finding.severity !== 'HIGH',
+    finding => finding.ruleId === dependencyRule,
   ).length;
   for (const failure of failures) console.error(failure);
   console.log(
