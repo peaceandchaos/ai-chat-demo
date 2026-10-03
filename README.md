@@ -30,7 +30,7 @@ npm test                     # ordinary local test feedback
 npm run test:verified        # also reject empty/skipped/unfinished suites
 npm run secrets
 npm run security             # iOS/shared scan; HIGH or undisposed app findings block
-npm run audit:check          # all high/critical findings block
+npm run audit:check          # high/critical findings block; one dated exception
 npm run build:server
 npm run build:ios-js          # release JS bundle; not native compilation
 npm run react-compiler-check # report; not proof of native compilation
@@ -51,9 +51,9 @@ The GitHub App bot is installed and its repository-scoped authentication is veri
 
 The 13 selected anti-slop rules remain errors. Their source and license are in `tools/vendor/anti-slop/UPSTREAM.md`. Exact legacy-file overrides preserve inherited demo files until their feature logic is replaced. A raw-input decoder may suppress `anti-slop/no-unknown-parameters` on the parameter declaration with a named rule and reason after `--`. Existing fixtures verify that exception and reject undocumented suppressions. The Effect plugin remains unregistered.
 
-Every high/critical dependency advisory blocks acceptance, regardless of exposure. Moderate/low findings have dated dispositions in `tools/verification/dependency-dispositions.json`; new or expired findings need review. No update or override is automatic.
+Every high/critical dependency advisory blocks acceptance, regardless of exposure. The one exception, approved on 3 October 2026, is a high advisory that no release fixes yet. It can pass for at most 14 days at a time under a `track-unpatched` disposition, and any new release of its package fails the check again ([dependency triage](docs/dependencies.md), "Unpatched high advisories"). Moderate/low findings have dated dispositions in `tools/verification/dependency-dispositions.json`; new or expired findings need review. No update or override is automatic.
 
-The scanner excludes Android-specific files and scans the remaining app. Stream and tool arguments receive schema validation; raw network errors are not logged. Reply links require HTTP/HTTPS, structural validation, and OS support. Checks exercise React Native's actual JavaScript URL implementation. The fresh scanner run reports no shared-code findings and six medium dependency entries. The separate dependency gate checks their advisory dispositions. Any other scanner finding fails unless `tools/verification/security-dispositions.json` records a current, reasoned disposition for it. Neither check proves native networking safety. All seven native patches and the Metro patch must apply during `npm ci`.
+The scanner excludes Android-specific files and scans the remaining app. Stream and tool arguments receive schema validation; raw network errors are not logged. Reply links require HTTP/HTTPS, structural validation, and OS support. Checks exercise React Native's actual JavaScript URL implementation. The fresh scanner run reports no shared-code findings. It leaves its dependency entries, at any severity, to the separate dependency gate, which checks their advisory dispositions. Any other scanner finding fails unless `tools/verification/security-dispositions.json` records a current, reasoned disposition for it. Neither check proves native networking safety. All seven native patches and the Metro patch must apply during `npm ci`.
 
 ## Test review
 

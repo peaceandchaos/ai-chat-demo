@@ -289,7 +289,127 @@ test('dependency policy blocks high findings, missing reviews, expired reviews, 
   );
 });
 
-test('app security policy fails a real undisposed MEDIUM finding and keeps HIGH blocking', () => {
+test('a high advisory with no fixed release passes only under a current, exact track-unpatched disposition', () => {
+  const url = 'https://github.com/advisories/unpatched';
+  const advisory = {
+    name: 'braces',
+    dependency: 'braces',
+    url,
+    range: '<=3.0.3',
+    severity: 'high',
+  };
+  const audit = {
+    auditReportVersion: 2,
+    vulnerabilities: {
+      braces: { severity: 'high', via: [advisory] },
+      micromatch: { severity: 'high', via: ['braces'] },
+      jest: { severity: 'high', via: ['micromatch'] },
+    },
+    metadata: { dependencies: { total: 3 } },
+  };
+  const tracked = {
+    package: 'braces',
+    range: '<=3.0.3',
+    severity: 'high',
+    decision: 'track-unpatched',
+    latest: '3.0.3',
+    reviewedAt: '2026-10-03',
+    reviewBy: '2026-10-17',
+    reason: 'No fixed release exists. Only build and test tools load it.',
+  };
+  const check = (disposition, today = '2026-10-03', latest = '3.0.3') =>
+    evaluate(
+      audit,
+      disposition ? { [url]: disposition } : {},
+      today,
+      () => latest,
+    );
+  const blocked = ['braces: high', 'micromatch: high', 'jest: high'];
+
+  expect(check(tracked)).toEqual([]);
+  expect(check(undefined)).toEqual(expect.arrayContaining(blocked));
+  expect(check(tracked, '2026-10-18')).toEqual(expect.arrayContaining(blocked));
+  expect(check({ ...tracked, reviewBy: '2026-10-18' })).toEqual(
+    expect.arrayContaining(blocked),
+  );
+  expect(check({ ...tracked, reviewBy: 'soon' })).toEqual(
+    expect.arrayContaining(blocked),
+  );
+  expect(check({ ...tracked, range: '<=3.0.2' })).toEqual(
+    expect.arrayContaining(blocked),
+  );
+  expect(check({ ...tracked, package: 'micromatch' })).toEqual(
+    expect.arrayContaining(blocked),
+  );
+  expect(check({ ...tracked, reason: '' })).toEqual(
+    expect.arrayContaining(blocked),
+  );
+  expect(check({ ...tracked, decision: 'track' })).toEqual(
+    expect.arrayContaining(blocked),
+  );
+  expect(check(tracked, '2026-10-03', '3.0.4')).toEqual(
+    expect.arrayContaining([
+      ...blocked,
+      expect.stringContaining('braces 3.0.4 is released'),
+    ]),
+  );
+
+  advisory.severity = 'critical';
+  audit.vulnerabilities.braces.severity = 'critical';
+  expect(check({ ...tracked, severity: 'critical' })).toEqual(
+    expect.arrayContaining(['braces: critical', 'micromatch: high']),
+  );
+  advisory.severity = 'high';
+  audit.vulnerabilities.braces.severity = 'high';
+
+  audit.vulnerabilities.micromatch.via.push({
+    name: 'micromatch',
+    dependency: 'micromatch',
+    url: 'https://github.com/advisories/second',
+    range: '<4.0.9',
+    severity: 'high',
+  });
+  const second = check(tracked);
+  expect(second).toEqual(
+    expect.arrayContaining(['micromatch: high', 'jest: high']),
+  );
+  expect(second).not.toContain('braces: high');
+  audit.vulnerabilities.micromatch.via.pop();
+
+  const moderateOnly = {
+    ...audit,
+    vulnerabilities: {
+      fixture: {
+        severity: 'moderate',
+        via: [
+          {
+            ...advisory,
+            url: 'https://github.com/advisories/other',
+            severity: 'moderate',
+          },
+        ],
+      },
+    },
+  };
+  expect(
+    evaluate(
+      moderateOnly,
+      {
+        'https://github.com/advisories/other': {
+          ...tracked,
+          decision: 'track',
+          range: '<=3.0.3',
+          reviewBy: '2026-10-29',
+        },
+        [url]: tracked,
+      },
+      '2026-10-03',
+      () => '3.0.3',
+    ),
+  ).toEqual([`${url}: track-unpatched disposition matches no high advisory`]);
+});
+
+test('app security policy fails a real undisposed MEDIUM finding, keeps HIGH blocking, and leaves dependency advisories to audit:check', () => {
   const fixture = mkdtempSync(join(tmpdir(), 'security-fixture-'));
   try {
     writeFileSync(
@@ -346,9 +466,7 @@ test('app security policy fails a real undisposed MEDIUM finding and keeps HIGH 
         '2026-09-29',
         fixture,
       ),
-    ).toEqual([
-      'NPM_VULNERABLE_DEPENDENCY package.json:3: HIGH has no exceptions',
-    ]);
+    ).toEqual([]);
     expect(
       security.evaluate(
         scanned([finding('DEPRECATED_NPM_PACKAGE', 'LOW')]),
