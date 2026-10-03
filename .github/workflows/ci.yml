@@ -49,8 +49,10 @@ jobs:
     if: always()
     needs: verify
     runs-on: ubuntu-24.04
-    timeout-minutes: 2
+    timeout-minutes: 1
     steps:
+      - name: Exceed the job time limit
+        run: sleep 300
       - name: Require every verification job
         env:
           RESULT: ${{ needs.verify.result }}
