@@ -387,14 +387,15 @@
         "skill": "blast-radius",
         "findings": [
           {
-            "finding": "Review base: dffee9a, the last PR5 commit and the base the 5d report names. With e22c06d, skills:record --review adds 12 author entries. From dffee9a it adds none, and the 10 required skills match the author section.",
-            "cites": "Steps",
-            "none": "No defect."
+            "finding": "High. The pull request rule asked whether any record in the range held a non-author review receipt for each skill. A record whose review held only its own author's receipts passed when another record's review covered the skill. 9edd3b4 checks each record's review against its own author receipts.",
+            "cites": "Steps 3",
+            "commit": "9edd3b470ded",
+            "patch": "e861ecb23ab7ce6081efaec0a8b3326f843a2b2c"
           },
           {
-            "finding": "GITHUB_EVENT_NAME passes through cleanEnvironment in tools/verification/snapshot.cjs, so a hosted pull request job runs skills:check in pull request mode. 053ae2b keeps the fixture tests out of that mode.",
-            "cites": "Steps",
-            "none": "No defect."
+            "finding": "The one fact the rule reaches the check because of: cleanEnvironment in tools/verification/snapshot.cjs removes GIT_, npm_config_, and secret-like names but keeps GITHUB_EVENT_NAME. A pull request job's skills:check therefore runs in pull request mode once hosted CI passes --base.",
+            "cites": "Steps 2",
+            "none": "Read at snapshot.cjs:13-27."
           }
         ],
         "receipts": [
@@ -405,17 +406,17 @@
             "source": "Skill",
             "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
             "partial": false,
-            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
-            "agent": "a6f2e1d3baa74f5d7",
-            "agentType": "pstack:effort-high",
-            "toolUseId": "toolu_018BpkiYheSRjbqdcNKmsViU",
-            "time": "2026-10-02T13:29:42.407Z",
-            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_016ctevuXnzJGLR334BCUNCU",
+            "time": "2026-10-03T18:42:07.238Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
             "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
-            "branch": "work/skill-process-review",
-            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
-            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
-            "sig": "MfUxYYU/f15e7D8YY3RDP+emTGiixmxDhlOpNEWpHEnj+lPjrVF6ON1ZqUMVDSVuFQ3c2Wj41X1oyUUd1OpAAQ=="
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "CxI0oNBbnc7aySLC4q3Uc60SvTnwsKKSmvQhg7XCpRWgnxLiR75bzERHotgVZv32PHQFJQ2eJvGgBfbcdIFECQ=="
           }
         ]
       },
@@ -423,9 +424,9 @@
         "skill": "deslop",
         "findings": [
           {
-            "finding": "8ac891b names the review requirement as one boolean instead of repeating the condition.",
+            "finding": "The rule adds one flag to checkRecords and one loop over records without a review. No cast, guard, or restating comment.",
             "cites": "Focus Areas",
-            "none": "No slop to remove."
+            "none": "No slop found."
           }
         ],
         "receipts": [
@@ -436,17 +437,17 @@
             "source": "Skill",
             "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
             "partial": false,
-            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
-            "agent": "a6f2e1d3baa74f5d7",
-            "agentType": "pstack:effort-high",
-            "toolUseId": "toolu_01GsiovVLkDX1c7ysRiePcLw",
-            "time": "2026-10-02T13:29:43.036Z",
-            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01KZ1yZESQVdq5XgbUZj1ekt",
+            "time": "2026-10-03T18:42:07.395Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
             "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
-            "branch": "work/skill-process-review",
-            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
-            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
-            "sig": "n4aPA9H9igqEMkceoWbf0UZ7W+/Wo3yoC8Tv6MuXzbgDvzT4keXGniiPOu+UrjNLjzqdjsL29FhRRvBC1+HLDw=="
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "UiiRiOQlM5fa8R5IW9ZZ+pNV4y1fiUjQ8MuSyVR+gxE1U+gx9IFB9T2PsiIVTGZnXqBvmaSQ2PemtuSuyDA4CA=="
           }
         ]
       },
@@ -454,9 +455,9 @@
         "skill": "no-comments",
         "findings": [
           {
-            "finding": "I applied this skill inline and did not dispatch the comment-sicko agent, because this review session may not spawn agents. 5d adds no comment that restates the code.",
-            "cites": "Steps",
-            "none": "No comment to remove."
+            "finding": "Judged inline without comment-sicko. The range adds no code comments.",
+            "cites": "No comments",
+            "none": "Nothing to judge."
           }
         ],
         "receipts": [
@@ -467,17 +468,17 @@
             "source": "Skill",
             "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
             "partial": false,
-            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
-            "agent": "a6f2e1d3baa74f5d7",
-            "agentType": "pstack:effort-high",
-            "toolUseId": "toolu_01YT2BdaLYRqGYrmqT5Enr9f",
-            "time": "2026-10-02T13:29:43.124Z",
-            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_016WiwiFYENRRRxwxCo3vqEU",
+            "time": "2026-10-03T18:42:07.773Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
             "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
-            "branch": "work/skill-process-review",
-            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
-            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
-            "sig": "eTic5A0NmaqMNP9Kps4WUJUTjMS9CMlsOox0b9QwM05JlHZLoP0oH7xBkU+DwDMzE1Sk7fMqGjJFzwd5Xa4SDg=="
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "zUQVzlES1HJxHObF4PkDaDD7WA+PF0tH94QR82duThE+p2NEi1QLKgqkNQgb1zDqm6ARVQ8dva8i5NhAk6uSDA=="
           }
         ]
       },
@@ -485,15 +486,9 @@
         "skill": "principle-prove-it-works",
         "findings": [
           {
-            "finding": "Open, High. The pull request review rule is checked across all records together. records.cjs:282-287 checks only that each record has a review section. receiptProblems at tools/skills/receipts.cjs:106-114 then asks whether any record holds a non-author review receipt for each skill. A record whose review entries hold only its own author's receipts passes when another record's review has a reviewer receipt for the same skill. Probe: with four 5d review entries holding only the 5d author's own receipts, a pull request run passes and prints \"with independent review\" (review-evidence/gap/probe-review-own-author.log, commit 3c9cf622).",
+            "finding": "The new test runs the real check with GITHUB_EVENT_NAME set and unset and asserts the exact stderr for an unreviewed, a half-reviewed, and a reviewed stack. It passes at HEAD in its rewritten form.",
             "cites": "Prove It Works",
-            "commit": "6e186e2a17c69c25cd3b91dae02c84c34a4f39a7",
-            "patch": "e861ecb23ab7ce6081efaec0a8b3326f843a2b2c"
-          },
-          {
-            "finding": "The 5d author receipts were made at 13:21:55 to 13:22:00Z on 8ac891b, after all 5d code commits, and the Skill tool answered \"already loaded\". They prove a Skill call bound to a range commit, not a fresh read at that head. The earlier loads were bound to 6424990, outside the range. The 5d report discloses this; the record does not.",
-            "cites": "Prove It Works",
-            "none": "Disclosure of weak evidence. The tool behavior is open in the skill-process-5 review of technical-writing."
+            "none": "Verified by a run."
           }
         ],
         "receipts": [
@@ -504,17 +499,17 @@
             "source": "Skill",
             "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
             "partial": false,
-            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
-            "agent": "a6f2e1d3baa74f5d7",
-            "agentType": "pstack:effort-high",
-            "toolUseId": "toolu_019Wajfb4wV6DnsVK25HNiBZ",
-            "time": "2026-10-02T13:29:50.513Z",
-            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01B99Pm3qtfkFsJKnb1ZRmiH",
+            "time": "2026-10-03T18:42:09.230Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
             "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
-            "branch": "work/skill-process-review",
-            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
-            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
-            "sig": "7z2Yr5448dlReb7itAkl49EHL549Vu6HKcCXjyYSFRATDOcuG2xBPyzVBpQ0XN8U5uslNDGNU62aGFU6C2qNBg=="
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "2yL28bO+5cevJyDRpO3lmyaJc1dROii/fSMW8a07t8DdfQtZ619b9zbmVoXaEp9PU3t/6d2xKtxudIwvubzvCg=="
           }
         ]
       },
@@ -522,9 +517,9 @@
         "skill": "principle-sequence-verifiable-units",
         "findings": [
           {
-            "finding": "053ae2b adds the rule with its tests, 9e55391 documents it, and 8ac891b refactors after both.",
+            "finding": "4b3827c adds the rule with its test, adc5b81 documents it, and the record commits follow.",
             "cites": "Sequence work into verifiable units",
-            "none": "No defect."
+            "none": "The order checks itself."
           }
         ],
         "receipts": [
@@ -535,17 +530,17 @@
             "source": "Skill",
             "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
             "partial": false,
-            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
-            "agent": "a6f2e1d3baa74f5d7",
-            "agentType": "pstack:effort-high",
-            "toolUseId": "toolu_017rQf2uwCe1m61tAxV8pQYi",
-            "time": "2026-10-02T13:29:51.155Z",
-            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_019NtDxtx2yabV3EzpXfrAho",
+            "time": "2026-10-03T18:42:09.590Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
             "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
-            "branch": "work/skill-process-review",
-            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
-            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
-            "sig": "RoY1r+9rl0ci4q6apt9miZPLOBi61g6vhCrvn0Yd9gyhOJBrU63hk3uw5eu8YZl+N8JI5EgmkZXEqw45/7N1Bw=="
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "c3b9RlGJ0IGLwTOP2FddRVXnN2n+nmEKb7qaeUJCYg8iMh4ozEOPwe4x4e18gcb9oEyLa+I1YyrlFtRIl5nvAA=="
           }
         ]
       },
@@ -553,9 +548,9 @@
         "skill": "principle-test-behavior-not-implementation",
         "findings": [
           {
-            "finding": "053ae2b adds the test \"a pull request run needs a review section in every record and a reviewer receipt for every required skill\" (tools/__tests__/skill-records.test.js:389). No test gives one record a review made of its own author's receipts, so the suite passes with the open aggregation defect.",
+            "finding": "The fixture sets GITHUB_EVENT_NAME to undefined for every ordinary run, so the pull request rule fires only in the test that asks for it, and that test checks the full error list.",
             "cites": "Test behavior, not implementation",
-            "none": "Covered by the open finding under principle-prove-it-works."
+            "none": "The test detects a missing review."
           }
         ],
         "receipts": [
@@ -566,17 +561,17 @@
             "source": "Skill",
             "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
             "partial": false,
-            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
-            "agent": "a6f2e1d3baa74f5d7",
-            "agentType": "pstack:effort-high",
-            "toolUseId": "toolu_01Up4q7jA2URxTmekznNWEgh",
-            "time": "2026-10-02T13:29:51.753Z",
-            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01CMQGKy5sgzqhjRUNLgjwCk",
+            "time": "2026-10-03T18:42:10.390Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
             "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
-            "branch": "work/skill-process-review",
-            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
-            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
-            "sig": "b+v5WYcoB4dBz8CvkZXBbWlARV+1tTH5+95Xu9k1cdSYvpE9VWRPNt/hrtlKw1OR+1IU08WxcCai1khpb/RXBQ=="
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "bybZr+mdce9LDXjWP+ZphMoA3oIWvxmkIW8rZOi1u2iKu2nWfWJUPAofXIHOIM7KjNkkGxT28ud/E+49Kw3YAQ=="
           }
         ]
       },
@@ -584,9 +579,9 @@
         "skill": "technical-writing",
         "findings": [
           {
-            "finding": "Open, Medium. README.md:65 says verify:commit fails when \"the record\" misses a required skill or \"lacks a signed receipt for a required skill\". AGENTS.md:38 says verify:commit \"fails until the record covers every required skill with a valid receipt\". Both came from 9e55391. The check aggregates coverage and receipts across all records in the range, so a single record can miss both and pass (review-evidence/gap/).",
+            "finding": "docs/skills.md still said a receipt proves the agent loaded the skill text, next to the new pull request rule. 042160a corrected the claim.",
             "cites": "Voice and repo specifics",
-            "commit": "8e1afe338a36cac7e07712775bcfea2b58f1dd0c",
+            "commit": "042160af68ce",
             "patch": "9df3aa5adb8836f7f7c70ac37dadf05aff05b552"
           }
         ],
@@ -598,17 +593,17 @@
             "source": "Skill",
             "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
             "partial": false,
-            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
-            "agent": "a6f2e1d3baa74f5d7",
-            "agentType": "pstack:effort-high",
-            "toolUseId": "toolu_01VVAUHeHXT8cXw7JnkzTbi7",
-            "time": "2026-10-02T13:29:56.437Z",
-            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01FMbvgWjTBqLxKZuQCid4pE",
+            "time": "2026-10-03T18:42:10.679Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
             "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
-            "branch": "work/skill-process-review",
-            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
-            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
-            "sig": "WRxkoSX86eFADBrvu0z79F2R2YHNMwbl8HVsniNxsS1d1jgiAnTQmqYi6SxYWBx6kzzmr7x5aOtG0QYoG0anCA=="
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "sXNW6rSBu7Bne+pBtVbSvCN8vTbRlhH/8kH29oBMXZNCKcj6sP/9NDeKO339Ng6676DHCdmZJBty1Y7401cKCQ=="
           }
         ]
       },
@@ -616,7 +611,7 @@
         "skill": "test-prune",
         "findings": [
           {
-            "finding": "053ae2b unsets GITHUB_EVENT_NAME in the fixture helper only. The 5d record reports that 10 of 12 tests failed without it (pr5d/ci-env-without-isolation.log); I did not rerun that. The change keeps the fixtures independent of the job event and removes no case.",
+            "finding": "The range adds one check test and changes one expected message. No case is removed, skipped, or weakened.",
             "cites": "Review questions",
             "none": "No pruning needed."
           }
@@ -629,17 +624,17 @@
             "source": "Skill",
             "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
             "partial": false,
-            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
-            "agent": "a6f2e1d3baa74f5d7",
-            "agentType": "pstack:effort-high",
-            "toolUseId": "toolu_014m3EGC2ayPkvUz2g2QDYnv",
-            "time": "2026-10-02T13:29:57.049Z",
-            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01Rgi6R72cdY5QKFanVr6Uks",
+            "time": "2026-10-03T18:42:14.247Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
             "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
-            "branch": "work/skill-process-review",
-            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
-            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
-            "sig": "sarm+O88S9soMvYH6v2De3sR3sNCDgzVnmiv1vcPF1QOkbZwy2OPuNsQPZpocuc/qg0v01GPLcueB5b0/qlICg=="
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "12B/kEx6MsElrB/4E1m5t5pW92imIRQgERap49FxoYIwwVK0WrZQu/Vc78ohbFfo4W6NYS/A5eeSt9ITRnyUAg=="
           }
         ]
       },
@@ -647,9 +642,9 @@
         "skill": "unslop",
         "findings": [
           {
-            "finding": "The 5d docs say what the pull request run fails and when hosted CI does not run it.",
-            "cites": "Plain speech 27",
-            "none": "No slop. The overclaim is open under technical-writing."
+            "finding": "Scanned the README, AGENTS.md, and docs/skills.md changes for dashes, colon connectors, filler, and AI vocabulary.",
+            "cites": "Process 1",
+            "none": "No pattern found."
           }
         ],
         "receipts": [
@@ -660,17 +655,17 @@
             "source": "Skill",
             "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
             "partial": false,
-            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
-            "agent": "a6f2e1d3baa74f5d7",
-            "agentType": "pstack:effort-high",
-            "toolUseId": "toolu_01T7Ajm7bDT3pCM3mmujFrmf",
-            "time": "2026-10-02T13:29:58.166Z",
-            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01Jj8y95WgpW4hvWBSopcu5M",
+            "time": "2026-10-03T18:41:00.503Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
             "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
-            "branch": "work/skill-process-review",
-            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
-            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
-            "sig": "5CBBMyR7gGdW/nCQQtYuw/v9RDn8BxKd2hQAta/aUl1CqAZ0mE1dH11kPvn7Np6YbtSCvzG/rzXCI6FAjEkBBQ=="
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "B3Nhd0eqXTaNk1liIuHH/m10qS3H0lSJIpVHrNsKB/hKOwvwyxcYR6f32gbaVh0hVF9H7rVynwPVPDyVirmtCg=="
           }
         ]
       },
@@ -678,10 +673,9 @@
         "skill": "writing-for-agents",
         "findings": [
           {
-            "finding": "Open, Medium. AGENTS.md:38 is always loaded, and it tells agents that the check enforces per-record coverage and receipts. An agent that trusts it can skip loading skills for one record of a multi-record range and still see the check pass. The line should state what the check enforces today.",
+            "finding": "The added AGENTS.md sentence states one enforced fact: a pull request run fails until each record has a review.",
             "cites": "Context pointers",
-            "commit": "8e1afe338a36cac7e07712775bcfea2b58f1dd0c",
-            "patch": "9df3aa5adb8836f7f7c70ac37dadf05aff05b552"
+            "none": "The added sentence is accurate."
           }
         ],
         "receipts": [
@@ -692,17 +686,17 @@
             "source": "Skill",
             "sha256": "a842323e664e5af104eac5c97ad22fda929ebeb62d81c501161ac1f6f482db58",
             "partial": false,
-            "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
-            "agent": "a6f2e1d3baa74f5d7",
-            "agentType": "pstack:effort-high",
-            "toolUseId": "toolu_01448kwSKuPBvSonWcp4dYD6",
-            "time": "2026-10-02T13:29:58.685Z",
-            "cwd": "fc43309e275c51bfe1368137bb7e4caaf598191aeff73008525376406eebb756",
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01NmWFgyuAztbrjbkGMHMTmj",
+            "time": "2026-10-03T18:42:11.432Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
             "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
-            "branch": "work/skill-process-review",
-            "head": "d6c52c93511884baa3127f8786449344ff2e3dee",
-            "headPatch": "e9c7a6ce7e665b9d84f982d5eeaacc7f34385451",
-            "sig": "99LFvkeaQpOmXKtqa6a6erebTlDogW6u20x2UjU/1+sBcmEQ5u1FErfcw04yNI9E3JLXZ8HxsG4qvkpb2QFBAw=="
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "fFNSYgcXWv6ekkriUchgEuuMawxu1yT8z3PMBeGLWLQmWacfj0KE3gxhIkauSEpRY7S3dHjjIUGEBBBbgrJNDw=="
           }
         ]
       }
