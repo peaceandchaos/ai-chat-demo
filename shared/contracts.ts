@@ -24,7 +24,7 @@ export const imageSchema = z
   .max(3_000_000)
   .regex(/^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/u);
 
-export const historyEntrySchema = z.strictObject({
+const historyEntrySchema = z.strictObject({
   id: idSchema,
   parentId: idSchema.nullable(),
   role: z.enum(['user', 'assistant']),
@@ -97,13 +97,13 @@ const stagedIdentity = {
   parts: z.number().int().positive().safe(),
   characters: z.number().int().positive().safe(),
 };
-export const contextPartSchema = z.strictObject({
+const contextPartSchema = z.strictObject({
   kind: z.literal('stage'),
   ...stagedIdentity,
   index: z.number().int().nonnegative().safe(),
   text: z.string().min(1).max(contextPartCharacters),
 });
-export const commitInputSchema = z.strictObject({
+const commitInputSchema = z.strictObject({
   kind: z.literal('commit'),
   ...stagedIdentity,
 });

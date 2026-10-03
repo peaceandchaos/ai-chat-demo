@@ -35,7 +35,7 @@ const pollSchema = z.strictObject({
   events: z.array(jobEventSchema),
 });
 export const staleAfterMs = 330_000;
-export type JobUpdate = {
+type JobUpdate = {
   events?: EventPayload[];
   text?: string;
   reasoning?: string;

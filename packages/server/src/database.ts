@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 
-export type SqlValue = string | number | boolean | null;
-export type SqlResult = { rows: { data: string }[] };
+type SqlValue = string | number | boolean | null;
+type SqlResult = { rows: { data: string }[] };
 export interface SqlConnection {
   query(sql: string, values?: SqlValue[]): Promise<SqlResult>;
 }

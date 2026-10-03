@@ -1,0 +1,957 @@
+{
+  "change": "skill-process-5",
+  "base": {
+    "commit": "a54cdcecc84ede872e5cda71267cce9da6f022e0",
+    "patch": "0db4a1c73f952483ea97fa57e0639a71355185ec"
+  },
+  "skills": [
+    {
+      "skill": "blast-radius",
+      "files": [
+        "tools/__tests__/receipt-fixture.cjs",
+        "tools/__tests__/receipts.test.js",
+        "tools/__tests__/skill-records.test.js",
+        "tools/__tests__/skills.test.js",
+        "tools/skills/catalog.cjs",
+        "tools/skills/catalog.lock.json",
+        "tools/skills/cli.cjs",
+        "tools/skills/install-receipt-hook.mjs",
+        "tools/skills/receipt-hook.mjs",
+        "tools/skills/receipt-public-key.pem",
+        "tools/skills/receipts.cjs",
+        "tools/skills/records.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "The binding rule rests on one fact: a receipt's head is an ancestor of the commit that records it, so a receipt copied from a merged record cannot match a later range by SHA.",
+          "cites": "Steps 2",
+          "none": "The cherry-pick and rebase tests run the rule on real commits."
+        },
+        {
+          "finding": "Records 1 to 4 have no cites or receipts, so they fail the new schema.",
+          "cites": "Steps 4",
+          "none": "By owner decision, those records are replaced with receipt-backed ones before PRs 1 to 4 merge."
+        },
+        {
+          "finding": "The Read path of the hook rested on an unrun assumption about the Claude Code Read response. A full Read of a SKILL.md in a throwaway range produced a non-partial receipt that skills:record accepted, and a Read with limit produced none that it accepted.",
+          "cites": "Steps 5",
+          "none": "The live probe confirmed the assumption. It ran outside the repository and left nothing behind."
+        },
+        {
+          "finding": "Reviewer coverage applies only when some record in the range has a review section, so a range whose records have none passes without any reviewer receipt.",
+          "cites": "Steps 4",
+          "none": "docs/skills.md states the rule. Requiring a review section would fail the author's own pre-push run. The owner decides whether acceptance needs it."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "blast-radius",
+          "source": "Skill",
+          "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01F25RF81dmETfqVYx8H1Tpb",
+          "time": "2026-10-02T12:14:37.799Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "885bb3989527b94e85c41afc2fb8a210f925b9ec",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "MDcBtqFPULLH2YLbYYRWasrRcgW5+1kcHfnJ0l90RuuqDSpjLh7Ajj+hX7ktACvUwcBM0jiq1e2s23SvJqZ3CQ=="
+        }
+      ]
+    },
+    {
+      "skill": "deslop",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The installer re-checked that HOME is absolute, which os.homedir already guarantees.",
+          "cites": "Focus Areas",
+          "commit": "cb241bf47c89",
+          "patch": "1bdc52504c68705982f9cbd8b7d85aa388deb63a"
+        },
+        {
+          "finding": "cli.cjs main filtered the --review flag out twice to bound the argument count.",
+          "cites": "Focus Areas",
+          "commit": "4b42eebdd944",
+          "patch": "9f98963788df48a44b7a0f77059889321919fb84"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "deslop",
+          "source": "Skill",
+          "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01DyJzJfqH6GE1KJ4eoEq7VN",
+          "time": "2026-10-02T11:46:37.200Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "5561f64359d2c3f638fbbdeea04dc69e7b2d9c37",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "vDKqTnoZHrGStGypDbopqxvX4t5b/68PIwumYsgwXT4BM1oMu1ona7k3WIo0mHAsgM5hheYLsG5fiYQhuSQ5Cw=="
+        }
+      ]
+    },
+    {
+      "skill": "no-comments",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "This task allows no subagents, so comment-sicko did not run. I applied its rules by hand and deleted four comments, one of which a test already enforces.",
+          "cites": "Steps 1",
+          "commit": "cb241bf47c89",
+          "patch": "1bdc52504c68705982f9cbd8b7d85aa388deb63a"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "no-comments",
+          "source": "Skill",
+          "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_013TiyAU1g9XZqSritMqD6Jt",
+          "time": "2026-10-02T12:14:38.463Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "885bb3989527b94e85c41afc2fb8a210f925b9ec",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "v9Y6pcI4zC+A7wwgMOwT944DlV9zemUMVKT9Q/MVKFTo1q7dbgcoCLwmS2kFflXCX/ae70p+GzVDH/st7CHeDQ=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-minimize-reader-load",
+      "files": [
+        "tools/__tests__/receipt-fixture.cjs",
+        "tools/__tests__/receipts.test.js",
+        "tools/skills/catalog.cjs",
+        "tools/skills/catalog.lock.json",
+        "tools/skills/install-receipt-hook.mjs",
+        "tools/skills/receipt-hook.mjs",
+        "tools/skills/receipt-public-key.pem",
+        "tools/skills/receipts.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "The check and the pull share one receiptFault, so a reader learns the validity rule in one place.",
+          "cites": "Minimize Reader Load",
+          "none": "The code already has that shape."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-minimize-reader-load",
+          "source": "Skill",
+          "sha256": "772bd55686c20d49e1220d0728de4587cd5608ae2968b7896c5477b3f8813dfc",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_014PqPzHuPZbhnxeCqLUGk7M",
+          "time": "2026-10-02T12:14:38.983Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "885bb3989527b94e85c41afc2fb8a210f925b9ec",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "6leu1iaRhy3lnijpJnh2NnaKG+SHqQxStJf2dQ1zfPAg7o1zgP0DeiiMylhWcpjjtGuzE7hRuSJe5WrXAyBxDQ=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-prove-it-works",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Thirty mutations of the checks, the hook, and the installer each fail the tests for the predicted reason.",
+          "cites": "Script the check when you can",
+          "none": "The logs are in skill-process-evidence/pr5."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-prove-it-works",
+          "source": "Skill",
+          "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01NY9MSb5oQnzKscqXE7tRmQ",
+          "time": "2026-10-02T12:14:39.063Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "885bb3989527b94e85c41afc2fb8a210f925b9ec",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "3aBHuha24TWDuleDCpcDKKpQCWu2PwaZz/WIsBIjbu5mTz7w3FiV9IjqSk2sm8m3sduveuSnMkZf/QwPMgTKCA=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-sequence-verifiable-units",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Code and its tests land in one commit, the docs next, and the record last.",
+          "cites": "Sequence work into verifiable units",
+          "none": "Each commit passed verify:staged."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-sequence-verifiable-units",
+          "source": "Skill",
+          "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01Ce1LGvcLFbBTGLEJG5qMYT",
+          "time": "2026-10-02T12:14:39.625Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "885bb3989527b94e85c41afc2fb8a210f925b9ec",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "kg//fXVx0jnRxXBubFztt5ud32NFa0kQeH8u6sk6tpBXX04F36CVOMIp2wIgM5SQ4g2Wpwhod61jKXkeD8s/Cg=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-subtract-before-you-add",
+      "files": [
+        "tools/__tests__/receipt-fixture.cjs",
+        "tools/__tests__/receipts.test.js",
+        "tools/skills/catalog.cjs",
+        "tools/skills/catalog.lock.json",
+        "tools/skills/install-receipt-hook.mjs",
+        "tools/skills/receipt-hook.mjs",
+        "tools/skills/receipt-public-key.pem",
+        "tools/skills/receipts.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "The sketch had a signature-uniqueness check. It could fire only for a re-landed patch, which the binding rule treats as the same work, so it was dropped.",
+          "cites": "Subtract Before You Add",
+          "commit": "cb241bf47c89",
+          "patch": "1bdc52504c68705982f9cbd8b7d85aa388deb63a"
+        },
+        {
+          "finding": "install-receipt-hook.mjs computes a 44-line LCS text diff of settings.json, although plannedSettings already knows each entry it adds or removes and could list those.",
+          "cites": "Subtract Before You Add",
+          "none": "Proposed for the owner, not applied. The owner already ran the installer and reviewed this output, and the hook may only change with owner review."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-subtract-before-you-add",
+          "source": "Skill",
+          "sha256": "84bfde4d3dc16360264e0cb944b2dfbd8d92a70624322e83b93432f8e35dc60e",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01MeQMLDVB9Z6bV8VoPdJYLk",
+          "time": "2026-10-02T12:14:40.337Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "885bb3989527b94e85c41afc2fb8a210f925b9ec",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "CarCm3LTdB2E81lz/sgEexjIVnkvsiFSO0Y3b+CpGSiW/wem+/mUcvo51uP0WDk0G0RXkvYS74xOCF/JmrBCCQ=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-test-behavior-not-implementation",
+      "files": [
+        "tools/__tests__/receipt-fixture.cjs",
+        "tools/__tests__/receipts.test.js",
+        "tools/__tests__/skill-records.test.js",
+        "tools/__tests__/skills.test.js",
+        "tools/skills/catalog.cjs",
+        "tools/skills/catalog.lock.json",
+        "tools/skills/cli.cjs",
+        "tools/skills/install-receipt-hook.mjs",
+        "tools/skills/receipt-hook.mjs",
+        "tools/skills/receipt-public-key.pem",
+        "tools/skills/receipts.cjs",
+        "tools/skills/records.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "Each tampering case asserts the exact problem line, so a check that rejects a receipt for the wrong reason fails the test.",
+          "cites": "Test behavior, not implementation",
+          "none": "The mutations confirm it."
+        },
+        {
+          "finding": "The reviewer independence rule had no test for the case that the coordinator's review flow depends on, a subagent in the author's session.",
+          "cites": "Test behavior, not implementation",
+          "commit": "8b318e17f0b6",
+          "patch": "739db75eee1cdca099d47076e734a480c4025fe6"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-test-behavior-not-implementation",
+          "source": "Skill",
+          "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01CMpkJ8DawbwqkQU14N8V2q",
+          "time": "2026-10-02T12:14:40.411Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "885bb3989527b94e85c41afc2fb8a210f925b9ec",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "iVWrksDQz/T7NKcrx5nTy95z/gbCOxg8Y2oUOz0dsc0H5DRRwXJItswa2GKVzF4i8VhmwtPcGmOpbwKzQqkkDA=="
+        }
+      ]
+    },
+    {
+      "skill": "technical-writing",
+      "files": ["<change>", "AGENTS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "The receipt docs are split into install steps, receipt contents, pulling, validity, and limits.",
+          "cites": "Pick the mode first (Diátaxis)",
+          "none": "Written that way from the start."
+        },
+        {
+          "finding": "docs/skills.md called the reviewer a session in two places and a session and agent pair in a third.",
+          "cites": "Leave no sentence open to two readings (Global English)",
+          "commit": "7e5a136ba102",
+          "patch": "53717a3a6e04839a88efe1ba041ff0fe02f1817f"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "technical-writing",
+          "source": "Skill",
+          "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01TDpqreUur9C3C48T9YVEfV",
+          "time": "2026-10-02T12:14:40.862Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "885bb3989527b94e85c41afc2fb8a210f925b9ec",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "WGVp3TxwOlZO3EZyBXhGY663h8Abb3KmwC/PZTcgBtOhb+hPZmiBvf6jRV93eh9tg5YRQHG4EQHGjFwnpXdXCQ=="
+        }
+      ]
+    },
+    {
+      "skill": "test-prune",
+      "files": [
+        "tools/__tests__/receipt-fixture.cjs",
+        "tools/__tests__/receipts.test.js",
+        "tools/__tests__/skill-records.test.js",
+        "tools/__tests__/skills.test.js"
+      ],
+      "findings": [
+        {
+          "finding": "The Cursor Read case without file content asserts partial: true. That documents that an unknown response shape fails closed.",
+          "cites": "Review questions",
+          "none": "Kept, because the Cursor Read output shape is unverified."
+        },
+        {
+          "finding": "The review test signed every reviewer receipt in another session, so a check that compared sessions only, not session and agent pairs, would still pass. A same-session subagent reviewer case now fails under that mutation.",
+          "cites": "Review questions",
+          "commit": "8b318e17f0b6",
+          "patch": "739db75eee1cdca099d47076e734a480c4025fe6"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "test-prune",
+          "source": "Skill",
+          "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01KvNvSShw3CE3Mc8ptjCFfp",
+          "time": "2026-10-02T12:14:40.939Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "885bb3989527b94e85c41afc2fb8a210f925b9ec",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "MppX+njpzzN2PZdKXzasFrVghIsY/phkqsgOAyAJTZhrouB+nDfJUNyjW9j4vJuDkaCdML01Erj2iAtCxaw+BA=="
+        }
+      ]
+    },
+    {
+      "skill": "thermo-nuclear-code-quality-review",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "records.cjs grows to 407 lines. Receipt validity lives in receipts.cjs, so records.cjs only wires it in.",
+          "cites": "Approval Bar",
+          "none": "No file nears 1000 lines."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "thermo-nuclear-code-quality-review",
+          "source": "Skill",
+          "sha256": "35f68c89a24f690eaba7f77c637d3b7dc1cb0fc7bf17670606ffd83f074fa626",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01LFySS3hu1eoXeJRp6Eynno",
+          "time": "2026-10-02T12:14:41.378Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "885bb3989527b94e85c41afc2fb8a210f925b9ec",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "eo4YrrdWpuuadSW+78MTiDg4dxZvirL2kC2TLqPlTYUt3q/IEVtjZBApYA97YstM2w3kAh3AjQ4Cf+eG4khfDw=="
+        }
+      ]
+    },
+    {
+      "skill": "unslop",
+      "files": ["<change>", "AGENTS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "Checked the docs and commit messages for em dashes and mid-sentence colons.",
+          "cites": "Style",
+          "none": "None found."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "unslop",
+          "source": "Skill",
+          "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01X7Lz7qcBodo8V5JuF8y3KF",
+          "time": "2026-10-02T12:14:41.660Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "885bb3989527b94e85c41afc2fb8a210f925b9ec",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "WvZ0Hu4Ad0k5MVW3aiSffk8jC3vEkAYzQhKpaox84xi/7p8vsb8EsksUgIFM14cOtUdFTe3zED5klZBHpizFAA=="
+        }
+      ]
+    },
+    {
+      "skill": "writing-for-agents",
+      "files": ["AGENTS.md"],
+      "findings": [
+        {
+          "finding": "The AGENTS.md line stated the positive target, a Skill tool load or a full Read, and then restated it as a prohibition on cat.",
+          "cites": "Leading words",
+          "commit": "edc64d33ac8c",
+          "patch": "cbf59aeba04abea7297510e1da1def0027a0c92d"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "writing-for-agents",
+          "source": "Skill",
+          "sha256": "a842323e664e5af104eac5c97ad22fda929ebeb62d81c501161ac1f6f482db58",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01A1neUHkkbh18tFC7n27sMc",
+          "time": "2026-10-02T12:14:41.735Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "885bb3989527b94e85c41afc2fb8a210f925b9ec",
+          "headPatch": "2cedd77c44d1c83a369e9e5d9e12205f805e7ee8",
+          "sig": "uvonhAlnOldRUvwyJ6B9QZNNPY1tp7JEnAlCxoS9EGMEHSqA9F2YOc9UZm6zXRRLxOeTLiiZrzStCeKzEf6rAA=="
+        }
+      ]
+    }
+  ],
+  "review": {
+    "skills": [
+      {
+        "skill": "blast-radius",
+        "findings": [
+          {
+            "finding": "High. skills:record --review pulled the earliest valid receipt from any agent in the clone that made no author receipt, because a command cannot see which agent runs it. A review could hold other agents' loads. 60d3fff binds review pulls to the folder the command runs in. With that filter removed at HEAD, three record-writing tests fail.",
+            "cites": "Steps 3",
+            "commit": "60d3fff6a4a0",
+            "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
+          },
+          {
+            "finding": "High. receiptProblems asked only whether some record in the range held a valid author receipt for each required skill, so one record's receipts covered another record's skills. 9edd3b4 checks each record's receipts against its own range.",
+            "cites": "Steps 3",
+            "commit": "9edd3b470ded",
+            "patch": "e861ecb23ab7ce6081efaec0a8b3326f843a2b2c"
+          },
+          {
+            "finding": "Cleared. The author side of skills:record still pulls the earliest valid receipt from any pair outside the review section. If it pulls a reviewer's load, the reviewer becomes an author, and the check then fails every review entry. Any other pair needs a load on this record's own commits.",
+            "cites": "Steps 4",
+            "none": "The reviewer case fails loudly, and the helper case is the documented limit that the check cannot tell an author's helper from another agent."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "blast-radius",
+            "source": "Skill",
+            "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_016ctevuXnzJGLR334BCUNCU",
+            "time": "2026-10-03T18:42:07.238Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "CxI0oNBbnc7aySLC4q3Uc60SvTnwsKKSmvQhg7XCpRWgnxLiR75bzERHotgVZv32PHQFJQ2eJvGgBfbcdIFECQ=="
+          }
+        ]
+      },
+      {
+        "skill": "deslop",
+        "findings": [
+          {
+            "finding": "The hook's outer try block writes errors to errors.log and exits 0, so a hook failure never blocks a tool call. That is a boundary handler, not a defensive check in trusted code.",
+            "cites": "Focus Areas",
+            "none": "No slop found."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "deslop",
+            "source": "Skill",
+            "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01KZ1yZESQVdq5XgbUZj1ekt",
+            "time": "2026-10-03T18:42:07.395Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "UiiRiOQlM5fa8R5IW9ZZ+pNV4y1fiUjQ8MuSyVR+gxE1U+gx9IFB9T2PsiIVTGZnXqBvmaSQ2PemtuSuyDA4CA=="
+          }
+        ]
+      },
+      {
+        "skill": "no-comments",
+        "findings": [
+          {
+            "finding": "Judged inline without comment-sicko. The pullSection comment said an author's receipt never stands in for a reviewer's, which the code did not guarantee. 663fce8 rewrote it to state what the code does.",
+            "cites": "No comments",
+            "commit": "663fce8b68a6",
+            "patch": "ee3de23c9f0fa67c5a2f2980839dff52f15a955e"
+          },
+          {
+            "finding": "The comments that listed the fields of 'context' in receipts.cjs and 'pull' in records.cjs restated parameter shapes. 60d3fff deleted them. The hook and installer comments state facts outside the code and stay.",
+            "cites": "No comments",
+            "commit": "60d3fff6a4a0",
+            "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "no-comments",
+            "source": "Skill",
+            "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_016WiwiFYENRRRxwxCo3vqEU",
+            "time": "2026-10-03T18:42:07.773Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "zUQVzlES1HJxHObF4PkDaDD7WA+PF0tH94QR82duThE+p2NEi1QLKgqkNQgb1zDqm6ARVQ8dva8i5NhAk6uSDA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-minimize-reader-load",
+        "findings": [
+          {
+            "finding": "receipts.cjs keeps its state in arguments and returns problem lists. pullReceipts changes entry.receipts, which belongs to the record being written, and that change stays inside writeRecord's call.",
+            "cites": "Minimize Reader Load 2",
+            "none": "No hidden state to shrink."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-minimize-reader-load",
+            "source": "Skill",
+            "sha256": "772bd55686c20d49e1220d0728de4587cd5608ae2968b7896c5477b3f8813dfc",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_014SvG1ps8TzTNbNgFBnXGtD",
+            "time": "2026-10-03T18:42:08.881Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "p9e9ES/5RRA04c+WLFxhFwFSK2pDSOX9z9MZimQQpoaXwN5RW8KAfOVeShyM9Tp0+o4supEPHEpk7+AGL+9GAw=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-prove-it-works",
+        "findings": [
+          {
+            "finding": "I removed the review folder filter at HEAD and ran skill-record-writing.test.js. Three folder tests failed, so the tests catch the High finding's return. Restored, all 79 tool tests pass.",
+            "cites": "Script the check when you can",
+            "none": "Verified by a run."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-prove-it-works",
+            "source": "Skill",
+            "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01B99Pm3qtfkFsJKnb1ZRmiH",
+            "time": "2026-10-03T18:42:09.230Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "2yL28bO+5cevJyDRpO3lmyaJc1dROii/fSMW8a07t8DdfQtZ619b9zbmVoXaEp9PU3t/6d2xKtxudIwvubzvCg=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-sequence-verifiable-units",
+        "findings": [
+          {
+            "finding": "1578670 lands receipts with their tests before 7547ce2 commits the public key, so the check failed closed until the key existed. The doc commits follow the code they describe.",
+            "cites": "Sequence work into verifiable units",
+            "none": "The order checks itself."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-sequence-verifiable-units",
+            "source": "Skill",
+            "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_019NtDxtx2yabV3EzpXfrAho",
+            "time": "2026-10-03T18:42:09.590Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "c3b9RlGJ0IGLwTOP2FddRVXnN2n+nmEKb7qaeUJCYg8iMh4ozEOPwe4x4e18gcb9oEyLa+I1YyrlFtRIl5nvAA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-subtract-before-you-add",
+        "findings": [
+          {
+            "finding": "The installer printed its settings change through a 44-line hand-written JSON diff, while plannedSettings already knew each change. 7d5b1ea deleted the diff and prints that list.",
+            "cites": "Subtract Before You Add",
+            "commit": "7d5b1eaca946",
+            "patch": "b9e2deb6aff6a05d77599aa4530477fed3df92b6"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-subtract-before-you-add",
+            "source": "Skill",
+            "sha256": "84bfde4d3dc16360264e0cb944b2dfbd8d92a70624322e83b93432f8e35dc60e",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_019rrrN8AfbYCDSMgCDws5Wn",
+            "time": "2026-10-03T18:42:09.975Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "OexTCDANpC2f4TthMqF59p22WnoCbwq2vhPWRtngFYnQzgLNyoe4867rCAxExdiOjzFV8D0qc5/GYhG3D1ASCg=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-test-behavior-not-implementation",
+        "findings": [
+          {
+            "finding": "The record-writing test pinned the review pull that takes receipts from any non-author pair in the clone, which is the High finding's behavior. 60d3fff rewrote it to sign review loads in a separate folder and assert that only those are pulled.",
+            "cites": "Test behavior, not implementation",
+            "commit": "60d3fff6a4a0",
+            "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-test-behavior-not-implementation",
+            "source": "Skill",
+            "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01CMQGKy5sgzqhjRUNLgjwCk",
+            "time": "2026-10-03T18:42:10.390Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "bybZr+mdce9LDXjWP+ZphMoA3oIWvxmkIW8rZOi1u2iKu2nWfWJUPAofXIHOIM7KjNkkGxT28ud/E+49Kw3YAQ=="
+          }
+        ]
+      },
+      {
+        "skill": "technical-writing",
+        "findings": [
+          {
+            "finding": "docs/skills.md said a receipt proves that the agent loaded the skill text. The hook signs every Skill call, including one that answers 'already loaded', so the claim was too strong. 042160a says a receipt proves a signed call or full Read while the locked text was on disk.",
+            "cites": "Voice and repo specifics",
+            "commit": "042160af68ce",
+            "patch": "9df3aa5adb8836f7f7c70ac37dadf05aff05b552"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "technical-writing",
+            "source": "Skill",
+            "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01FMbvgWjTBqLxKZuQCid4pE",
+            "time": "2026-10-03T18:42:10.679Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "sXNW6rSBu7Bne+pBtVbSvCN8vTbRlhH/8kH29oBMXZNCKcj6sP/9NDeKO339Ng6676DHCdmZJBty1Y7401cKCQ=="
+          }
+        ]
+      },
+      {
+        "skill": "test-prune",
+        "findings": [
+          {
+            "finding": "receipts.test.js runs the real hook and installer with HOME, SKILL_RECEIPTS_DIR, and SKILL_RECEIPTS_KEY in a temporary folder, so it never touches the owner's key or settings. Tampered, foreign-key, partial, and out-of-range receipts each have a failing case.",
+            "cites": "Review questions",
+            "none": "No pruning needed."
+          },
+          {
+            "finding": "routing.json maps test-prune to the repository root, while the Skill tool loads glow-guides:test-prune and the hook hashes that copy. Both copies hash to 807f9139, equal to the lock. If they drift, receiptFault rejects the receipt's hash, so drift fails closed. The owner's 30 September answer in PLANS.md makes .agents/skills/test-prune/SKILL.md the maintained source.",
+            "cites": "Scope and evidence",
+            "none": "Owner decision recorded, and drift fails closed. The doctor check is outside this repository, and I did not run it."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "test-prune",
+            "source": "Skill",
+            "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01Rgi6R72cdY5QKFanVr6Uks",
+            "time": "2026-10-03T18:42:14.247Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "12B/kEx6MsElrB/4E1m5t5pW92imIRQgERap49FxoYIwwVK0WrZQu/Vc78ohbFfo4W6NYS/A5eeSt9ITRnyUAg=="
+          }
+        ]
+      },
+      {
+        "skill": "thermo-nuclear-code-quality-review",
+        "findings": [
+          {
+            "finding": "receipts.test.js is 397 lines and skill-records.test.js 686 at b44b24f. The receipt logic lives in receipts.cjs instead of growing records.cjs, which keeps each module on one concept.",
+            "cites": "Non-Negotiable Additional Standards 1",
+            "none": "No file near 1,000 lines in this range."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "thermo-nuclear-code-quality-review",
+            "source": "Skill",
+            "sha256": "35f68c89a24f690eaba7f77c637d3b7dc1cb0fc7bf17670606ffd83f074fa626",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_012HthGpMaUJrPFWYHfNGxXZ",
+            "time": "2026-10-03T18:42:11.085Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "LTGDin+QPiOqH1FQKEZKYuD9hBYs7j537lZsnn5XtIa0+EUBgniVI8K2Qx+LhJZhh9Rw5roqOeKKSx97Uc5kAg=="
+          }
+        ]
+      },
+      {
+        "skill": "unslop",
+        "findings": [
+          {
+            "finding": "Scanned the receipt sections of docs/skills.md, the README, AGENTS.md, and the commit messages for dashes, colon connectors, filler, and AI vocabulary.",
+            "cites": "Process 1",
+            "none": "No pattern found."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "unslop",
+            "source": "Skill",
+            "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01Jj8y95WgpW4hvWBSopcu5M",
+            "time": "2026-10-03T18:41:00.503Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "B3Nhd0eqXTaNk1liIuHH/m10qS3H0lSJIpVHrNsKB/hKOwvwyxcYR6f32gbaVh0hVF9H7rVynwPVPDyVirmtCg=="
+          }
+        ]
+      },
+      {
+        "skill": "writing-for-agents",
+        "findings": [
+          {
+            "finding": "AGENTS.md said a passing check shows that each skill was loaded. That overstated a receipt, which an 'already loaded' Skill call also makes. 042160a states what the check enforces and what a receipt does not show.",
+            "cites": "Context pointers",
+            "commit": "042160af68ce",
+            "patch": "9df3aa5adb8836f7f7c70ac37dadf05aff05b552"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "writing-for-agents",
+            "source": "Skill",
+            "sha256": "a842323e664e5af104eac5c97ad22fda929ebeb62d81c501161ac1f6f482db58",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01NmWFgyuAztbrjbkGMHMTmj",
+            "time": "2026-10-03T18:42:11.432Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "fFNSYgcXWv6ekkriUchgEuuMawxu1yT8z3PMBeGLWLQmWacfj0KE3gxhIkauSEpRY7S3dHjjIUGEBBBbgrJNDw=="
+          }
+        ]
+      }
+    ]
+  }
+}

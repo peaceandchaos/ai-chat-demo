@@ -3,12 +3,11 @@ import { z } from 'zod';
 import {
   decodeJson,
   responseInputItemSchema,
-  type ModelKey,
   type ResponseInputItem,
 } from '../../../shared/contracts';
 import { parseResponsesEvent } from '../../../shared/provider-events';
 import { ProviderFailure } from './errors';
-import { models } from './models';
+import type { ResponsesModel } from './models';
 import type { BeforePaidCall, ProviderChunk } from './provider';
 
 // Strip API-only fields (annotations, item status) while preserving every replay item.
@@ -68,7 +67,7 @@ function dataText(data: RawData): string {
   return data.toString('utf8');
 }
 
-export type ResponsesOptions = {
+type ResponsesOptions = {
   apiKey: string;
   socketUrl?: string;
   httpUrl?: string;
@@ -79,7 +78,7 @@ export class ResponsesClient {
   constructor(private readonly options: ResponsesOptions) {}
 
   async compact(
-    model: ModelKey,
+    config: ResponsesModel,
     items: ResponseInputItem[],
     signal: AbortSignal,
     beforeCall: BeforePaidCall,
@@ -95,7 +94,7 @@ export class ResponsesClient {
           Authorization: `Bearer ${this.options.apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ model: models[model].id, input: items }),
+        body: JSON.stringify({ model: config.id, input: items }),
       },
     );
     if (!response.ok) {
@@ -114,7 +113,7 @@ export class ResponsesClient {
   }
 
   async generate(
-    model: ModelKey,
+    config: ResponsesModel,
     input: ResponseInputItem[],
     signal: AbortSignal,
     beforeCall: BeforePaidCall,
@@ -159,16 +158,16 @@ export class ResponsesClient {
         socket.send(
           JSON.stringify({
             type: 'response.create',
-            model: models[model].id,
+            model: config.id,
             input,
             store: false,
-            max_output_tokens: models[model].maxOutput,
+            max_output_tokens: config.maxOutput,
             include: ['reasoning.encrypted_content'],
             reasoning: { summary: 'auto' },
             context_management: [
               {
                 type: 'compaction',
-                compact_threshold: models[model].compactThreshold,
+                compact_threshold: config.compactThreshold,
               },
             ],
           }),

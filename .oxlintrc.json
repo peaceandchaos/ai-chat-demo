@@ -83,7 +83,8 @@
     "import/no-duplicates": "error",
     "eslint/eqeqeq": "error",
     "unicorn/no-abusive-eslint-disable": "error",
-    "project/require-disable-reason": "error"
+    "project/require-disable-reason": "error",
+    "project/no-type-assertion": ["error", { "allow": [] }]
   },
   "overrides": [
     {
@@ -145,7 +146,8 @@
         "import/no-duplicates": "off",
         "eslint/eqeqeq": "off",
         "unicorn/no-abusive-eslint-disable": "off",
-        "project/require-disable-reason": "off"
+        "project/require-disable-reason": "off",
+        "project/no-type-assertion": "off"
       }
     },
     {

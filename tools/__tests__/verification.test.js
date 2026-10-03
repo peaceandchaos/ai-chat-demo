@@ -18,7 +18,7 @@ const {
 } = require('../verification/snapshot.cjs');
 const { evaluate } = require('../audit-check.cjs');
 const security = require('../security-check.cjs');
-const checks = require('../verification/checks.cjs');
+const { checks, rangeChecks } = require('../verification/checks.cjs');
 const { assertComplete } = require('../test-verified.cjs');
 
 test('a real Jest run with a skipped case cannot become an accepted pass', () => {
@@ -67,7 +67,8 @@ function createFixture(check, message, extraScripts = {}) {
     copyFileSync(resolve(__dirname, '..', name), join(fixture, 'tools', name));
   }
   const scripts = { ...extraScripts };
-  for (const args of Object.values(checks)) scripts[args[1]] = 'node check.cjs';
+  for (const args of [...Object.values(checks), ...Object.values(rangeChecks)])
+    scripts[args[1]] = 'node check.cjs';
   writeFileSync(
     join(fixture, 'package.json'),
     JSON.stringify({ name: 'fixture', version: '1.0.0', scripts }),
@@ -91,6 +92,8 @@ function createFixture(check, message, extraScripts = {}) {
     'export {};\n',
   );
   writeFileSync(join(fixture, 'check.cjs'), check);
+  git(fixture, ['commit', '--quiet', '--allow-empty', '-m', 'Main']);
+  git(fixture, ['update-ref', 'refs/remotes/origin/main', 'HEAD']);
   git(fixture, ['add', '.']);
   git(fixture, ['commit', '--quiet', '-m', message]);
   return fixture;
@@ -127,6 +130,7 @@ test('committed and staged checks reject a broken tree despite an unstaged fix a
   const fixture = createFixture(needsLocalFix(1), 'Broken fixture');
   try {
     const commit = git(fixture, ['rev-parse', 'HEAD']);
+    const main = git(fixture, ['rev-parse', 'origin/main']);
     mkdirSync(join(fixture, 'node_modules'));
     writeFileSync(
       join(fixture, 'node_modules/local-fix'),
@@ -154,6 +158,10 @@ test('committed and staged checks reject a broken tree despite an unstaged fix a
     ).toEqual([
       ['install', ['npm', 'ci', '--no-audit', '--no-fund']],
       ...Object.entries(checks).map(([name, args]) => [name, ['npm', ...args]]),
+      ...Object.entries(rangeChecks).map(([name, args]) => [
+        name,
+        ['npm', ...args, main, commit],
+      ]),
     ]);
     withSnapshot(fixture, 'staged', 'HEAD', checkout => {
       expect(existsSync(join(checkout, 'node_modules'))).toBe(false);
@@ -257,6 +265,94 @@ writeFileSync('.quality-results/0-forged/result.json', ${JSON.stringify(JSON.str
       'Tracked .quality-results files could forge verification records.',
     );
     expect(runRecords()).toEqual([]);
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
+test('range checks receive the merge base and run only over a non-empty range', () => {
+  const fixture = createFixture('process.exit(0);\n', 'Base fixture');
+  try {
+    const base = git(fixture, ['rev-parse', 'origin/main']);
+    writeFileSync(join(fixture, 'change.txt'), 'change\n');
+    git(fixture, ['add', 'change.txt']);
+    git(fixture, ['commit', '--quiet', '-m', 'Change']);
+    const head = git(fixture, ['rev-parse', 'HEAD']);
+    const results = join(fixture, '.quality-results');
+    const rangeResults = () => {
+      const records = resultRecords(results);
+      rmSync(results, { recursive: true, force: true });
+      rmSync(join(fixture, 'node_modules'), { recursive: true, force: true });
+      return records.map(record => ({
+        base: record.base,
+        required: record.required.filter(name => name in rangeChecks),
+        commands: record.results
+          .filter(result => result.name in rangeChecks)
+          .map(result => result.command),
+      }));
+    };
+    const ranged = {
+      base,
+      required: Object.keys(rangeChecks),
+      commands: Object.values(rangeChecks).map(args =>
+        ['npm'].concat(args, [base, head]),
+      ),
+    };
+
+    const committed = verifyFixture(fixture, ['commit', 'HEAD']);
+    expect(committed.status).toBe(0);
+    expect(committed.stdout).toContain(`, base ${base} (2 commits); PASS\n`);
+    expect(rangeResults()).toEqual([ranged]);
+
+    const empty = verifyFixture(fixture, ['commit', 'HEAD', '--base', 'HEAD']);
+    expect(empty.status).toBe(1);
+    expect(empty.stderr).toContain(
+      `${head}..${head} has no commits, so the range checks would check nothing. Pass --base with a ref that the commit is ahead of.\n`,
+    );
+    expect(rangeResults()).toEqual([]);
+
+    const missing = verifyFixture(fixture, [
+      'commit',
+      'HEAD',
+      '--base',
+      'gone',
+    ]);
+    expect(missing.status).toBe(1);
+    expect(missing.stderr).toBe(
+      `Cannot find the merge base of ${head} and gone. Fetch gone, or pass --base <ref>.\n`,
+    );
+    expect(rangeResults()).toEqual([]);
+
+    const notRun = `PASS (range checks not run: ${Object.keys(rangeChecks).join(', ')})\n`;
+    const unranged = verifyFixture(fixture, ['current']);
+    expect(unranged.status).toBe(0);
+    expect(unranged.stdout).toContain(
+      `, tree ${git(fixture, ['rev-parse', 'HEAD^{tree}'])}; ${notRun}`,
+    );
+    const [unrangedRecord] = resultRecords(results);
+    expect(unrangedRecord.notRun).toEqual(Object.keys(rangeChecks));
+    expect(rangeResults()).toEqual([
+      { base: undefined, required: [], commands: [] },
+    ]);
+
+    const emptyCurrent = verifyFixture(fixture, ['current', '--base', 'HEAD']);
+    expect(emptyCurrent.status).toBe(0);
+    expect(emptyCurrent.stdout).toContain(
+      `, base ${head} (0 commits); ${notRun}`,
+    );
+    expect(resultRecords(results)[0].notRun).toEqual(Object.keys(rangeChecks));
+    expect(rangeResults()).toEqual([
+      { base: head, required: [], commands: [] },
+    ]);
+
+    const current = verifyFixture(fixture, [
+      'current',
+      '--base',
+      'origin/main',
+    ]);
+    expect(current.status).toBe(0);
+    expect(resultRecords(results)[0].notRun).toEqual([]);
+    expect(rangeResults()).toEqual([ranged]);
   } finally {
     rmSync(fixture, { recursive: true, force: true });
   }

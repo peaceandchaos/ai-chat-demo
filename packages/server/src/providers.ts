@@ -51,9 +51,10 @@ export class LiveProviders implements Providers {
     onChunk: (chunk: ProviderChunk) => Promise<void>,
     beforeCall: BeforePaidCall,
   ): Promise<ProviderCompletion> {
-    if (models[model].wire === 'responses') {
+    const config = models[model];
+    if (config.wire === 'responses') {
       const items = await this.responses.generate(
-        model,
+        config,
         context.items,
         signal,
         beforeCall,

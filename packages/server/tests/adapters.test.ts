@@ -6,6 +6,7 @@ import { ProviderFailure } from '../src/errors';
 import { GatewayClient, gatewayMessages } from '../src/gateway';
 import { JevClient } from '../src/jev';
 import type { ProviderChunk } from '../src/provider';
+import { models } from '../src/models';
 import { ResponsesClient, trimCompacted } from '../src/responses';
 import { submission } from './fixtures';
 
@@ -162,7 +163,7 @@ test('Responses uses a real socket, store:false, and receives official compactio
     });
     const received: ProviderChunk[] = [];
     const result = await client.generate(
-      'gpt-6.1-sol',
+      models['gpt-6.1-sol'],
       input,
       signal,
       before,
@@ -171,7 +172,7 @@ test('Responses uses a real socket, store:false, and receives official compactio
         return Promise.resolve();
       },
     );
-    await client.generate('gpt-6-astra', input, signal, before, () =>
+    await client.generate(models['gpt-6-astra'], input, signal, before, () =>
       Promise.resolve(),
     );
     expect(requests).toHaveLength(2);
@@ -206,13 +207,19 @@ test('standalone compaction keeps its entire canonical replacement window', asyn
     { type: 'compaction', encrypted_content: 'opaque' },
     textItem('user', 'tail'),
   ];
+  const requests: RequestInit[] = [];
   const client = new ResponsesClient({
     apiKey: 'example-key',
-    fetcher: () => Promise.resolve(Response.json({ output })),
+    fetcher: (_url, init) => {
+      if (init) requests.push(init);
+      return Promise.resolve(Response.json({ output }));
+    },
   });
-  expect(await client.compact('gpt-6.1-sol', input, signal, before)).toEqual(
-    output,
-  );
+  const config = models['gpt-6.1-sol'];
+  expect(await client.compact(config, input, signal, before)).toEqual(output);
+  expect(requests.map(request => request.body)).toEqual([
+    JSON.stringify({ model: config.id, input }),
+  ]);
   expect(trimCompacted([...input, ...output])).toEqual(output.slice(1));
 });
 

@@ -1,0 +1,677 @@
+{
+  "change": "skill-process-5f-a",
+  "base": {
+    "commit": "1e64d771e4a7a85355b2c098dcc3e041e977b1a7",
+    "patch": "d614834d0bc09c78e1d3b1453934d2fe06505f2c"
+  },
+  "skills": [
+    {
+      "skill": "blast-radius",
+      "files": [
+        "tools/__tests__/record-fixture.cjs",
+        "tools/__tests__/skill-record-writing.test.js",
+        "tools/__tests__/skill-records.test.js",
+        "tools/skills/cli.cjs",
+        "tools/skills/ledger.cjs",
+        "tools/skills/receipts.cjs",
+        "tools/skills/records.cjs",
+        "tools/verification/export-entries.json"
+      ],
+      "findings": [
+        {
+          "finding": "The one fact the folder rule is safe because of: the CLI hashes git rev-parse --show-toplevel, which resolves links the way Claude Code reports its folder, so a review run sees only receipts made in its own worktree. A test runs --review from a symlinked path, and six planted defects each fail a test.",
+          "cites": "Steps 2",
+          "commit": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "blast-radius",
+          "source": "Skill",
+          "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
+          "partial": false,
+          "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+          "agent": null,
+          "agentType": null,
+          "toolUseId": "toolu_01KMKXCsU2GeKUJofDMipHfv",
+          "time": "2026-10-03T18:34:04.200Z",
+          "cwd": "b4b7eafd5f3422cb455fa84702655fccbbec52e6114ce6dcc981a228c041c5f0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "submission/skill-process-5f-a",
+          "head": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "headPatch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f",
+          "sig": "WNjnhjV+fgic6Tt2Ikv0Qni+PifZxhU3gIaFVId8j5nVslLvZ5HZuhl6bpI4Gdof8zjfD5Kh3WgluEcrAh1WDQ=="
+        }
+      ]
+    },
+    {
+      "skill": "deslop",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The H1 (a) draft added no casts, try blocks or defensive checks. The comment review of record 5e's range found 21 comments that only restated code, and they are deleted.",
+          "cites": "Focus Areas",
+          "commit": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "deslop",
+          "source": "Skill",
+          "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
+          "partial": false,
+          "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+          "agent": null,
+          "agentType": null,
+          "toolUseId": "toolu_01NwMovc2fUxwHtN9E3tb48W",
+          "time": "2026-10-03T18:34:06.311Z",
+          "cwd": "b4b7eafd5f3422cb455fa84702655fccbbec52e6114ce6dcc981a228c041c5f0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "submission/skill-process-5f-a",
+          "head": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "headPatch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f",
+          "sig": "HbhLCzEHNemBq0Tpo4pj+GstiUTaDx5w6fXkpVSvVMD2ITkQTzQQCUZgNQlTN+PJiZ5jjt3l9mU3O7T/W+S/Aw=="
+        }
+      ]
+    },
+    {
+      "skill": "no-comments",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "pstack:comment-sicko reviewed the comments that record 5e's range added. 21 deletions are applied, 2 git-behavior comments in change.cjs are kept with proof, and the pullSection comment now names its cause. Its 9 structural rewrite demands are declined for this PR as non-defects.",
+          "cites": "Steps 2",
+          "commit": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "no-comments",
+          "source": "Skill",
+          "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
+          "partial": false,
+          "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+          "agent": null,
+          "agentType": null,
+          "toolUseId": "toolu_016zrNFNwQSPcJefDtbNmyXi",
+          "time": "2026-10-03T18:34:08.362Z",
+          "cwd": "b4b7eafd5f3422cb455fa84702655fccbbec52e6114ce6dcc981a228c041c5f0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "submission/skill-process-5f-a",
+          "head": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "headPatch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f",
+          "sig": "yDwXNA0cMhjDQ+VCo9e3/o/KQBK6FdjhOZc7WuuUnlzOi+Z0XwFo2iDePGeolA1kl4Pm4TBusXxd3Evcos8EDQ=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-prove-it-works",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Each new test failed before the change and passes after it. Run on the committed records, the new check flags both stray reviewer pairs and the receipts made in an author folder, which is the H1 bug the rule exists for.",
+          "cites": "Script the check when you can",
+          "commit": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-prove-it-works",
+          "source": "Skill",
+          "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
+          "partial": false,
+          "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+          "agent": null,
+          "agentType": null,
+          "toolUseId": "toolu_018P1tTiMGDhNh5LneYS1M4Z",
+          "time": "2026-10-03T18:34:12.522Z",
+          "cwd": "b4b7eafd5f3422cb455fa84702655fccbbec52e6114ce6dcc981a228c041c5f0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "submission/skill-process-5f-a",
+          "head": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "headPatch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f",
+          "sig": "E26zlrjjUFtJRLmh38QY92N41pyAGzNY72jyokjCcmHEqi0XuP/5NRBBQ/eEocwcqint24h+o243dacAgYTbDQ=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-sequence-verifiable-units",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The commits land in an order that checks itself: the fixture fix and export entries first, then H1 (a) with its tests, then the records, then the fresh review that runs under H1 (a).",
+          "cites": "Sequence work into verifiable units",
+          "none": "An ordering choice, not a defect."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-sequence-verifiable-units",
+          "source": "Skill",
+          "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
+          "partial": false,
+          "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+          "agent": null,
+          "agentType": null,
+          "toolUseId": "toolu_01JNE5CS35SNbb39UJAcT1hq",
+          "time": "2026-10-03T18:34:12.927Z",
+          "cwd": "b4b7eafd5f3422cb455fa84702655fccbbec52e6114ce6dcc981a228c041c5f0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "submission/skill-process-5f-a",
+          "head": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "headPatch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f",
+          "sig": "kuZCqo8jwsHp04IzNW9RJio1brkkp2rATlYDIbi9MdUfPJ9ZH7r8RuZ3q/bgf3QahrU5y3ZMv9hdaPmI+n6yAA=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-test-behavior-not-implementation",
+      "files": [
+        "tools/__tests__/record-fixture.cjs",
+        "tools/__tests__/skill-record-writing.test.js",
+        "tools/__tests__/skill-records.test.js",
+        "tools/skills/cli.cjs",
+        "tools/skills/ledger.cjs",
+        "tools/skills/receipts.cjs",
+        "tools/skills/records.cjs",
+        "tools/verification/export-entries.json"
+      ],
+      "findings": [
+        {
+          "finding": "The folder tests assert the receipts a review keeps and the check messages, not internal calls. A symlink test uses a decoy folder, so it fails when the logical path is hashed.",
+          "cites": "Test behavior, not implementation",
+          "commit": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-test-behavior-not-implementation",
+          "source": "Skill",
+          "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
+          "partial": false,
+          "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+          "agent": null,
+          "agentType": null,
+          "toolUseId": "toolu_01CYhmSy6AMnb59cdkkrfF14",
+          "time": "2026-10-03T18:34:13.271Z",
+          "cwd": "b4b7eafd5f3422cb455fa84702655fccbbec52e6114ce6dcc981a228c041c5f0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "submission/skill-process-5f-a",
+          "head": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "headPatch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f",
+          "sig": "ru7NuoXpEBN9XFKrt4VHc2q/4EV4WUxh8HcYVLezsutwW8GM4rEwjZAWbpGeBTUNnzffNIUAm5/IilcKp1y5Aw=="
+        }
+      ]
+    },
+    {
+      "skill": "technical-writing",
+      "files": ["<change>", "PLANS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "docs/skills.md lines on review pulls and the manual folder check described the old rule. They now state the folder binding and the one-reviewer rule, and PLANS.md records the hosted CI gap.",
+          "cites": "Make statements load one at a time (STE rules)",
+          "commit": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "technical-writing",
+          "source": "Skill",
+          "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
+          "partial": false,
+          "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+          "agent": null,
+          "agentType": null,
+          "toolUseId": "toolu_01FuUa2Acgy6hKrWDFHg5Mae",
+          "time": "2026-10-03T18:34:13.892Z",
+          "cwd": "b4b7eafd5f3422cb455fa84702655fccbbec52e6114ce6dcc981a228c041c5f0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "submission/skill-process-5f-a",
+          "head": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "headPatch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f",
+          "sig": "6ahyMaZNW3ZpwXc+S3NoL1dkHS02f/aMzt/B/Y165zhuWu93fTcnep3RSxholoxb+sUuwakWDJA2Ke6jWUboBQ=="
+        }
+      ]
+    },
+    {
+      "skill": "test-prune",
+      "files": [
+        "tools/__tests__/record-fixture.cjs",
+        "tools/__tests__/skill-record-writing.test.js",
+        "tools/__tests__/skill-records.test.js"
+      ],
+      "findings": [
+        {
+          "finding": "Two existing tests changed expectations because rules 3 and 4 now reject what they used to accept. No test was removed. The record fixture now turns off git auto-maintenance, which made one test fail 5 of 25 runs.",
+          "cites": "Review questions",
+          "commit": "ef7d4ea5d247a048fbb24c781b32d9a2b762f653",
+          "patch": "15d06a533abb33a326746f2360770175295f4672"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "test-prune",
+          "source": "Skill",
+          "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
+          "partial": false,
+          "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+          "agent": null,
+          "agentType": null,
+          "toolUseId": "toolu_01FHNGN5uExDBjF4hchhWEdm",
+          "time": "2026-10-03T18:34:13.970Z",
+          "cwd": "b4b7eafd5f3422cb455fa84702655fccbbec52e6114ce6dcc981a228c041c5f0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "submission/skill-process-5f-a",
+          "head": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "headPatch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f",
+          "sig": "tZ1Y8AoQFkN67fBIP57M7g0jrD/kY7dpopysJBtW7sfb4tZdHKTYtbPFQKg6B6OddVTsW4h2JA9L76Q4J4R4Aw=="
+        }
+      ]
+    },
+    {
+      "skill": "thermo-nuclear-code-quality-review",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "No file crosses 1000 lines. The rule adds one folder filter in pullReceipts and two checks in receiptProblems, with no new mode flag. The comment review named larger restructurings, such as splitting writeRecord by mode, which stay out of this PR.",
+          "cites": "Non-Negotiable Additional Standards 1",
+          "none": "Restructuring is out of scope for a PR with no spare commit."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "thermo-nuclear-code-quality-review",
+          "source": "Skill",
+          "sha256": "35f68c89a24f690eaba7f77c637d3b7dc1cb0fc7bf17670606ffd83f074fa626",
+          "partial": false,
+          "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+          "agent": null,
+          "agentType": null,
+          "toolUseId": "toolu_01FQumRNqeFBD9EjmdrXMv2j",
+          "time": "2026-10-03T18:34:14.392Z",
+          "cwd": "b4b7eafd5f3422cb455fa84702655fccbbec52e6114ce6dcc981a228c041c5f0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "submission/skill-process-5f-a",
+          "head": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "headPatch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f",
+          "sig": "jJ0vBsFj4K+dlQTnzYu8lsEb5g8FYavEw3US/gQMtEKiK6nfXDPMSWOtPODgm2cRU65b/XemzhrwPlcrgd8tAA=="
+        }
+      ]
+    },
+    {
+      "skill": "unslop",
+      "files": ["<change>", "PLANS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "Commit messages, docs and record text were checked for dashes, filler and colon connectors.",
+          "cites": "Process 1",
+          "none": "No pattern found after the edits."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "unslop",
+          "source": "Skill",
+          "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
+          "partial": false,
+          "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+          "agent": null,
+          "agentType": null,
+          "toolUseId": "toolu_01KtAKCtUtFu2MaxQ7zgMBqL",
+          "time": "2026-10-03T18:34:14.573Z",
+          "cwd": "b4b7eafd5f3422cb455fa84702655fccbbec52e6114ce6dcc981a228c041c5f0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "submission/skill-process-5f-a",
+          "head": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "headPatch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f",
+          "sig": "lIF1H8TM6veCjnEoDTRhRSu6p/PUn5SBixhHDt8EvwKMAb8Flz9M8JdeuGRs5+d9mfe+TaeYgh/rD1S7uZ2JBw=="
+        }
+      ]
+    }
+  ],
+  "review": {
+    "skills": [
+      {
+        "skill": "blast-radius",
+        "findings": [
+          {
+            "finding": "The one fact the folder rule is safe because of: git rev-parse --show-toplevel prints the physical folder through a symlink. I entered this worktree through a symlink in my scratchpad. pwd -L showed the link, and both the top level and pwd -P printed the real path.",
+            "cites": "Steps 5",
+            "none": "Proved by a run."
+          },
+          {
+            "finding": "Cleared. If Claude Code reported a logical path, the hook would hash a folder that the command never matches, and skills:record --review would name every skill as missing.",
+            "cites": "Steps 4",
+            "none": "The failure is loud, so a wrong review cannot pass."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "blast-radius",
+            "source": "Skill",
+            "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_016ctevuXnzJGLR334BCUNCU",
+            "time": "2026-10-03T18:42:07.238Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "CxI0oNBbnc7aySLC4q3Uc60SvTnwsKKSmvQhg7XCpRWgnxLiR75bzERHotgVZv32PHQFJQ2eJvGgBfbcdIFECQ=="
+          }
+        ]
+      },
+      {
+        "skill": "deslop",
+        "findings": [
+          {
+            "finding": "The folder rule is one condition in pullReceipts and two rules in receiptProblems. It adds no cast, try block, or guard.",
+            "cites": "Focus Areas",
+            "none": "No slop found."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "deslop",
+            "source": "Skill",
+            "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01KZ1yZESQVdq5XgbUZj1ekt",
+            "time": "2026-10-03T18:42:07.395Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "UiiRiOQlM5fa8R5IW9ZZ+pNV4y1fiUjQ8MuSyVR+gxE1U+gx9IFB9T2PsiIVTGZnXqBvmaSQ2PemtuSuyDA4CA=="
+          }
+        ]
+      },
+      {
+        "skill": "no-comments",
+        "findings": [
+          {
+            "finding": "Judged inline without comment-sicko. 60d3fff deleted 21 comments from record 5e's range. The new comments state facts the code cannot show: the cli.cjs note that Claude Code and git both resolve the folder, the fixture's maintenance note, the symlink test's note, and the pullSection limit.",
+            "cites": "No comments",
+            "none": "Each kept comment states a fact outside the code."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "no-comments",
+            "source": "Skill",
+            "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_016WiwiFYENRRRxwxCo3vqEU",
+            "time": "2026-10-03T18:42:07.773Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "zUQVzlES1HJxHObF4PkDaDD7WA+PF0tH94QR82duThE+p2NEi1QLKgqkNQgb1zDqm6ARVQ8dva8i5NhAk6uSDA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-prove-it-works",
+        "findings": [
+          {
+            "finding": "I ran --review for all eight records in my own worktree. All 112 review entries hold receipts from one pair, this session with agent a2c79c32, signed in this folder. Removing the folder filter fails three tests.",
+            "cites": "Prove It Works",
+            "none": "Verified by a run."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-prove-it-works",
+            "source": "Skill",
+            "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01B99Pm3qtfkFsJKnb1ZRmiH",
+            "time": "2026-10-03T18:42:09.230Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "2yL28bO+5cevJyDRpO3lmyaJc1dROii/fSMW8a07t8DdfQtZ619b9zbmVoXaEp9PU3t/6d2xKtxudIwvubzvCg=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-sequence-verifiable-units",
+        "findings": [
+          {
+            "finding": "ef7d4ea fixes the flaky fixture first, 60d3fff lands the folder rule with its tests, and 068a796 records the range.",
+            "cites": "Sequence work into verifiable units",
+            "none": "The order checks itself."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-sequence-verifiable-units",
+            "source": "Skill",
+            "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_019NtDxtx2yabV3EzpXfrAho",
+            "time": "2026-10-03T18:42:09.590Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "c3b9RlGJ0IGLwTOP2FddRVXnN2n+nmEKb7qaeUJCYg8iMh4ozEOPwe4x4e18gcb9oEyLa+I1YyrlFtRIl5nvAA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-test-behavior-not-implementation",
+        "findings": [
+          {
+            "finding": "The symlink test runs the command from a link with PWD set to it, so it fails if the code hashes the logical path. The author-folder test signs a second pair's receipt in the author folder and asserts the rejection text.",
+            "cites": "Test behavior, not implementation",
+            "none": "The tests detect the defects they name."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-test-behavior-not-implementation",
+            "source": "Skill",
+            "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01CMQGKy5sgzqhjRUNLgjwCk",
+            "time": "2026-10-03T18:42:10.390Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "bybZr+mdce9LDXjWP+ZphMoA3oIWvxmkIW8rZOi1u2iKu2nWfWJUPAofXIHOIM7KjNkkGxT28ud/E+49Kw3YAQ=="
+          }
+        ]
+      },
+      {
+        "skill": "technical-writing",
+        "findings": [
+          {
+            "finding": "docs/skills.md states the folder rule and its limit. The README dependency lines match the code: unpatchedDays is 14 in audit-check.cjs, a new latest release fails the disposition, and security-check.cjs leaves dependency entries to the dependency gate.",
+            "cites": "Voice and repo specifics",
+            "none": "The claims match the code."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "technical-writing",
+            "source": "Skill",
+            "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01FMbvgWjTBqLxKZuQCid4pE",
+            "time": "2026-10-03T18:42:10.679Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "sXNW6rSBu7Bne+pBtVbSvCN8vTbRlhH/8kH29oBMXZNCKcj6sP/9NDeKO339Ng6676DHCdmZJBty1Y7401cKCQ=="
+          }
+        ]
+      },
+      {
+        "skill": "test-prune",
+        "findings": [
+          {
+            "finding": "Two existing tests changed their expected errors, because the check now rejects a review receipt in an author folder and a second reviewer pair. No test is removed or skipped, and maintenance.auto false removes a timing source.",
+            "cites": "Review questions",
+            "none": "No pruning needed."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "test-prune",
+            "source": "Skill",
+            "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01Rgi6R72cdY5QKFanVr6Uks",
+            "time": "2026-10-03T18:42:14.247Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "12B/kEx6MsElrB/4E1m5t5pW92imIRQgERap49FxoYIwwVK0WrZQu/Vc78ohbFfo4W6NYS/A5eeSt9ITRnyUAg=="
+          }
+        ]
+      },
+      {
+        "skill": "thermo-nuclear-code-quality-review",
+        "findings": [
+          {
+            "finding": "The folder rule is one field on the pull context and two checks in receiptProblems. It adds no mode flag, and records.cjs shrinks by 18 lines.",
+            "cites": "Non-Negotiable Additional Standards 2",
+            "none": "No spaghetti growth."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "thermo-nuclear-code-quality-review",
+            "source": "Skill",
+            "sha256": "35f68c89a24f690eaba7f77c637d3b7dc1cb0fc7bf17670606ffd83f074fa626",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_012HthGpMaUJrPFWYHfNGxXZ",
+            "time": "2026-10-03T18:42:11.085Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "LTGDin+QPiOqH1FQKEZKYuD9hBYs7j537lZsnn5XtIa0+EUBgniVI8K2Qx+LhJZhh9Rw5roqOeKKSx97Uc5kAg=="
+          }
+        ]
+      },
+      {
+        "skill": "unslop",
+        "findings": [
+          {
+            "finding": "Scanned docs/skills.md, README.md, PLANS.md, and the range's commit messages for dashes, colon connectors, filler, and AI vocabulary.",
+            "cites": "Process 1",
+            "none": "No pattern found."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "unslop",
+            "source": "Skill",
+            "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01Jj8y95WgpW4hvWBSopcu5M",
+            "time": "2026-10-03T18:41:00.503Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "B3Nhd0eqXTaNk1liIuHH/m10qS3H0lSJIpVHrNsKB/hKOwvwyxcYR6f32gbaVh0hVF9H7rVynwPVPDyVirmtCg=="
+          }
+        ]
+      }
+    ]
+  }
+}

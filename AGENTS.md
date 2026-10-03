@@ -31,6 +31,12 @@ npm run verify:commit -- HEAD
 
 The example config has no live credentials. Never copy personal config or environment files into verification checkouts. `verify:staged` checks the index; `verify:commit` installs locked dependencies in a fresh checkout and records the tested commit/tree. `verify:current` is for a clean CI checkout. Working-tree checks are useful feedback, not proof about another commit. Read `tools/verification/checks.cjs` for the implemented suite.
 
+## Skills
+
+Before you edit, run `npm run skills:required -- --plan <path>...` for the files you plan to touch. Load every skill it lists with the Skill tool and apply it. Only a Skill tool load, or a full Read of the `SKILL.md`, makes a signed receipt. On a branch, run `npm run skills:required -- origin/main`. Set the skill roots first, as `docs/skills.md` describes. `tools/skills/routing.json` decides what is required; changes to it need owner review. The same output lists the unenforced lessons from `tools/skills/ledger.json`. Apply them too. When a review finding recurs, add the sighting to its lesson, or add a lesson the first time.
+
+Before you push, run `npm run skills:record -- <change-id> origin/main`. It copies your receipts into the record. Write each skill's findings, the heading or numbered rule each finding cites, and the fixing commit, the reason none was needed, or `open` with what is left. Then commit the record. A reviewer loads the same skills and runs the command again with `--review`. A pull request run of the check fails until each record has that review and no finding is open. `verify:commit` fails until each record that the range changes covers every skill its own range requires, with a valid receipt made in that range. A passing check shows a signed Skill tool call or full Read of each skill while the locked text was on disk. It does not show a fresh read, because a Skill call that answers "already loaded" also makes a receipt, and it does not show that the skill was applied well.
+
 ## Checks and repairs
 
 Use the repository `test-prune` skill when reviewing test quality. Prefer meaningful integration checks for important flows. Keep small boundary checks when they provide clearer evidence. Do not optimize test count, coverage, or scores.

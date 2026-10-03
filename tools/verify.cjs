@@ -16,14 +16,17 @@ const {
   fingerprint,
   cleanEnvironment,
 } = require('./verification/snapshot.cjs');
-const checks = require('./verification/checks.cjs');
+const { checks, rangeChecks } = require('./verification/checks.cjs');
 
 const root = git(process.cwd(), ['rev-parse', '--show-toplevel']);
-const mode = process.argv[2];
-const ref = process.argv[3] ?? 'HEAD';
+const [mode, ...rest] = process.argv.slice(2);
+const baseFlag = rest.indexOf('--base');
+const baseRef = baseFlag === -1 ? null : rest[baseFlag + 1];
+const positional = baseFlag === -1 ? rest : rest.toSpliced(baseFlag, 2);
+const ref = positional[0] ?? 'HEAD';
 // A checkout run writes only where its caller asks, never inside the candidate.
 const output = mode?.endsWith('-checkout')
-  ? resolve(process.argv[3])
+  ? resolve(positional[0])
   : resolve(root, '.quality-results', `${Date.now()}-${process.pid}`);
 mkdirSync(output, { recursive: true });
 const userConfig = join(output, 'user.npmrc');
@@ -80,6 +83,30 @@ function fixtureConfig(directory) {
   copyFileSync(example, config);
 }
 
+function mergeBase(commit, base) {
+  try {
+    return git(root, ['merge-base', base, commit]);
+  } catch {
+    throw new Error(
+      `Cannot find the merge base of ${commit} and ${base}. Fetch ${base}, or pass --base <ref>.`,
+    );
+  }
+}
+
+function planRanges(directory, { mode, base, commit }) {
+  const rangeCommits = base
+    ? Number(git(directory, ['rev-list', '--count', `${base}..${commit}`]))
+    : 0;
+  if (mode === 'commit' && !rangeCommits)
+    throw new Error(
+      `${base}..${commit} has no commits, so the range checks would check nothing. Pass --base with a ref that the commit is ahead of.`,
+    );
+  const names = rangeCommits ? Object.keys(rangeChecks) : [];
+  const notRun =
+    mode === 'current' && !rangeCommits ? Object.keys(rangeChecks) : [];
+  return { rangeCommits, ranges: names, notRun };
+}
+
 function verify(directory, provenance, install) {
   const expectedNode = readFileSync(
     join(directory, '.node-version'),
@@ -100,8 +127,17 @@ function verify(directory, provenance, install) {
     provenance.mode === 'staged'
       ? ['lint', 'format', 'credentials']
       : Object.keys(checks);
+  const { rangeCommits, ranges, notRun } = planRanges(directory, provenance);
   if (results.every(result => result.passed)) {
     for (const name of names) results.push(run(directory, name, checks[name]));
+    for (const name of ranges)
+      results.push(
+        run(directory, name, [
+          ...rangeChecks[name],
+          provenance.base,
+          provenance.commit,
+        ]),
+      );
   }
   let unchanged = false;
   try {
@@ -111,12 +147,13 @@ function verify(directory, provenance, install) {
   }
   const passed =
     unchanged &&
-    results.length === names.length + Number(install) &&
+    results.length === names.length + ranges.length + Number(install) &&
     results.every(result => result.passed);
   const report = {
     ...provenance,
     node: process.versions.node,
-    required: names,
+    required: [...names, ...ranges],
+    notRun,
     unchanged,
     passed,
     results,
@@ -126,12 +163,20 @@ function verify(directory, provenance, install) {
     JSON.stringify(report, null, 2) + '\n',
   );
   console.log(
-    `${provenance.mode}: commit ${provenance.commit}, tree ${provenance.tree}; ${passed ? 'PASS' : 'FAIL'}`,
+    `${provenance.mode}: commit ${provenance.commit}, tree ${provenance.tree}${provenance.base ? `, base ${provenance.base} (${rangeCommits} commits)` : ''}; ${passed ? 'PASS' : 'FAIL'}${notRun.length ? ` (range checks not run: ${notRun.join(', ')})` : ''}`,
   );
   if (!passed) process.exitCode = 1;
 }
 
 function verifyRef(commit, snapshotMode = 'commit') {
+  // The source repository holds the base ref; the snapshot holds only branches.
+  const base =
+    snapshotMode === 'commit'
+      ? [
+          '--base',
+          mergeBase(identity(root, commit).commit, baseRef ?? 'origin/main'),
+        ]
+      : [];
   withSnapshot(root, snapshotMode, commit, (directory, provenance) => {
     // Execute the snapshot's checks, not an unstaged copy of the checking code.
     const result = spawnSync(
@@ -140,6 +185,7 @@ function verifyRef(commit, snapshotMode = 'commit') {
         join(directory, 'tools/verify.cjs'),
         `${snapshotMode}-checkout`,
         join(output, `${snapshotMode}-${provenance.commit}`),
+        ...base,
       ],
       {
         cwd: directory,
@@ -152,6 +198,7 @@ function verifyRef(commit, snapshotMode = 'commit') {
 }
 
 try {
+  if (baseFlag !== -1 && !baseRef) throw new Error('Name a ref after --base.');
   if (mode === 'commit' || mode === 'staged') {
     verifyRef(ref, mode);
   } else if (mode === 'commit-checkout' || mode === 'staged-checkout') {
@@ -161,13 +208,18 @@ try {
     if (mode === 'staged-checkout') provenance.tree = git(root, ['write-tree']);
     else if (git(root, ['status', '--porcelain']))
       throw new Error('Commit checkout must be clean.');
+    else if (!baseRef)
+      throw new Error('Commit checkout needs --base <commit>.');
+    else provenance.base = baseRef;
     verify(root, provenance, true);
   } else if (mode === 'current') {
     if (git(root, ['status', '--porcelain']))
       throw new Error('CI checkout must be clean.');
     if (existsSync(join(root, 'node_modules')))
       throw new Error('CI must begin without installed dependencies.');
-    verify(root, { mode, ...identity(root, 'HEAD') }, true);
+    const provenance = { mode, ...identity(root, 'HEAD') };
+    if (baseRef) provenance.base = mergeBase(provenance.commit, baseRef);
+    verify(root, provenance, true);
   } else if (mode === 'push') {
     const refs = readFileSync(0, 'utf8').trim().split('\n');
     const commits = new Set();
@@ -178,7 +230,7 @@ try {
     for (const commit of commits) verifyRef(commit);
   } else {
     throw new Error(
-      'Usage: node tools/verify.cjs staged|commit [ref]|current|push',
+      'Usage: node tools/verify.cjs staged | commit [ref] [--base <ref>] | current [--base <ref>] | push [--base <ref>]',
     );
   }
 } catch (error) {

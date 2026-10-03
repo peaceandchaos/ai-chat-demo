@@ -1,0 +1,1728 @@
+{
+  "change": "skill-process-3",
+  "base": {
+    "commit": "fb664681f003f36e230c4c4bdce08c14131c2b46",
+    "patch": "758545645d5fced3d3949bc2b4fc3851fcde37b5"
+  },
+  "skills": [
+    {
+      "skill": "blast-radius",
+      "files": [
+        ".oxlintrc.json",
+        "package.json",
+        "packages/app/src/network/client.ts",
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts",
+        "packages/server/src/api.ts",
+        "packages/server/src/compaction/context.ts",
+        "packages/server/src/database.ts",
+        "packages/server/src/gateway.ts",
+        "packages/server/src/jobs.ts",
+        "packages/server/src/responses.ts",
+        "packages/server/src/worker.ts",
+        "packages/server/tests/session-harness.ts",
+        "shared/contracts.ts",
+        "tools/__tests__/exports-check.test.js",
+        "tools/__tests__/lint-policy.test.js",
+        "tools/__tests__/range-typecheck.test.js",
+        "tools/exports-check.cjs",
+        "tools/lint-policy.mjs",
+        "tools/range-typecheck.cjs",
+        "tools/verification/checks.cjs",
+        "tools/verification/export-entries.json"
+      ],
+      "findings": [
+        {
+          "finding": "Measured before the type and lint changes: ModelConfig has five consumers in packages/server, and no UI branch edits them. All 6 assertions are in legacy override files, and the UI branches add none. Of 45 unused exports, 11 are imported on work/ui-pr3-c, so they became entries instead of removals.",
+          "cites": "Steps 2",
+          "none": "Recorded in the PR evidence; no breakage found."
+        },
+        {
+          "finding": "typecheck:range adds about 3 seconds per commit to verify:commit, plus one npm ci for each new set of install inputs.",
+          "cites": "Steps 4",
+          "none": "Documented in README.md."
+        },
+        {
+          "finding": "work/ui-pr3-d replaces work/ui-pr3-c. On a copy of work/ui-pr3-d (7248857), exports:check finds importers for loadDeviceId, openArchive, followAppState, ChatRecord, AttemptActivity, MemoryStorage, and uuid, and none for isActive.",
+          "cites": "Steps 3",
+          "commit": "b2d0bcc20891",
+          "patch": "97d2b4375a89b4e664d163ed372f2973d5fa67b0"
+        },
+        {
+          "finding": "cc6ba67 stopped exporting executeCommand, which tools/native-transport/server.mjs imports. Loading server.mjs failed with \"does not provide an export named 'executeCommand'\".",
+          "cites": "Steps 3",
+          "commit": "88341a8ff363",
+          "patch": "f4d78d219271dbf91afbe869f3394aec2b6413fe"
+        },
+        {
+          "finding": "work/ui-pr3-d adds packages/app/src/state/images.ts with an EncodeJpeg export that nothing imports, so exports:check will fail there after it rebases onto this branch.",
+          "cites": "Steps 3",
+          "none": "Left to work/ui-pr3-d, which the UI owner owns."
+        },
+        {
+          "finding": "No tracked file disables project/no-type-assertion inline, so rejecting those comments breaks nothing (git grep finds none).",
+          "cites": "Steps 3",
+          "none": "Evidence."
+        },
+        {
+          "finding": "Second author pass, proving the lint exemption fact: an oxlint probe with the committed config showed that disables written as no-type-assertion without the plugin prefix, as a /** */ block comment, or in mixed case do not suppress project/no-type-assertion. Only the prefixed form suppresses it, and require-disable-reason rejects that form.",
+          "cites": "Steps 5",
+          "none": "The rule holds. The probe ran on a scratch fixture that was then removed."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "blast-radius",
+          "source": "Skill",
+          "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01V4QxWm81mjQxkoBKbAUNuQ",
+          "time": "2026-10-02T12:02:52.194Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "MqXudG8tep23nz7IOZGv/OrOZLPFdEbIXC90Z1rpdi4AqqW1xJ/nbKAcdR6CmnpBNvzK0SROg96Wmd8IwHrrBA=="
+        }
+      ]
+    },
+    {
+      "skill": "deslop",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Checked the new tools for wrappers, defensive branches, and names that restate types.",
+          "cites": "Focus Areas",
+          "none": "None found."
+        },
+        {
+          "finding": "Checked the PR3b fixes: the JavaScript import scan, the disable rejection, the default options, and the narrowing on wire.",
+          "cites": "Focus Areas",
+          "none": "None found."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "deslop",
+          "source": "Skill",
+          "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01KxQSFTfqtF8mAtpYjaG7s7",
+          "time": "2026-10-02T12:02:52.753Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "j3909j06vTbdiB2xBWKIQNXHzPWyHraGbr/+3eWJWBMQ2w2h9MyKxxYGFO7nNxvfqzHfGkYUb9c7BiSewK34BQ=="
+        }
+      ]
+    },
+    {
+      "skill": "no-comments",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Three comments were added: the install-input rule and the HEAD rule in range-typecheck.cjs, and the compact_threshold meaning in models.ts, which moved from the old type.",
+          "cites": "Steps 2",
+          "none": "Each states a constraint the code cannot show."
+        },
+        {
+          "finding": "PR3b adds two comments: why exports-check.cjs reads JavaScript files, and that typecheck enforces the compactThreshold test. comment-sicko was not spawned; this session spawns no subagents, so the check was by hand.",
+          "cites": "Steps 1",
+          "none": "Both state a reason the code cannot show."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "no-comments",
+          "source": "Skill",
+          "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01Fr69sFTMFXfMe8Ja3HQ3K6",
+          "time": "2026-10-02T12:02:52.836Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "Jcz9oxzIHG+zdeegJNCjt4BzBWjyOV7mGVPdwBSRu3rlfiHjWBGhI6NBPlap0W03GFhifuzxLNoChIAEm9y1Cg=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-boundary-discipline",
+      "files": [
+        "packages/app/src/network/client.ts",
+        "packages/server/src/api.ts",
+        "shared/contracts.ts"
+      ],
+      "findings": [
+        {
+          "finding": "The changes to client.ts, api.ts, and contracts.ts only remove export keywords; parsing at those boundaries is unchanged.",
+          "cites": "Boundary Discipline",
+          "none": "No boundary changed."
+        },
+        {
+          "finding": "The rule options are config input; meta.defaultOptions lets oxlint merge them before schema validation, so the rule body reads a complete option.",
+          "cites": "Boundary Discipline",
+          "none": "No new boundary."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-boundary-discipline",
+          "source": "Skill",
+          "sha256": "e59efe04ed66e3a403a50e70640daeb5c7b592598687a67b6e25ceed6251d19f",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01QCXHD8DR8ckMEgBNe6yR4K",
+          "time": "2026-10-02T12:02:53.381Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "3F2yxYphHFIdheuAd1zzUvayQWUS3Nmr3cveZX0/yUETAason/SRW1lGrs+/TH2AMIDmkOmmjuSEyAR/yNmvAQ=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-fix-root-causes",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Root cause: ModelConfig made compactThreshold optional for every model, so a Responses entry without it typechecked and sent compact_threshold: undefined. The compaction tests built exactly that config. The fix makes the field required by the union on wire. With the field optional again, the @ts-expect-error fixture fails the typecheck.",
+          "cites": "Fix Root Causes",
+          "commit": "ea7cd3e8390c",
+          "patch": "228da3202295d5764927f59c705d199995817d68"
+        },
+        {
+          "finding": "Root cause of the executeCommand removal: exports:check read only the TypeScript projects, so the import in tools/native-transport/server.mjs was invisible. The check now reads relative imports in tracked .js, .mjs, and .cjs files. With all 23 un-exported names exported again, it reports 22, so executeCommand was the only one with a JavaScript importer.",
+          "cites": "Fix Root Causes",
+          "commit": "c6e2700a4cd5",
+          "patch": "d23acd7875e1fdfb7bd0d49a009e56b5a21737dc"
+        },
+        {
+          "finding": "project/require-disable-reason accepted a disable comment for any named rule, so an inline disable could skip the reviewed allow list of project/no-type-assertion.",
+          "cites": "Fix Root Causes",
+          "commit": "fe9fc7ac8608",
+          "patch": "ed18de52653be787ad1269997bf675310a3f332b"
+        },
+        {
+          "finding": "project/no-type-assertion read context.options[0].allow with no default, so enabling it as plain \"error\" crashed the plugin.",
+          "cites": "Fix Root Causes",
+          "commit": "55323e79e909",
+          "patch": "70d3044cbf7ddf57dfa8bccfde8923aa86b08e83"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-fix-root-causes",
+          "source": "Skill",
+          "sha256": "4c5fd0fb9eb4754dff9a6dd4d1de7a87dc927f5154ab3afd643bedb9b7f8b6b9",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01N3iQwLF2ti21sQxapD7sud",
+          "time": "2026-10-02T12:02:53.485Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "6o05Ym+Bi7A8LJpRLSpfTJ+v9CzkFjL1bXKicaeAOKdy0OV2wzAAX2gI6SuBxkhw0Uw0FFOcIrUPVqQ/QVztDw=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-make-operations-idempotent",
+      "files": [
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts",
+        "packages/server/src/database.ts",
+        "packages/server/src/jobs.ts",
+        "packages/server/src/worker.ts"
+      ],
+      "findings": [
+        {
+          "finding": "archive.ts, attempt.ts, session.ts, database.ts, jobs.ts, and worker.ts changed only by losing export keywords.",
+          "cites": "Make Operations Idempotent",
+          "none": "No write path changed."
+        },
+        {
+          "finding": "typecheck:range writes only into a fresh temporary directory, which it removes.",
+          "cites": "Make Operations Idempotent",
+          "none": "Reruns start clean."
+        },
+        {
+          "finding": "skills:record now rewrites a cited SHA to its in-range copy; running it twice over the same range writes the same record.",
+          "cites": "Make Operations Idempotent",
+          "none": "Checked by running it twice."
+        },
+        {
+          "finding": "Second author pass: typecheck:range shares an install by symlinking node_modules from HEAD, and npm's workspace links inside it point at HEAD's packages/app and packages/server. No source imports MargeloChat or @personal-chat/server by name today, so each commit still typechecks its own source.",
+          "cites": "Make Operations Idempotent",
+          "none": "No current import resolves through a workspace link. A future name import would typecheck against HEAD's copy."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-make-operations-idempotent",
+          "source": "Skill",
+          "sha256": "576260695df90ac979f01c03321d5a8cb7bd824bdbc5d3fbe6790ee1caa19ab4",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_018Xx2ePDa8fa4VvfuDAHDHm",
+          "time": "2026-10-02T12:02:53.959Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "sjX8OQx7D5UZ94SDijZ0sAUaIVVeX2LFANQpKjrT4bNlQ147+2IK49n/Ku02lUKkF6yGrOgHOywC891Xn9duAQ=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-migrate-callers-then-delete-legacy-apis",
+      "files": [
+        "packages/app/src/network/client.ts",
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts",
+        "packages/server/src/api.ts",
+        "packages/server/src/compaction/context.ts",
+        "packages/server/src/database.ts",
+        "packages/server/src/gateway.ts",
+        "packages/server/src/jobs.ts",
+        "packages/server/src/responses.ts",
+        "packages/server/src/worker.ts",
+        "packages/server/tests/session-harness.ts",
+        "shared/contracts.ts"
+      ],
+      "findings": [
+        {
+          "finding": "The earlier claim that no un-exported name had an importer was false: the measurement read only TypeScript, and tools/native-transport/server.mjs imports executeCommand. With the JavaScript scan, the other 22 names have no importer in tracked files here or on work/ui-pr3-d.",
+          "cites": "Migrate Callers Then Delete Legacy APIs",
+          "commit": "88341a8ff363",
+          "patch": "f4d78d219271dbf91afbe869f3394aec2b6413fe"
+        },
+        {
+          "finding": "ResponsesModelKey and isResponsesModel had callers in providers.ts, responses.ts, and adapters.test.ts. All three now use the config narrowed on wire, and both names are deleted.",
+          "cites": "Migrate Callers Then Delete Legacy APIs",
+          "commit": "cc67645afbbd",
+          "patch": "a7c0517e3e889aef6de3aff110283ebac63df963"
+        },
+        {
+          "finding": "Second author pass: the generate narrowing left compact on the old ModelKey lookup, so ResponsesClient had two ways to name a model. compact, its service type, and its caller moved to the narrowed config in one commit, and the models import left responses.ts.",
+          "cites": "Migrate Callers Then Delete Legacy APIs",
+          "commit": "250b2a5a27b6",
+          "patch": "4eb37c655482ea6f765565a66ad383b7ffe2332e"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-migrate-callers-then-delete-legacy-apis",
+          "source": "Skill",
+          "sha256": "8014f4eb04fe50474f7e3f9286bce2de276116b8b669cd2fe7b2100972efb68a",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01XuzoyKtL4jz996S7UqvpzQ",
+          "time": "2026-10-02T12:02:54.122Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "+gyyDcqqWrnH4bVfDQ1vN3RXbQAA+gmnPoNLVxmJ4Tjjt00cPtyhpsJkeI8I4lCJlBpFh+jjaS0IOq+1t+pJDw=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-minimize-reader-load",
+      "files": [
+        "packages/server/tests/models.test.ts",
+        "tools/__tests__/exports-check.test.js",
+        "tools/__tests__/range-typecheck.test.js",
+        "tools/exports-check.cjs",
+        "tools/range-typecheck.cjs",
+        "tools/verification/export-entries.json"
+      ],
+      "findings": [
+        {
+          "finding": "range-typecheck.cjs and exports-check.cjs sit beside audit-check.cjs and security-check.cjs, and each has one npm script and one checks.cjs entry.",
+          "cites": "Minimize Reader Load",
+          "none": "Follows the existing layout."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-minimize-reader-load",
+          "source": "Skill",
+          "sha256": "772bd55686c20d49e1220d0728de4587cd5608ae2968b7896c5477b3f8813dfc",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01DCF5NLs7CY6iDQYWsuaY8m",
+          "time": "2026-10-02T12:02:56.836Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "VjY/enydvy9CI1fSXpHRky2h6DWpC0W/cOEVjyieG3/9I9hxyLmYKEh8FLfycHGf6Q0amtnKbf5A7DzBEp+uCw=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-prove-it-works",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Mutations that failed a test: range ignores failures, never shares an install, includes HEAD; assertion allowlist ignored, as const reported, non-null allowed, definite allowed, legacy override removed (lint fails on the 6 legacy assertions); export check ignores namespace imports, counts untracked files, ignores import types, dynamic imports, or re-exports, allows stale entries. One survived: removing commit-types from checks.cjs, because the suite list is owner-reviewed, not tested.",
+          "cites": "Script the check when you can",
+          "none": "Evidence; the survivor is the documented owner-review control."
+        },
+        {
+          "finding": "typecheck:range on work/image-context-2 fails 91d9451, dd3430e, and 08dab07; 08dab07 still called a removed model id in compaction.test.ts.",
+          "cites": "Prove It Works",
+          "none": "Evidence."
+        },
+        {
+          "finding": "PR3b mutations that failed a test or the typecheck: inline disable allowed, only next-line disables rejected, no default options, compactThreshold optional (Unused @ts-expect-error), a provider condition that does not narrow. The JavaScript-importer fixtures failed before 873285a. Logs are in the PR evidence.",
+          "cites": "Script the check when you can",
+          "none": "Evidence."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-prove-it-works",
+          "source": "Skill",
+          "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01APYgFFLxmTWu8Vgw38juNH",
+          "time": "2026-10-02T12:02:57.438Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "eSZxeuvK1GvbZgfr17wMwJion927MRHJCQ7NuKELllRtWiWhCUnq/Acxj8R4kaP79QfPtEaCJjMNB6cUSkfxDg=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-sequence-verifiable-units",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The un-export commits come before the export check, so each commit passes lint and typecheck; typecheck:range over this range passes every commit.",
+          "cites": "Sequence work into verifiable units",
+          "none": "Evidence."
+        },
+        {
+          "finding": "Each PR3b fix is its own commit on top of the cherry-picked PR3 commits, and each new fixture ran red before its fix.",
+          "cites": "Sequence work into verifiable units",
+          "none": "Evidence."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-sequence-verifiable-units",
+          "source": "Skill",
+          "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01CkNF6yuNn8tcsvLvZzrb1U",
+          "time": "2026-10-02T12:02:57.530Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "TetcbchzL0wsfwkBo+jb+StFpbJxhhPEtb4sa67qZwSwnFs8OOICbo2C2uDYnIlLhZOPAlndByULMk7hHQujAw=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-subtract-before-you-add",
+      "files": [
+        "packages/server/tests/models.test.ts",
+        "tools/__tests__/exports-check.test.js",
+        "tools/__tests__/range-typecheck.test.js",
+        "tools/exports-check.cjs",
+        "tools/range-typecheck.cjs",
+        "tools/verification/export-entries.json"
+      ],
+      "findings": [
+        {
+          "finding": "A deletion of modelLabels was considered because nothing reads it.",
+          "cites": "Subtract Before You Add",
+          "none": "Kept as an entry: it holds the display names, and the UI owner decides."
+        },
+        {
+          "finding": "The App.tsx file entry and the isActive export entry are gone: index.js imports App, and nothing imports isActive.",
+          "cites": "Subtract Before You Add",
+          "commit": "b2d0bcc20891",
+          "patch": "97d2b4375a89b4e664d163ed372f2973d5fa67b0"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-subtract-before-you-add",
+          "source": "Skill",
+          "sha256": "84bfde4d3dc16360264e0cb944b2dfbd8d92a70624322e83b93432f8e35dc60e",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_013RihaFZtVsMcDHvTyVdgJe",
+          "time": "2026-10-02T12:02:58.046Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "dUeuOE/QsQLO0McBoWuHywWjlL1DGLQO9sjC3qNEkXypTK8tfYtcG0+/c0MNCp0IBHxN3TqfOY4afvrdXopTAQ=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-test-behavior-not-implementation",
+      "files": [
+        ".oxlintrc.json",
+        "package.json",
+        "packages/server/tests/adapters.test.ts",
+        "packages/server/tests/compaction.test.ts",
+        "packages/server/tests/models.test.ts",
+        "packages/server/tests/session-harness.ts",
+        "tools/__tests__/exports-check.test.js",
+        "tools/__tests__/lint-policy.test.js",
+        "tools/__tests__/range-typecheck.test.js",
+        "tools/exports-check.cjs",
+        "tools/lint-policy.mjs",
+        "tools/range-typecheck.cjs",
+        "tools/verification/checks.cjs",
+        "tools/verification/export-entries.json"
+      ],
+      "findings": [
+        {
+          "finding": "typecheck:range keyed the shared install to the named head, but the root holds HEAD; a test now names a head that is not HEAD.",
+          "cites": "Test behavior, not implementation",
+          "commit": "4ded8da7e436",
+          "patch": "bbcedac776bff71a57553852f752cdc4eae3e1db"
+        },
+        {
+          "finding": "The compactThreshold test asserted that a literal it had just written had wire responses, which nothing could break. The typecheck is the check.",
+          "cites": "Test behavior, not implementation",
+          "commit": "27e59fc772bd",
+          "patch": "1d3e3e103f22977e059f01b6ce3eb71cacc9d834"
+        },
+        {
+          "finding": "The export fixture had no JavaScript importer, so no test could catch the missed server.mjs import. The fixture now has an .mjs and a .cjs importer and an untracked one.",
+          "cites": "Test behavior, not implementation",
+          "commit": "c6e2700a4cd5",
+          "patch": "d23acd7875e1fdfb7bd0d49a009e56b5a21737dc"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-test-behavior-not-implementation",
+          "source": "Skill",
+          "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01DcGkEX43oHLsKKkzSxBRae",
+          "time": "2026-10-02T12:02:58.281Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "3dv90ImSdzDAEHesZ5dJvdEd9z/N2KgBNKb7swPlgaFeWok1Ezu+R+KPtIT9KxEm99wpj25Xut0ly5ovSYldDA=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-type-system-discipline",
+      "files": [
+        "packages/app/src/network/client.ts",
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts",
+        "packages/server/src/api.ts",
+        "packages/server/src/compaction/context.ts",
+        "packages/server/src/database.ts",
+        "packages/server/src/gateway.ts",
+        "packages/server/src/jobs.ts",
+        "packages/server/src/models.ts",
+        "packages/server/src/providers.ts",
+        "packages/server/src/responses.ts",
+        "packages/server/src/worker.ts",
+        "packages/server/tests/adapters.test.ts",
+        "packages/server/tests/compaction.test.ts",
+        "packages/server/tests/models.test.ts",
+        "packages/server/tests/session-harness.ts",
+        "shared/contracts.ts"
+      ],
+      "findings": [
+        {
+          "finding": "ModelConfig allowed a Responses model without its threshold.",
+          "cites": "Type System Discipline",
+          "commit": "ea7cd3e8390c",
+          "patch": "228da3202295d5764927f59c705d199995817d68"
+        },
+        {
+          "finding": "isResponsesModel is a type predicate, which the compiler does not verify. Narrowing models[model] on wire replaces it.",
+          "cites": "Type System Discipline",
+          "commit": "cc67645afbbd",
+          "patch": "a7c0517e3e889aef6de3aff110283ebac63df963"
+        },
+        {
+          "finding": "Second author pass: 644b792 narrowed ResponsesClient.generate to a Responses config, but compact and ContextServices.compactOpenAI still took any ModelKey, so a compaction call with a gateway model compiled. Both now take ResponsesModel. A probe call with models.kimi fails typecheck with TS2345.",
+          "cites": "Type System Discipline",
+          "commit": "250b2a5a27b6",
+          "patch": "4eb37c655482ea6f765565a66ad383b7ffe2332e"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-type-system-discipline",
+          "source": "Skill",
+          "sha256": "adaa7a27c8794b24112fdaf73d11d7c59f0926c496fd5c9b0b5cb1c0ebbd3536",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01BD8i87gZYKiBfmSNEPCfbZ",
+          "time": "2026-10-02T12:02:58.697Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "mFBzhieignOwgeP3YXFq6dfJ/sWSNR5GROnx+/PLHvtOsSARfYkTN7BcmhCJRE/jkeLZd0Bze13+HQSDlu7TDw=="
+        }
+      ]
+    },
+    {
+      "skill": "react-native-best-practices",
+      "files": [
+        "packages/app/src/network/client.ts",
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts"
+      ],
+      "findings": [
+        {
+          "finding": "client.ts, archive.ts, attempt.ts, and session.ts only lose export keywords on types.",
+          "cites": "When to Apply",
+          "none": "No runtime change."
+        },
+        {
+          "finding": "archive.ts loses the isActive export; the function and its two callers are unchanged.",
+          "cites": "When to Apply",
+          "none": "No runtime change."
+        },
+        {
+          "finding": "Second author pass: the app changes in this range only stop exporting types and helpers from src/state and src/network. No render, list, startup, or bundle path changes.",
+          "cites": "When to Apply",
+          "none": "Nothing in this range touches the performance areas the skill covers."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "react-native-best-practices",
+          "source": "Skill",
+          "sha256": "abdbb7fc34ad739420fe43632e0baa1d646a01d097c6905211aa8b5b41957bf1",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01H2uu5WEvryzGTqPPDLXi5v",
+          "time": "2026-10-02T12:02:58.786Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "uxtFhIOQ1feAyducAb6iDCutOXVIRVHAbIO0Sw6BfKh0LQW4EwMxD+dv60UWwnkmIBx4RV3sb0jvwMbts66RDg=="
+        }
+      ]
+    },
+    {
+      "skill": "react-native-best-practices-sm",
+      "files": [
+        "packages/app/src/network/client.ts",
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts"
+      ],
+      "findings": [
+        {
+          "finding": "client.ts, archive.ts, attempt.ts, and session.ts only lose export keywords on types.",
+          "cites": "Sub-skills",
+          "none": "No runtime change."
+        },
+        {
+          "finding": "archive.ts loses the isActive export; the function and its two callers are unchanged.",
+          "cites": "Sub-skills",
+          "none": "No runtime change."
+        },
+        {
+          "finding": "Second author pass: no Reanimated, Gesture Handler, worklet, or other Software Mansion library code changes in this range.",
+          "cites": "Sub-skills",
+          "none": "Nothing in scope for the skill."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "react-native-best-practices-sm",
+          "source": "Skill",
+          "sha256": "29dd5507d4a278f549fdbb4c40ce426d9aebd9102c76ba38e76e1455efeba256",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01AhhRciT2VQhXuq9tNG4Cj4",
+          "time": "2026-10-02T12:03:02.843Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "Nf2gQk6k7DBrpW3UT1W8zQMXDWNOBTywDEr0wf5pfR2BzZyMsfbMtsyi41KOZk/S6bIniIlWG72qYYAycaTCDg=="
+        }
+      ]
+    },
+    {
+      "skill": "technical-writing",
+      "files": ["<change>", "README.md"],
+      "findings": [
+        {
+          "finding": "README.md said exports:check fails on \"a tracked export that nothing imports\", which was false. It now names what the check reads and what it does not.",
+          "cites": "Voice and repo specifics",
+          "commit": "9b1f9021176b",
+          "patch": "96d56640cb853b514ce446cd2f5156eb8129e159"
+        },
+        {
+          "finding": "README.md did not say that the allow list is the only exemption from project/no-type-assertion or that it defaults to empty.",
+          "cites": "Voice and repo specifics",
+          "commit": "fe9fc7ac8608",
+          "patch": "ed18de52653be787ad1269997bf675310a3f332b"
+        },
+        {
+          "finding": "Second author pass: exports:check now has its own README paragraph instead of sharing the anti-slop lint paragraph.",
+          "cites": "Make statements load one at a time (STE rules)",
+          "commit": "ef58bf0a1ead",
+          "patch": "7a032f89ef2ac06b2198fd60e0e668c0004fdf0f"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "technical-writing",
+          "source": "Skill",
+          "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01Grhozu6rwZx8bDb51ZMXEV",
+          "time": "2026-10-02T12:03:03.584Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "yNT7vUsQ1u201yfJS8M0FdqlciKhbayNizQHLNEE5rc39w1j4lyE4ikfrITOT+gFTbjbcZ1R9zdLN1V6rWUMBA=="
+        }
+      ]
+    },
+    {
+      "skill": "test-prune",
+      "files": [
+        "packages/server/tests/adapters.test.ts",
+        "packages/server/tests/compaction.test.ts",
+        "packages/server/tests/models.test.ts",
+        "packages/server/tests/session-harness.ts",
+        "tools/__tests__/exports-check.test.js",
+        "tools/__tests__/lint-policy.test.js",
+        "tools/__tests__/range-typecheck.test.js"
+      ],
+      "findings": [
+        {
+          "finding": "Each lint fixture covers a distinct assertion syntax, and each export fixture covers a distinct import form. Dropping the handling of non-null, definite, namespace, import-type, dynamic-import, or re-export cases each failed the tests.",
+          "cites": "Review questions",
+          "none": "Kept all."
+        },
+        {
+          "finding": "adapters.test.ts now passes models[...] configs to ResponsesClient.generate. The assertions on the sent model id and compact_threshold are unchanged, so they still check the real table.",
+          "cites": "Review questions",
+          "none": "Kept."
+        },
+        {
+          "finding": "Second author pass: the standalone compaction test ignored the request, so it could not catch a wrong model id. It now checks the request body, and changing the sent id to gpt-6-astra fails it with the body diff.",
+          "cites": "Review questions",
+          "commit": "250b2a5a27b6",
+          "patch": "4eb37c655482ea6f765565a66ad383b7ffe2332e"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "test-prune",
+          "source": "Skill",
+          "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01HrjqvJRNh9CeCupPjDdXWw",
+          "time": "2026-10-02T12:03:03.731Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "RrfN4Ldm1kZUm9MLIdpsDTKvl5r29tu3LUYxwJEfpw5d0n3bOg0Au13rDmsmAmTFkru1TUPjJ2NINECHPivmAw=="
+        }
+      ]
+    },
+    {
+      "skill": "thermo-nuclear-code-quality-review",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The shared install for range commits was keyed to the wrong commit.",
+          "cites": "Primary Review Questions",
+          "commit": "4ded8da7e436",
+          "patch": "bbcedac776bff71a57553852f752cdc4eae3e1db"
+        },
+        {
+          "finding": "Export problems came out in checker order, which made the output unstable.",
+          "cites": "Non-Negotiable Additional Standards 4",
+          "none": "Sorted before the first commit."
+        },
+        {
+          "finding": "A package.json script edit changes the install key and costs one npm ci.",
+          "cites": "Primary Review Questions",
+          "none": "Kept conservative: a narrower key could reuse an install that npm ci would build differently."
+        },
+        {
+          "finding": "ResponsesModelKey rebuilt from the table what narrowing on wire already gives.",
+          "cites": "Non-Negotiable Additional Standards 5",
+          "commit": "cc67645afbbd",
+          "patch": "a7c0517e3e889aef6de3aff110283ebac63df963"
+        },
+        {
+          "finding": "The JavaScript scan could be its own module.",
+          "cites": "Preferred Remedies",
+          "none": "Kept in exports-check.cjs: one function and one call, and the file stays near 210 lines."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "thermo-nuclear-code-quality-review",
+          "source": "Skill",
+          "sha256": "35f68c89a24f690eaba7f77c637d3b7dc1cb0fc7bf17670606ffd83f074fa626",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_01Eeg5awMicWKGaitoZhu4KZ",
+          "time": "2026-10-02T12:03:04.110Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "PoywNpBySNs0YKKEBc6Vl3kcn7i8yLm3PJDmZsULY7/Xy7KPbtGdVpkmOzTfsXnhhU+PoBLbVkYk9iLrIPCnAg=="
+        }
+      ]
+    },
+    {
+      "skill": "typescript-best-practices",
+      "files": [
+        "packages/app/src/network/client.ts",
+        "packages/app/src/state/archive.ts",
+        "packages/app/src/state/attempt.ts",
+        "packages/app/src/state/session.ts",
+        "packages/server/src/api.ts",
+        "packages/server/src/compaction/context.ts",
+        "packages/server/src/database.ts",
+        "packages/server/src/gateway.ts",
+        "packages/server/src/jobs.ts",
+        "packages/server/src/models.ts",
+        "packages/server/src/providers.ts",
+        "packages/server/src/responses.ts",
+        "packages/server/src/worker.ts",
+        "packages/server/tests/adapters.test.ts",
+        "packages/server/tests/compaction.test.ts",
+        "packages/server/tests/models.test.ts",
+        "packages/server/tests/session-harness.ts",
+        "shared/contracts.ts"
+      ],
+      "findings": [
+        {
+          "finding": "responses.ts read an optional field and sent it unchecked.",
+          "cites": "TypeScript best practices",
+          "commit": "ea7cd3e8390c",
+          "patch": "228da3202295d5764927f59c705d199995817d68"
+        },
+        {
+          "finding": "providers.ts narrowed through a user-defined guard where a discriminant check works.",
+          "cites": "TypeScript best practices",
+          "commit": "cc67645afbbd",
+          "patch": "a7c0517e3e889aef6de3aff110283ebac63df963"
+        },
+        {
+          "finding": "Second author pass: Extract<ModelConfig, { wire: 'responses' }> was spelled inline. It is now the ResponsesModel alias in models.ts, used by responses.ts and compaction/context.ts.",
+          "cites": "TypeScript best practices",
+          "commit": "250b2a5a27b6",
+          "patch": "4eb37c655482ea6f765565a66ad383b7ffe2332e"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "typescript-best-practices",
+          "source": "Skill",
+          "sha256": "fd61fe218e2d08226a63533d344277ccacd6e92fd07a81ca663817594585221d",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_019mZeJckkvC39WwuoxAiDNV",
+          "time": "2026-10-02T12:03:04.188Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "9b6AvvM2wikzczf6SZYzT/GzVMxr8KONWhly+prwP62ulg06uMhZgFXBawS7W+Cdp6eQdTOZQ2sH2gPa6JGTAA=="
+        }
+      ]
+    },
+    {
+      "skill": "unslop",
+      "files": ["<change>", "README.md"],
+      "findings": [
+        {
+          "finding": "Checked the README.md additions for filler and long dashes.",
+          "cites": "Filler",
+          "none": "None found."
+        },
+        {
+          "finding": "Checked the PR3b README sentences and commit messages for filler and long dashes.",
+          "cites": "Filler",
+          "none": "None found."
+        },
+        {
+          "finding": "Second author pass: the README lint paragraph carried the type-assertion rule and exports:check together, with two semicolons and a mid-sentence colon.",
+          "cites": "Style 14",
+          "commit": "ef58bf0a1ead",
+          "patch": "7a032f89ef2ac06b2198fd60e0e668c0004fdf0f"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "unslop",
+          "source": "Skill",
+          "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_0148tkgaUehruRvRaFDkujaJ",
+          "time": "2026-10-02T12:03:04.607Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "xTV0lY1T/8vGsCHbtvZHU/HFD+WEOkwa0l4Bgc95EqTEZwc2XUOCsqYaopCm3adrNXSbuy0E1H1+6dfs2yB3BQ=="
+        }
+      ]
+    },
+    {
+      "skill": "workflow",
+      "files": ["packages/server/src/jobs.ts", "packages/server/src/worker.ts"],
+      "findings": [
+        {
+          "finding": "jobs.ts and worker.ts only lose export keywords on option and update types.",
+          "cites": "*CRITICAL*: Always Use Correct `workflow` Documentation",
+          "none": "No workflow step changed."
+        },
+        {
+          "finding": "Second author pass: jobs.ts and worker.ts only stop exporting JobUpdate and WorkerOptions. The durable reply in packages/server/workflows/reply.ts, which uses the Workflow DevKit, does not change in this range.",
+          "cites": "*CRITICAL*: Always Use Correct `workflow` Documentation",
+          "none": "No workflow or step function changes."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "workflow",
+          "source": "Skill",
+          "sha256": "e4f3981d54efc3de50c898eba48ba71ccf45dfd25ce8806c1e100f9826a9885b",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "ad2454baa3fac7ff9",
+          "agentType": "pstack:poteto-agent-high",
+          "toolUseId": "toolu_014wR9yfn8Li1vXZ2UNvh1MX",
+          "time": "2026-10-02T12:03:04.684Z",
+          "cwd": "7613995a0058a0a530d14627e33862460afa8422831e21b85aedbbcfa9f9d237",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": null,
+          "head": "b06145dba4db8db967bb2b7d36085a33b3b4160f",
+          "headPatch": "cdea468dab98ebd61a10f873c699a1e2e15efabc",
+          "sig": "la2898NZ+asn73HjrvbF3RGcL4JZODgGA11G/WpXu7QKWQ+C3FEeEptE4wGaPkBUvFEIsOFDO1jHpPZOeCaoCA=="
+        }
+      ]
+    }
+  ],
+  "review": {
+    "skills": [
+      {
+        "skill": "blast-radius",
+        "findings": [
+          {
+            "finding": "86cdbf2 stopped exporting executeCommand, because exports:check read only the TypeScript projects. tools/native-transport/server.mjs imports it, and that module then failed to load. 1f7f65b exports it again, and 68d740b makes the check read tracked JavaScript importers.",
+            "cites": "Steps 3",
+            "commit": "1f7f65beb778",
+            "patch": "f4d78d219271dbf91afbe869f3394aec2b6413fe"
+          },
+          {
+            "finding": "The one fact the export removals are safe because of: exports:check reads every tracked JavaScript importer. With addJavaScriptImports disabled at HEAD, it fails on 'packages/server/src/api.ts: executeCommand is exported but never imported'. Restored, it passes.",
+            "cites": "Steps 5",
+            "none": "Proved by a run."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "blast-radius",
+            "source": "Skill",
+            "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_016ctevuXnzJGLR334BCUNCU",
+            "time": "2026-10-03T18:42:07.238Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "CxI0oNBbnc7aySLC4q3Uc60SvTnwsKKSmvQhg7XCpRWgnxLiR75bzERHotgVZv32PHQFJQ2eJvGgBfbcdIFECQ=="
+          }
+        ]
+      },
+      {
+        "skill": "deslop",
+        "findings": [
+          {
+            "finding": "The models change removes the isResponsesModel predicate instead of adding a cast, and the new lint rule rejects new assertions. No restating comment or defensive check was added.",
+            "cites": "Focus Areas",
+            "none": "No slop found."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "deslop",
+            "source": "Skill",
+            "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01KZ1yZESQVdq5XgbUZj1ekt",
+            "time": "2026-10-03T18:42:07.395Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "UiiRiOQlM5fa8R5IW9ZZ+pNV4y1fiUjQ8MuSyVR+gxE1U+gx9IFB9T2PsiIVTGZnXqBvmaSQ2PemtuSuyDA4CA=="
+          }
+        ]
+      },
+      {
+        "skill": "no-comments",
+        "findings": [
+          {
+            "finding": "Judged inline without comment-sicko. Kept: the install-key comment in range-typecheck.cjs, the comment on why HEAD is skipped, the exports-check comment on JavaScript importers, the models.test.ts note that typecheck enforces the test, and the comment naming the compact_threshold wire field. Each states a fact the code cannot show.",
+            "cites": "No comments",
+            "none": "No comment to delete."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "no-comments",
+            "source": "Skill",
+            "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_016WiwiFYENRRRxwxCo3vqEU",
+            "time": "2026-10-03T18:42:07.773Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "zUQVzlES1HJxHObF4PkDaDD7WA+PF0tH94QR82duThE+p2NEi1QLKgqkNQgb1zDqm6ARVQ8dva8i5NhAk6uSDA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-boundary-discipline",
+        "findings": [
+          {
+            "finding": "shared/contracts.ts and packages/app/src/network/client.ts only lose exports. The parse schemas stay where data enters, and no validation moved inward.",
+            "cites": "Boundary Discipline",
+            "none": "No boundary changed."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-boundary-discipline",
+            "source": "Skill",
+            "sha256": "e59efe04ed66e3a403a50e70640daeb5c7b592598687a67b6e25ceed6251d19f",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01PGQiDJHYJfMjH37xbWCcj2",
+            "time": "2026-10-03T18:42:08.112Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "lhi7Mr1MA3z6h+nBHO9KTY5L/241XiVnV5PZSBqxBU4KIzYlWKEFgqzXWMDOfiBJw5KhlJAwiAPamwtSnQB8CA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-fix-root-causes",
+        "findings": [
+          {
+            "finding": "The executeCommand break had its cause in the checker, not in api.ts. 1f7f65b restored the export, and 68d740b fixed the scan that missed JavaScript importers, so the same removal cannot pass again.",
+            "cites": "Fix Root Causes",
+            "commit": "68d740b18d35",
+            "patch": "d23acd7875e1fdfb7bd0d49a009e56b5a21737dc"
+          },
+          {
+            "finding": "de364bf fixed the plugin crash at its source with meta.defaultOptions. 94660d0 closed the inline-disable path in the reason rule instead of adding per-file checks.",
+            "cites": "Fix Root Causes",
+            "none": "Both fixes act at the cause inside this range."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-fix-root-causes",
+            "source": "Skill",
+            "sha256": "4c5fd0fb9eb4754dff9a6dd4d1de7a87dc927f5154ab3afd643bedb9b7f8b6b9",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01Ptj5EXNWT3zM95BVu7GpYc",
+            "time": "2026-10-03T18:42:08.481Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "/fWdURjNYdVZy0KRFcUHHidtFU4V3e4Eok+AzQ6PSjGqWE/NZbCu9eG/1sVWc74uFSvyaRlxoGHTw4izxtm9Aw=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-make-operations-idempotent",
+        "findings": [
+          {
+            "finding": "packages/app/src/state/** and database.ts only lose type exports and one helper export, so no write path or saved shape changes. typecheck:range extracts each commit into a fresh temporary folder and removes it in a finally block, so a rerun after a crash starts clean.",
+            "cites": "Make Operations Idempotent 1",
+            "none": "No state survives a run."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-make-operations-idempotent",
+            "source": "Skill",
+            "sha256": "576260695df90ac979f01c03321d5a8cb7bd824bdbc5d3fbe6790ee1caa19ab4",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01HQoyqZas6dRBmkqDfhBnnp",
+            "time": "2026-10-03T18:42:12.229Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "TgleP8I4aw9pQozZ+dpJJtgoNkjtPWe1i0ChAzQ04IzuwXxnmJesaioWz/j1tgPuyVh/GkCM+W25WJRcEfC1Dg=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-migrate-callers-then-delete-legacy-apis",
+        "findings": [
+          {
+            "finding": "The range removed 23 exports. The caller census missed tools/native-transport/server.mjs for executeCommand, and 1f7f65b restored that one export. compact and generate moved every caller from a ModelKey to a ResponsesModel config in 9e4558e and db5e342, with no adapter left.",
+            "cites": "Migrate Callers Then Delete Legacy APIs",
+            "commit": "1f7f65beb778",
+            "patch": "f4d78d219271dbf91afbe869f3394aec2b6413fe"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-migrate-callers-then-delete-legacy-apis",
+            "source": "Skill",
+            "sha256": "8014f4eb04fe50474f7e3f9286bce2de276116b8b669cd2fe7b2100972efb68a",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_019Qf2Vfk42NNekAjTqMvqQe",
+            "time": "2026-10-03T18:42:11.843Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "GayuHLezENVC1UVer4jAKvdOjYEiZSoD5ubVgvW/NDz09D36i0ggB3M1YBv4sU417MwZKA0/2jCLYdBb9iJHBA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-minimize-reader-load",
+        "findings": [
+          {
+            "finding": "9e4558e deleted the ResponsesModelKey mapped type and the isResponsesModel predicate. A reader now follows one narrowing on config.wire instead of a type and a guard.",
+            "cites": "Minimize Reader Load 1",
+            "none": "The layer was removed inside this range."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-minimize-reader-load",
+            "source": "Skill",
+            "sha256": "772bd55686c20d49e1220d0728de4587cd5608ae2968b7896c5477b3f8813dfc",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_014SvG1ps8TzTNbNgFBnXGtD",
+            "time": "2026-10-03T18:42:08.881Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "p9e9ES/5RRA04c+WLFxhFwFSK2pDSOX9z9MZimQQpoaXwN5RW8KAfOVeShyM9Tp0+o4supEPHEpk7+AGL+9GAw=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-prove-it-works",
+        "findings": [
+          {
+            "finding": "I made compactThreshold optional in models.ts and ran the server typecheck. It failed with TS2578 'Unused @ts-expect-error directive' at tests/models.test.ts:16, so typecheck enforces the fixture. Restored, it passes.",
+            "cites": "Prove It Works",
+            "none": "Verified by a run."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-prove-it-works",
+            "source": "Skill",
+            "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01B99Pm3qtfkFsJKnb1ZRmiH",
+            "time": "2026-10-03T18:42:09.230Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "2yL28bO+5cevJyDRpO3lmyaJc1dROii/fSMW8a07t8DdfQtZ619b9zbmVoXaEp9PU3t/6d2xKtxudIwvubzvCg=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-sequence-verifiable-units",
+        "findings": [
+          {
+            "finding": "0d3ec76 lands the type change with its fixture, and af0a294 lands the range typecheck with its tests. The export removals come before 076ec71 turns on the check that would fail without them, and each later fix follows the commit it repairs.",
+            "cites": "Sequence work into verifiable units",
+            "none": "The order checks itself."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-sequence-verifiable-units",
+            "source": "Skill",
+            "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_019NtDxtx2yabV3EzpXfrAho",
+            "time": "2026-10-03T18:42:09.590Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "c3b9RlGJ0IGLwTOP2FddRVXnN2n+nmEKb7qaeUJCYg8iMh4ozEOPwe4x4e18gcb9oEyLa+I1YyrlFtRIl5nvAA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-subtract-before-you-add",
+        "findings": [
+          {
+            "finding": "The range removes 23 unused exports before 076ec71 adds the check that keeps them out. e36ad1a deletes a runtime expect that tested a literal.",
+            "cites": "Subtract Before You Add",
+            "none": "Subtraction came first."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-subtract-before-you-add",
+            "source": "Skill",
+            "sha256": "84bfde4d3dc16360264e0cb944b2dfbd8d92a70624322e83b93432f8e35dc60e",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_019rrrN8AfbYCDSMgCDws5Wn",
+            "time": "2026-10-03T18:42:09.975Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "OexTCDANpC2f4TthMqF59p22WnoCbwq2vhPWRtngFYnQzgLNyoe4867rCAxExdiOjzFV8D0qc5/GYhG3D1ASCg=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-test-behavior-not-implementation",
+        "findings": [
+          {
+            "finding": "The compactThreshold fixture first asserted that a literal it had just written had wire 'responses', which nothing could break. e36ad1a removed that expect and kept the @ts-expect-error, which typecheck enforces.",
+            "cites": "Test behavior, not implementation",
+            "commit": "e36ad1a57e09",
+            "patch": "1d3e3e103f22977e059f01b6ce3eb71cacc9d834"
+          },
+          {
+            "finding": "db5e342 made the compaction adapter test check the request body, so sending another model id fails it.",
+            "cites": "Test behavior, not implementation",
+            "none": "The test asserts the required payload."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-test-behavior-not-implementation",
+            "source": "Skill",
+            "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01CMQGKy5sgzqhjRUNLgjwCk",
+            "time": "2026-10-03T18:42:10.390Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "bybZr+mdce9LDXjWP+ZphMoA3oIWvxmkIW8rZOi1u2iKu2nWfWJUPAofXIHOIM7KjNkkGxT28ud/E+49Kw3YAQ=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-type-system-discipline",
+        "findings": [
+          {
+            "finding": "0d3ec76 made ModelConfig a union on wire with compactThreshold required for Responses, which removes the 'compact_threshold: undefined' state. It also added isResponsesModel, a guard whose claim the compiler did not check. 9e4558e replaced it with narrowing on config.wire, and db5e342 made compact take the narrowed config.",
+            "cites": "Type System Discipline",
+            "commit": "9e4558e4c21e",
+            "patch": "a7c0517e3e889aef6de3aff110283ebac63df963"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-type-system-discipline",
+            "source": "Skill",
+            "sha256": "adaa7a27c8794b24112fdaf73d11d7c59f0926c496fd5c9b0b5cb1c0ebbd3536",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_019RkdCVTyNXZ9CCtyRC14w7",
+            "time": "2026-10-03T18:42:12.588Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "7MDxol/86qHnYoe7QR+LkfrTHCAj3gyNp4nQyQjfXqZxSgsnS4VDorRbLb1WOFKCWrRhgdWMAyMOQAI3ozLfBQ=="
+          }
+        ]
+      },
+      {
+        "skill": "react-native-best-practices",
+        "findings": [
+          {
+            "finding": "The app files lose only exports of types and the isActive helper. No render path, list, or animation changes, so no performance claim needs a measurement.",
+            "cites": "Review Guardrails",
+            "none": "No runtime change in the app."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "react-native-best-practices",
+            "source": "Skill",
+            "sha256": "abdbb7fc34ad739420fe43632e0baa1d646a01d097c6905211aa8b5b41957bf1",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01SmNG87s8dknD8zjsMbWkMa",
+            "time": "2026-10-03T18:42:13.320Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "Ejdw6tjcd1ML9Igykm4gHPZ2dR/cq7ctCoyDUFjn5iq0bjojWQdfYXrxg/+DnZxqwpdvF+5WEpkgqsWFc2JKAg=="
+          }
+        ]
+      },
+      {
+        "skill": "react-native-best-practices-sm",
+        "findings": [
+          {
+            "finding": "No sub-skill topic applies. The app changes remove exports and touch no Reanimated, gesture, SVG, audio, or worklet code.",
+            "cites": "Sub-skills",
+            "none": "No Software Mansion library code changed."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "react-native-best-practices-sm",
+            "source": "Skill",
+            "sha256": "29dd5507d4a278f549fdbb4c40ce426d9aebd9102c76ba38e76e1455efeba256",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01PFj2SEnNokc81UG7TBn45X",
+            "time": "2026-10-03T18:42:13.628Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "KoONOR/CH0YHjRpl18iSKG3hdzqAIRJGFl7q1GynFkkyOVGeOqi/H68hFnM7GyNfk7BUhKzQLFJWgKmsdTbeBg=="
+          }
+        ]
+      },
+      {
+        "skill": "technical-writing",
+        "findings": [
+          {
+            "finding": "The README said exports:check fails on any tracked export that nothing imports. The check then read only TypeScript projects, so the claim was too broad. 32bab9d names what it scans and what it skips.",
+            "cites": "Voice and repo specifics",
+            "commit": "32bab9d79dd5",
+            "patch": "96d56640cb853b514ce446cd2f5156eb8129e159"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "technical-writing",
+            "source": "Skill",
+            "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01FMbvgWjTBqLxKZuQCid4pE",
+            "time": "2026-10-03T18:42:10.679Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "sXNW6rSBu7Bne+pBtVbSvCN8vTbRlhH/8kH29oBMXZNCKcj6sP/9NDeKO339Ng6676DHCdmZJBty1Y7401cKCQ=="
+          }
+        ]
+      },
+      {
+        "skill": "test-prune",
+        "findings": [
+          {
+            "finding": "The new tests run range-typecheck.cjs and exports-check.cjs on real git fixtures and assert exact output lines. lint-policy.test.js runs oxlint on fixtures for each assertion kind and each disable form. No case is skipped or weakened.",
+            "cites": "Review questions",
+            "none": "No pruning needed."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "test-prune",
+            "source": "Skill",
+            "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01Rgi6R72cdY5QKFanVr6Uks",
+            "time": "2026-10-03T18:42:14.247Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "12B/kEx6MsElrB/4E1m5t5pW92imIRQgERap49FxoYIwwVK0WrZQu/Vc78ohbFfo4W6NYS/A5eeSt9ITRnyUAg=="
+          }
+        ]
+      },
+      {
+        "skill": "thermo-nuclear-code-quality-review",
+        "findings": [
+          {
+            "finding": "change.cjs and exports-check.cjs both parse TypeScript exports, but they answer different questions. change.cjs diffs one file's export names between two commits. exports-check.cjs asks the type checker which exports any program imports. A shared helper would join two unrelated uses.",
+            "cites": "Non-Negotiable Additional Standards 6",
+            "none": "Not a duplicate helper."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "thermo-nuclear-code-quality-review",
+            "source": "Skill",
+            "sha256": "35f68c89a24f690eaba7f77c637d3b7dc1cb0fc7bf17670606ffd83f074fa626",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_012HthGpMaUJrPFWYHfNGxXZ",
+            "time": "2026-10-03T18:42:11.085Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "LTGDin+QPiOqH1FQKEZKYuD9hBYs7j537lZsnn5XtIa0+EUBgniVI8K2Qx+LhJZhh9Rw5roqOeKKSx97Uc5kAg=="
+          }
+        ]
+      },
+      {
+        "skill": "typescript-best-practices",
+        "findings": [
+          {
+            "finding": "models uses 'satisfies Record<ModelKey, ModelConfig>', which keeps each entry's literal type for narrowing. project/no-type-assertion allows only 'as const', and its allow list is empty.",
+            "cites": "TypeScript best practices",
+            "none": "No cast or loose type added."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "typescript-best-practices",
+            "source": "Skill",
+            "sha256": "fd61fe218e2d08226a63533d344277ccacd6e92fd07a81ca663817594585221d",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_012h2NFZ6Vb3BoPZohdnnLey",
+            "time": "2026-10-03T18:42:13.247Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "VkyiwcnuOpOWN/IeOSTq/34WG5YclV2PNUU2GQGkEie6qPtpTexzIJtXUBmolq/HmajZZE5W/zTYbuV3K2aiAQ=="
+          }
+        ]
+      },
+      {
+        "skill": "unslop",
+        "findings": [
+          {
+            "finding": "PR3's README lint paragraph joined clauses with two semicolons and a mid-sentence colon. 6d97f17 split them into sentences and gave the export check its own paragraph.",
+            "cites": "Style 14",
+            "commit": "6d97f17bb007",
+            "patch": "7a032f89ef2ac06b2198fd60e0e668c0004fdf0f"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "unslop",
+            "source": "Skill",
+            "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01Jj8y95WgpW4hvWBSopcu5M",
+            "time": "2026-10-03T18:41:00.503Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "B3Nhd0eqXTaNk1liIuHH/m10qS3H0lSJIpVHrNsKB/hKOwvwyxcYR6f32gbaVh0hVF9H7rVynwPVPDyVirmtCg=="
+          }
+        ]
+      },
+      {
+        "skill": "workflow",
+        "findings": [
+          {
+            "finding": "The durable-work rule fires on jobs.ts and worker.ts, which only lose the export on JobUpdate and WorkerOptions. packages/server/workflows/reply.ts and services.ts hold the workflow code, and this range does not change them.",
+            "cites": "Prefer Step Functions to Avoid Sandbox Errors",
+            "none": "No workflow or step code changed."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "workflow",
+            "source": "Skill",
+            "sha256": "e4f3981d54efc3de50c898eba48ba71ccf45dfd25ce8806c1e100f9826a9885b",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01ExUc34ukNT5qsuWk9hZC3r",
+            "time": "2026-10-03T18:42:14.174Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "ST9fx3Kyw4xqIU32B4dW8R7RA7puD3De4h4cT2Chlr5QfAX+JJMWql5ezAiT1PknIrFikJG0gRjUxQkdHYw2Dw=="
+          }
+        ]
+      }
+    ]
+  }
+}

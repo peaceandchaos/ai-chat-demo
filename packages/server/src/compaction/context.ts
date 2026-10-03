@@ -6,7 +6,12 @@ import type {
   Submission,
 } from '../../../../shared/contracts';
 import { ProviderFailure } from '../errors';
-import { checkpointMethod, models, type ModelConfig } from '../models';
+import {
+  checkpointMethod,
+  models,
+  type ModelConfig,
+  type ResponsesModel,
+} from '../models';
 import type { BeforePaidCall, PreparedContext } from '../provider';
 import {
   kimiInstruction,
@@ -16,7 +21,7 @@ import {
 
 export type ContextServices = {
   compactOpenAI: (
-    model: ModelKey,
+    config: ResponsesModel,
     items: ResponseInputItem[],
     signal: AbortSignal,
     beforeCall: BeforePaidCall,
@@ -46,7 +51,7 @@ export function textItem(
 // Providers count an image by its dimensions, not its encoded bytes. This is the
 // largest per-image cost documented for the configured models: OpenAI's
 // 30,000-patch limit at its 1.2 multiplier. Sources are in docs/providers.md.
-export const imageEstimate = 36_000;
+const imageEstimate = 36_000;
 
 // A byte upper estimate protects multilingual text when provider tokenizers are
 // unavailable. It intentionally compacts earlier than the CLI's chars/4 estimate.
@@ -122,7 +127,7 @@ async function compact(
   services: ContextServices,
 ): Promise<ResponseInputItem[]> {
   if (config.wire === 'responses')
-    return services.compactOpenAI(model, items, signal, beforeCall);
+    return services.compactOpenAI(config, items, signal, beforeCall);
   const start = retainedStart(items, model, config);
   if (start === 0)
     throw new ProviderFailure(
@@ -164,7 +169,7 @@ export async function prepareContext(
   signal: AbortSignal,
   beforeCall: BeforePaidCall,
   services: ContextServices,
-  config = models[model],
+  config: ModelConfig = models[model],
 ): Promise<PreparedContext> {
   const checkpoint = input.checkpoints.find(item => item.model === model);
   let start = 0;

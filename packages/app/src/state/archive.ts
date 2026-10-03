@@ -68,7 +68,7 @@ const journalSchema = z.array(
 );
 export type ChatRecord = z.infer<typeof chatSchema>;
 export type SavedMessage = z.infer<typeof messageSchema>;
-export type ArchiveMetadata = z.infer<typeof metadataSchema>;
+type ArchiveMetadata = z.infer<typeof metadataSchema>;
 type Write = z.infer<typeof journalSchema>[number];
 
 const metaKey = 'archive/index';
@@ -85,7 +85,7 @@ const write = (
   value: ChatRecord | SavedMessage | ArchiveMetadata | string[] | string,
 ): Write => ({ key, value: JSON.stringify(value) });
 
-export function isActive(message: SavedMessage): boolean {
+function isActive(message: SavedMessage): boolean {
   return (
     message.role === 'assistant' &&
     (message.status === 'pending' || !isTerminal(message.status))

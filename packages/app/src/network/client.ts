@@ -29,7 +29,7 @@ export interface ClientSocket {
   send(data: string): void;
   close(code?: number, reason?: string): void;
 }
-export interface StreamTextDecoder {
+interface StreamTextDecoder {
   decode(
     input?: ArrayBuffer | ArrayBufferView,
     options?: { stream?: boolean },

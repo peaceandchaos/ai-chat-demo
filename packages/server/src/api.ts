@@ -34,7 +34,7 @@ const acknowledgeSchema = z.strictObject({
 });
 const maxRequestBytes = 4_000_000;
 
-export async function readBody(request: Request): Promise<string> {
+async function readBody(request: Request): Promise<string> {
   if (!request.headers.get('Content-Type')?.startsWith('application/json'))
     throw new RequestError(415, 'Send JSON.');
   if (!request.body) throw new RequestError(400, 'Missing request body.');
@@ -66,7 +66,7 @@ export async function readBody(request: Request): Promise<string> {
   }
 }
 
-export function errorResponse(error: Error | Response): Response {
+function errorResponse(error: Error | Response): Response {
   if (error instanceof Response) return error;
   if (error instanceof RequestError)
     return Response.json({ error: error.message }, { status: error.status });
@@ -118,7 +118,7 @@ export async function executeCommand(
   }
 }
 
-export type SocketPeer = {
+type SocketPeer = {
   isOpen(): boolean;
   send(text: string): void;
   close(code: number, reason: string): void;

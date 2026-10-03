@@ -25,6 +25,7 @@ The user approved repository instructions, repository/global `test-prune`, check
 - Preserve the original nine commits. Review tooling/workspace, server, and saved-chat/client foundations as three groups before one baseline PR.
 - The user delegated the brace-expansion patch, fork Actions handling, and bot-permission choices on 30 September. The patch moves the approved overrides to 1.1.21 and 5.0.12.
 - Only PR runs publish `quality-gate`; push runs publish `post-push-gate`, which the target-health controller reads.
+- Hosted CI runs no range check (`commit-types`, `skill-records`) until a CI change passes `--base` to `verify:current`. Until then the pre-push hook runs them on every push, and a PR merged from a push without the hook skips them.
 - Use the GitHub App from the current Mac account, as the user selected. Agent writes use its repository-scoped installation token. Owner credentials remain accessible on this account, so this setup does not establish credential isolation.
 - Global skill guidance stays generic. `.agents/skills/test-prune/SKILL.md` is the maintained source; explicitly copy reviewed changes to the global install and compare hashes.
 

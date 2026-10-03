@@ -1,0 +1,1007 @@
+{
+  "change": "skill-process-5e",
+  "base": {
+    "commit": "ad6d22a67ed130a6f812304d0ddec76fb9d36994",
+    "patch": "f168805a31914ad95a2082b2367029a9986fda19"
+  },
+  "skills": [
+    {
+      "skill": "blast-radius",
+      "files": [
+        "tools/__tests__/ledger.test.js",
+        "tools/__tests__/receipts.test.js",
+        "tools/__tests__/record-fixture.cjs",
+        "tools/__tests__/skill-record-writing.test.js",
+        "tools/__tests__/skill-records.test.js",
+        "tools/__tests__/skills.test.js",
+        "tools/skills/change.cjs",
+        "tools/skills/install-receipt-hook.mjs",
+        "tools/skills/ledger.cjs",
+        "tools/skills/receipts.cjs",
+        "tools/skills/records.cjs",
+        "tools/skills/routing.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "The fact the per-record check is safe because of: each record's own range ends at the nearest later base of any record at HEAD, so the records at HEAD split the check range into ranges that do not overlap, and a commit no changed record holds fails the check. The stack fixture test proves it, and three mutations (end every range at HEAD, pool coverage across records, drop the uncovered-commit check) each make it fail.",
+          "cites": "Steps 2",
+          "none": "Logs are in pr5e-evidence/ at the PR 5e worktree root."
+        },
+        {
+          "finding": "Where grep stops: verify.cjs runs skills:check only as a range check, and hosted CI runs verify:current without --base, so the per-record check runs in verify:commit but not in hosted CI. The repository needs no change for this. The workflow change is in work/skill-process-evidence/ci-range-checks.patch for the owner, and L2 in skill-process-4 stays open until it lands.",
+          "cites": "Steps 3",
+          "none": "The fix is the owner-applied CI patch, not a repository change."
+        },
+        {
+          "finding": "Under the per-record rule, the skill-process-3 review entries for blast-radius and principle-prove-it-works hold only receipts that agent ad1b4f1b47d1a5c1a made on 9f62d28, which is below record 3's base fb66468, so the check rejects them. I did not edit them. The fresh review of every record replaced those receipts.",
+          "cites": "Steps 4",
+          "commit": "039f967",
+          "patch": "2aec84713489765cce113bf2b92cbf48dd69e1e2"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "blast-radius",
+          "source": "Skill",
+          "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_01DByKjaTJc62UBEbMrh4SdR",
+          "time": "2026-10-02T14:04:31.426Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+          "headPatch": "f168805a31914ad95a2082b2367029a9986fda19",
+          "sig": "qpiG8Q7nR2PK1ptPFpn7V1fiZY3kn0zABH+XrY+1k2Geo6fRyhHUDxfCieuRKZFVjyk18FbQUoLqYzX2ioAABg=="
+        }
+      ]
+    },
+    {
+      "skill": "deslop",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Swept the range for unneeded comments, defensive try/catch, casts, and deep nesting. startsOf keeps its try/catch, because a record at HEAD may hold invalid JSON, and readRecords already reports a changed record that does not parse. The split test files import only what they use.",
+          "cites": "Focus Areas",
+          "none": "No slop left to remove."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "deslop",
+          "source": "Skill",
+          "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_01WyGSWcinsiRyBc7yLQWQBM",
+          "time": "2026-10-02T14:04:33.840Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+          "headPatch": "f168805a31914ad95a2082b2367029a9986fda19",
+          "sig": "ay+h+jSXz2DiQOH6EJSmPoDsISONCmjoy0bmZbKHZnarfO2SewogQtuj0qEpuhBCd1N9o2hcIvo/Gj//XV7PBQ=="
+        }
+      ]
+    },
+    {
+      "skill": "no-comments",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The pullSection comment said an author's receipt never stands in for a reviewer's, which the code does not guarantee (L7). It now states what the code does and the limit that the command cannot tell which pair runs it.",
+          "cites": "Steps 4",
+          "commit": "663fce8b68a6",
+          "patch": "ee3de23c9f0fa67c5a2f2980839dff52f15a955e"
+        },
+        {
+          "finding": "I applied this skill inline and did not spawn the comment-sicko agent, because this session spawns agents only when the user asks. I kept the comments that state a rule the code does not show: base resolution, range end, the pullSection limit, and the fixture isolation. A comment-sicko run over this range later deleted 21 comments and kept 2 with proof.",
+          "cites": "Steps 1",
+          "commit": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "no-comments",
+          "source": "Skill",
+          "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_01Edko5WDcehjErV3EYJBF3x",
+          "time": "2026-10-02T14:04:34.434Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+          "headPatch": "f168805a31914ad95a2082b2367029a9986fda19",
+          "sig": "olPYWRxClGxnqCy1UUXErJbWSjdeoux64ujaVUMZcTk8vB4gyO0lHET1LPrT3DTW3w1HhkwVBK8eg7G/V2loBg=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-fix-root-causes",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "H2, H3, and H4 share one root cause: the check pooled every record's entries and receipts and checked them against the whole range. Each record now stores its base and is checked against its own range, so one change removes all three gaps without a guard for each.",
+          "cites": "Fix Root Causes",
+          "commit": "9edd3b470ded",
+          "patch": "e861ecb23ab7ce6081efaec0a8b3326f843a2b2c"
+        },
+        {
+          "finding": "L4: the first repair failed, because git appends a tab after a quoted path that holds a space. The second strips the tab, then unquotes C escapes and octal bytes, and passes. That is two attempts, within the limit.",
+          "cites": "Fix Root Causes",
+          "commit": "55d1752e8bcd",
+          "patch": "9ec15626664a1817b669f610f81a300b3554468b"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-fix-root-causes",
+          "source": "Skill",
+          "sha256": "4c5fd0fb9eb4754dff9a6dd4d1de7a87dc927f5154ab3afd643bedb9b7f8b6b9",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_013ozwMu4SM5BNtGBqfMcmou",
+          "time": "2026-10-02T14:04:31.285Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+          "headPatch": "f168805a31914ad95a2082b2367029a9986fda19",
+          "sig": "ddzg8Ocbz3pvA94xefNk1q5yoCI8OOaCH8NCbwHcQH29UYrg4WFWUy9ilqYGc5ztnI3e1M41QB8vn6GLgTFqDQ=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-minimize-reader-load",
+      "files": [
+        "tools/__tests__/record-fixture.cjs",
+        "tools/__tests__/skill-record-writing.test.js"
+      ],
+      "findings": [
+        {
+          "finding": "Disclosure: skills:required named this skill only after b58395d added two files, so I loaded it after writing that commit and applied it afterward. The split keeps the original file's module-level fixture state in record-fixture.cjs, and each test file copies it once in beforeAll. No test reassigns it, so the copies cannot drift. Passing the state into each helper would rewrite every test body and lose the byte-for-byte move.",
+          "cites": "Minimize Reader Load 2",
+          "none": "Kept, so the move stays verifiable."
+        },
+        {
+          "finding": "The fixture exported four helpers that only the check tests use. They now live in skill-records.test.js, so the fixture exports only what its setup and both test files use.",
+          "cites": "Minimize Reader Load 1",
+          "commit": "5bc0adf2ebfe",
+          "patch": "061c4a62f30d44047039259d9cd68d2f7e0a551a"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-minimize-reader-load",
+          "source": "Skill",
+          "sha256": "772bd55686c20d49e1220d0728de4587cd5608ae2968b7896c5477b3f8813dfc",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_015WqLpqyRinogyHGYRpZ5y7",
+          "time": "2026-10-02T15:06:54.974Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "b58395d4b155d3295bad5de8e0dd875c1bb52b72",
+          "headPatch": "2ba4effa5faede6c42747a468fe694e9a9881ee9",
+          "sig": "NxKrjNZZQdWOdpFgeBwQdKHm5zSphh5X0TCNXDbVleoEs4hBdTajRFbVYCh+f1C3XwHA56ITuLB4ePlSJGmJBA=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-prove-it-works",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Each defect has a before and an after log, and each gap fix has mutations that bring the gap back and fail a test. The first H2/H3/H4 before run failed on the schema's new base key, not on the gap, so I reran the old check with base allowed to get the predicted failure: empty receipts pass, a half-reviewed pull request passes, and a late base goes unreported.",
+          "cites": "Prove It Works",
+          "none": "Logs are in pr5e-evidence/ at the PR 5e worktree root."
+        },
+        {
+          "finding": "The split's proof is a script that compares test names, statuses, and each test body before and after (split-compare.log), plus a diff of every test body that differs only by one blank line (split-body-diff.log).",
+          "cites": "Script the check when you can",
+          "none": "Logs are in pr5e-evidence/ at the PR 5e worktree root."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-prove-it-works",
+          "source": "Skill",
+          "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_016aigSRaXwKy7kyJ7R3KNxM",
+          "time": "2026-10-02T14:04:30.062Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+          "headPatch": "f168805a31914ad95a2082b2367029a9986fda19",
+          "sig": "YTXa63oRWrAVa7ivHozpvoXICjbTiuenuNRj2XjJIWD3tHf3QwlLwzBijtk091lgSGVAR20xVqOoRg27eH9UDQ=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-sequence-verifiable-units",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "Each defect is one commit with its test, in the brief's order, and each passed verify:staged before the next began. The record statuses, the test split, and this record come after the commits they cite.",
+          "cites": "Sequence work into verifiable units",
+          "none": "The sequence is the commit list fb88a0f..HEAD."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-sequence-verifiable-units",
+          "source": "Skill",
+          "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_01B64m1BZVEZXZeJwoeKYpSM",
+          "time": "2026-10-02T14:04:30.677Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+          "headPatch": "f168805a31914ad95a2082b2367029a9986fda19",
+          "sig": "q5Gk0zTeZjF85vFv1O8goJVqmlshuuf7huBdqOBb9tRvZtisJyh2TcZAju5oKZA9yQGZikbHTGtQZ1WTSBSxCg=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-subtract-before-you-add",
+      "files": [
+        "tools/__tests__/record-fixture.cjs",
+        "tools/__tests__/skill-record-writing.test.js"
+      ],
+      "findings": [
+        {
+          "finding": "L8: plannedSettings already knew each settings change, so the 44-line diff function is deleted and the dry run prints that list.",
+          "cites": "Subtract Before You Add",
+          "commit": "7d5b1eaca946",
+          "patch": "b9e2deb6aff6a05d77599aa4530477fed3df92b6"
+        },
+        {
+          "finding": "Disclosure: loaded after b58395d, like principle-minimize-reader-load. Applied afterward, it moved the check-only helpers out of the new fixture module.",
+          "cites": "Subtract Before You Add",
+          "commit": "5bc0adf2ebfe",
+          "patch": "061c4a62f30d44047039259d9cd68d2f7e0a551a"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-subtract-before-you-add",
+          "source": "Skill",
+          "sha256": "84bfde4d3dc16360264e0cb944b2dfbd8d92a70624322e83b93432f8e35dc60e",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_015t47opKZbPjhn4RC1tjrKi",
+          "time": "2026-10-02T15:06:54.807Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "b58395d4b155d3295bad5de8e0dd875c1bb52b72",
+          "headPatch": "2ba4effa5faede6c42747a468fe694e9a9881ee9",
+          "sig": "fHCeJ7KRayTDk+W3RqMVOWqV1Kp7kZy9ZfKg7LsHB7fk6K2adTFvqlWcXjqTJzVXsnxjhUaZtM6b7V30UYmiCA=="
+        }
+      ]
+    },
+    {
+      "skill": "principle-test-behavior-not-implementation",
+      "files": [
+        "tools/__tests__/ledger.test.js",
+        "tools/__tests__/receipts.test.js",
+        "tools/__tests__/record-fixture.cjs",
+        "tools/__tests__/skill-record-writing.test.js",
+        "tools/__tests__/skill-records.test.js",
+        "tools/__tests__/skills.test.js",
+        "tools/skills/change.cjs",
+        "tools/skills/install-receipt-hook.mjs",
+        "tools/skills/ledger.cjs",
+        "tools/skills/receipts.cjs",
+        "tools/skills/records.cjs",
+        "tools/skills/routing.cjs"
+      ],
+      "findings": [
+        {
+          "finding": "The octal mutation that decodes in base 10 survived the first L4 test, because \\u0001 is 001 in both bases. The test now uses \\u001f, and the mutation fails.",
+          "cites": "Test behavior, not implementation",
+          "commit": "55d1752e8bcd",
+          "patch": "9ec15626664a1817b669f610f81a300b3554468b"
+        },
+        {
+          "finding": "The mutation that binds author receipts to the later range survived the first stack test. A lower record that reloads its skills after the upper base now fails under it.",
+          "cites": "Test behavior, not implementation",
+          "commit": "9edd3b470ded",
+          "patch": "e861ecb23ab7ce6081efaec0a8b3326f843a2b2c"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "principle-test-behavior-not-implementation",
+          "source": "Skill",
+          "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_01XVqSqJJ9QwgpxFfHZFfu1m",
+          "time": "2026-10-02T14:04:31.356Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+          "headPatch": "f168805a31914ad95a2082b2367029a9986fda19",
+          "sig": "rakGE3V6lF7i+TXUoSJG9gSQTQtbfCUpu+ZX3WL4jZYa1OlOEVYZMOFz/jhf7IuZNt4UQUMNgtu0EX/I3sPeBQ=="
+        }
+      ]
+    },
+    {
+      "skill": "technical-writing",
+      "files": ["<change>", "AGENTS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "docs/skills.md, README.md, and AGENTS.md said a receipt proves a load and described per-record coverage that the check did not enforce. They now state the per-record rule and what a receipt does not show.",
+          "cites": "Voice and repo specifics",
+          "commit": "042160af68ce",
+          "patch": "9df3aa5adb8836f7f7c70ac37dadf05aff05b552"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "technical-writing",
+          "source": "Skill",
+          "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_01QqmaFsPEJKCPfQ6dJVpsFZ",
+          "time": "2026-10-02T14:04:34.505Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+          "headPatch": "f168805a31914ad95a2082b2367029a9986fda19",
+          "sig": "O4u2na/fivhKsmmrI2Vxm43gSkkC6HaPpR4bthSI93EDgIxuzQ77Of3CFQYlMtMbVyw6LdIoB5W55o88eri4CA=="
+        }
+      ]
+    },
+    {
+      "skill": "test-prune",
+      "files": [
+        "tools/__tests__/ledger.test.js",
+        "tools/__tests__/receipts.test.js",
+        "tools/__tests__/record-fixture.cjs",
+        "tools/__tests__/skill-record-writing.test.js",
+        "tools/__tests__/skill-records.test.js",
+        "tools/__tests__/skills.test.js"
+      ],
+      "findings": [
+        {
+          "finding": "No changed test weakens an assertion or narrows discovery. The scaffold test's expected record gained base, L3 now rejects a ledger test that Jest skips or never discovers, and the split keeps all 17 tests with each body unchanged. I loaded glow-guides:test-prune, the copy the hook hashes, while AGENTS.md names the repository copy (L6, open in skill-process-5).",
+          "cites": "Review questions",
+          "none": "No pruning needed."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "test-prune",
+          "source": "Skill",
+          "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_01PAM3ZtDKgmR7Pp8CwCM1Dk",
+          "time": "2026-10-02T14:04:35.528Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+          "headPatch": "f168805a31914ad95a2082b2367029a9986fda19",
+          "sig": "CYuHW6DxGyUn0SxxDmiz53Hv5EQg1+A1xzWkYNPRDFYCba8qTYGVxunVDD/tdmZGFHzI02R1Y1c9ii5kvnyzCw=="
+        }
+      ]
+    },
+    {
+      "skill": "thermo-nuclear-code-quality-review",
+      "files": ["<change>"],
+      "findings": [
+        {
+          "finding": "The range took tools/__tests__/skill-records.test.js from 751 to 1,041 lines. The fixture and the record-writing tests now live in their own files.",
+          "cites": "Non-Negotiable Additional Standards 1",
+          "commit": "061178ca5931",
+          "patch": "2ba4effa5faede6c42747a468fe694e9a9881ee9"
+        },
+        {
+          "finding": "One per-record range replaces the union checks behind H2, H3, and H4, instead of a guard for each gap.",
+          "cites": "Non-Negotiable Additional Standards 0",
+          "commit": "9edd3b470ded",
+          "patch": "e861ecb23ab7ce6081efaec0a8b3326f843a2b2c"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "thermo-nuclear-code-quality-review",
+          "source": "Skill",
+          "sha256": "35f68c89a24f690eaba7f77c637d3b7dc1cb0fc7bf17670606ffd83f074fa626",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_019zWKqbMpoRGAhakU8nEzxP",
+          "time": "2026-10-02T14:04:35.098Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+          "headPatch": "f168805a31914ad95a2082b2367029a9986fda19",
+          "sig": "QOKAM9yKcivqT+iLJ4aahL2rsUD6vVW4CL30bT3g76PrQx7vEl0p2+Pbo+/jYPBxu+hMuTDHqkA0upEw8UIfDQ=="
+        }
+      ]
+    },
+    {
+      "skill": "unslop",
+      "files": ["<change>", "AGENTS.md", "README.md", "docs/skills.md"],
+      "findings": [
+        {
+          "finding": "Swept the docs, commit messages, and finding text for em dashes, colon connectors, and AI vocabulary.",
+          "cites": "Style 13",
+          "none": "None left in the range."
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "unslop",
+          "source": "Skill",
+          "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_01R713F7u9ZMmPNE5FUejqeq",
+          "time": "2026-10-02T14:04:35.019Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+          "headPatch": "f168805a31914ad95a2082b2367029a9986fda19",
+          "sig": "vw6N69eFc5uboZk1XTQgn03yDDITTfew23z9P3DSCqdCovewRldqSkj3rzonlm4fhKhA5jJn6GxuAwLA1xNLBw=="
+        }
+      ]
+    },
+    {
+      "skill": "writing-for-agents",
+      "files": ["AGENTS.md"],
+      "findings": [
+        {
+          "finding": "AGENTS.md:38 is always loaded, so it now states exactly what the check enforces: each record, in its own range, with a receipt that shows a signed call, not a fresh read.",
+          "cites": "Context pointers",
+          "commit": "042160af68ce",
+          "patch": "9df3aa5adb8836f7f7c70ac37dadf05aff05b552"
+        }
+      ],
+      "receipts": [
+        {
+          "v": 1,
+          "client": "claude-code",
+          "skill": "writing-for-agents",
+          "source": "Skill",
+          "sha256": "a842323e664e5af104eac5c97ad22fda929ebeb62d81c501161ac1f6f482db58",
+          "partial": false,
+          "session": "5b5dc120-ce57-4bd9-b112-3647c99b5fbf",
+          "agent": "a997ee7979ef3f6a5",
+          "agentType": "pstack:effort-high",
+          "toolUseId": "toolu_014ysqN2SXfaUrG4UHKuN3U1",
+          "time": "2026-10-02T14:04:35.600Z",
+          "cwd": "1d970e058481a9d4439b4c8ca08129f99a4cf811a7a9346f4d70f219b0311cd0",
+          "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+          "branch": "work/skill-process-5e",
+          "head": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+          "headPatch": "f168805a31914ad95a2082b2367029a9986fda19",
+          "sig": "cXdRyCpdOHmYnFi1T9xF3CKwX/fjvR7b3Tjc4BK6mYsDlQUx9bBFWyTtUxVZEr/rUMpcq+NqqhcWWCWmFUzkDQ=="
+        }
+      ]
+    }
+  ],
+  "review": {
+    "skills": [
+      {
+        "skill": "blast-radius",
+        "findings": [
+          {
+            "finding": "The one fact the per-record check is safe because of: rangeEnd ends each record's range at the nearest later base of any record at the head, and checkRecords fails any commit that no changed record's range holds. The bases split the checked range without overlap or gaps, and my run over origin/main..HEAD reports no uncovered commit.",
+            "cites": "Steps 2",
+            "none": "Proved by a run."
+          },
+          {
+            "finding": "663fce8 stopped a review run from rewriting author entries, but the review pull still took receipts from any non-author pair in the clone. That is record 5's High finding, still present in this range's code. 60d3fff binds the pull to the review folder.",
+            "cites": "Steps 3",
+            "commit": "60d3fff6a4a0",
+            "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "blast-radius",
+            "source": "Skill",
+            "sha256": "5ae00d4f1ba5abcbdef1eadd3109c1a721b6766b506d3c8c7d11e84c6001c0df",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_016ctevuXnzJGLR334BCUNCU",
+            "time": "2026-10-03T18:42:07.238Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "CxI0oNBbnc7aySLC4q3Uc60SvTnwsKKSmvQhg7XCpRWgnxLiR75bzERHotgVZv32PHQFJQ2eJvGgBfbcdIFECQ=="
+          }
+        ]
+      },
+      {
+        "skill": "deslop",
+        "findings": [
+          {
+            "finding": "startsOf keeps a try block around JSON.parse, because a record at the head may hold invalid JSON and readRecords reports the changed ones. unquote decodes git's C escapes with no fallback guard.",
+            "cites": "Focus Areas",
+            "none": "No slop found."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "deslop",
+            "source": "Skill",
+            "sha256": "2f7b7def74af7ed11f5b44b4d32f0f91fca8c5d1f92bf2171e8d12fd33a0f810",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01KZ1yZESQVdq5XgbUZj1ekt",
+            "time": "2026-10-03T18:42:07.395Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "UiiRiOQlM5fa8R5IW9ZZ+pNV4y1fiUjQ8MuSyVR+gxE1U+gx9IFB9T2PsiIVTGZnXqBvmaSQ2PemtuSuyDA4CA=="
+          }
+        ]
+      },
+      {
+        "skill": "no-comments",
+        "findings": [
+          {
+            "finding": "Judged inline without comment-sicko. The range added comments on resolveBase, startsOf, rangeEnd, recordScope, headReader, coverageProblems, recordProblems, reviewedRecord, writeRecord, bound, receiptFault, receiptProblems, isDisabledBlock, and discoveredTests that restated names or parameter shapes. 60d3fff deleted them. The unquote comment states git's quoting rule and stays.",
+            "cites": "No comments",
+            "commit": "60d3fff6a4a0",
+            "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "no-comments",
+            "source": "Skill",
+            "sha256": "6de3c00a2a773ac982ad96fa74b10032133a7ca455d6902defeaf237105bfbad",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_016WiwiFYENRRRxwxCo3vqEU",
+            "time": "2026-10-03T18:42:07.773Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "zUQVzlES1HJxHObF4PkDaDD7WA+PF0tH94QR82duThE+p2NEi1QLKgqkNQgb1zDqm6ARVQ8dva8i5NhAk6uSDA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-fix-root-causes",
+        "findings": [
+          {
+            "finding": "9edd3b4 fixes the pooled coverage, pooled receipts, and pooled review gaps at their shared cause, with one range for every record instead of one guard per gap.",
+            "cites": "Fix Root Causes",
+            "none": "Root-cause fix inside this range."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-fix-root-causes",
+            "source": "Skill",
+            "sha256": "4c5fd0fb9eb4754dff9a6dd4d1de7a87dc927f5154ab3afd643bedb9b7f8b6b9",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01Ptj5EXNWT3zM95BVu7GpYc",
+            "time": "2026-10-03T18:42:08.481Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "/fWdURjNYdVZy0KRFcUHHidtFU4V3e4Eok+AzQ6PSjGqWE/NZbCu9eG/1sVWc74uFSvyaRlxoGHTw4izxtm9Aw=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-minimize-reader-load",
+        "findings": [
+          {
+            "finding": "061178c and 5bc0adf split the record tests into a shared fixture and two test files, and the fixture exports only what both files use. records.cjs keeps checking, scaffolding, and pulling in one 586-line module, each part a named function.",
+            "cites": "Minimize Reader Load 1",
+            "none": "No layer to collapse."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-minimize-reader-load",
+            "source": "Skill",
+            "sha256": "772bd55686c20d49e1220d0728de4587cd5608ae2968b7896c5477b3f8813dfc",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_014SvG1ps8TzTNbNgFBnXGtD",
+            "time": "2026-10-03T18:42:08.881Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "p9e9ES/5RRA04c+WLFxhFwFSK2pDSOX9z9MZimQQpoaXwN5RW8KAfOVeShyM9Tp0+o4supEPHEpk7+AGL+9GAw=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-prove-it-works",
+        "findings": [
+          {
+            "finding": "I reverted 55d1752 and 71c3847 at HEAD and three skills tests failed. Restored, all 79 tool tests pass.",
+            "cites": "Prove It Works",
+            "none": "Verified by a run."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-prove-it-works",
+            "source": "Skill",
+            "sha256": "779a5955bfcff1bdd6274a3287ac527fa6b00246cd0d66d7cf8ffc354e4d76ce",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01B99Pm3qtfkFsJKnb1ZRmiH",
+            "time": "2026-10-03T18:42:09.230Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "2yL28bO+5cevJyDRpO3lmyaJc1dROii/fSMW8a07t8DdfQtZ619b9zbmVoXaEp9PU3t/6d2xKtxudIwvubzvCg=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-sequence-verifiable-units",
+        "findings": [
+          {
+            "finding": "Each fix is one commit with its test: a2269eb, 9edd3b4, 663fce8, 8b71606, 29f842b, 55d1752, 71c3847, and bb59d78. The test split and the record updates come after the code they move or cite.",
+            "cites": "Sequence work into verifiable units",
+            "none": "The order checks itself."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-sequence-verifiable-units",
+            "source": "Skill",
+            "sha256": "5bee6caf5abdf7b05b3e7c8d3e66549d108c2f798d8155c352a1764d030816d7",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_019NtDxtx2yabV3EzpXfrAho",
+            "time": "2026-10-03T18:42:09.590Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "c3b9RlGJ0IGLwTOP2FddRVXnN2n+nmEKb7qaeUJCYg8iMh4ozEOPwe4x4e18gcb9oEyLa+I1YyrlFtRIl5nvAA=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-subtract-before-you-add",
+        "findings": [
+          {
+            "finding": "7d5b1ea deletes the installer's hand-written diff, and 9edd3b4 replaces three union checks with one per-record range.",
+            "cites": "Subtract Before You Add",
+            "none": "Subtraction done inside this range."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-subtract-before-you-add",
+            "source": "Skill",
+            "sha256": "84bfde4d3dc16360264e0cb944b2dfbd8d92a70624322e83b93432f8e35dc60e",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_019rrrN8AfbYCDSMgCDws5Wn",
+            "time": "2026-10-03T18:42:09.975Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "OexTCDANpC2f4TthMqF59p22WnoCbwq2vhPWRtngFYnQzgLNyoe4867rCAxExdiOjzFV8D0qc5/GYhG3D1ASCg=="
+          }
+        ]
+      },
+      {
+        "skill": "principle-test-behavior-not-implementation",
+        "findings": [
+          {
+            "finding": "The stack test builds two records and asserts each record's own errors, so a pooled check fails it. The octal test uses \\u001f, which a base-10 decoder gets wrong.",
+            "cites": "Test behavior, not implementation",
+            "none": "The tests detect the defects they name."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "principle-test-behavior-not-implementation",
+            "source": "Skill",
+            "sha256": "9f6a2e492337348bcedb02c42c1b7046b8b1b9f48fbffde98e101f0168faa9ba",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01CMQGKy5sgzqhjRUNLgjwCk",
+            "time": "2026-10-03T18:42:10.390Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "bybZr+mdce9LDXjWP+ZphMoA3oIWvxmkIW8rZOi1u2iKu2nWfWJUPAofXIHOIM7KjNkkGxT28ud/E+49Kw3YAQ=="
+          }
+        ]
+      },
+      {
+        "skill": "technical-writing",
+        "findings": [
+          {
+            "finding": "042160a states what a receipt and a passing check prove, and docs/skills.md documents the open status and the per-record range. Each claim matches records.cjs and receipts.cjs at 1e64d77.",
+            "cites": "Voice and repo specifics",
+            "none": "The claims match the code."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "technical-writing",
+            "source": "Skill",
+            "sha256": "a450d685f477833640054828477fff97e1fd4ffb396a845b512d131b633c1919",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01FMbvgWjTBqLxKZuQCid4pE",
+            "time": "2026-10-03T18:42:10.679Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "sXNW6rSBu7Bne+pBtVbSvCN8vTbRlhH/8kH29oBMXZNCKcj6sP/9NDeKO339Ng6676DHCdmZJBty1Y7401cKCQ=="
+          }
+        ]
+      },
+      {
+        "skill": "test-prune",
+        "findings": [
+          {
+            "finding": "bb59d78's git-error test deletes a loose object, and background git maintenance could pack it first, so the test failed 5 of 25 runs. ef7d4ea sets maintenance.auto to false in the fixture.",
+            "cites": "Review questions",
+            "commit": "ef7d4ea5d247",
+            "patch": "15d06a533abb33a326746f2360770175295f4672"
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "test-prune",
+            "source": "Skill",
+            "sha256": "807f913944dce0e0e87abe8559da20b9f9162988d4234dab0ecbe20f430e1364",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01Rgi6R72cdY5QKFanVr6Uks",
+            "time": "2026-10-03T18:42:14.247Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "12B/kEx6MsElrB/4E1m5t5pW92imIRQgERap49FxoYIwwVK0WrZQu/Vc78ohbFfo4W6NYS/A5eeSt9ITRnyUAg=="
+          }
+        ]
+      },
+      {
+        "skill": "thermo-nuclear-code-quality-review",
+        "findings": [
+          {
+            "finding": "The range took skill-records.test.js from 751 to 1,041 lines. 061178c moved the fixture and the record-writing tests into their own files.",
+            "cites": "Non-Negotiable Additional Standards 1",
+            "commit": "061178ca5931",
+            "patch": "2ba4effa5faede6c42747a468fe694e9a9881ee9"
+          },
+          {
+            "finding": "writeRecord branches on pull.review in three places. Splitting it into an author writer and a review writer would remove the flag.",
+            "cites": "Non-Negotiable Additional Standards 2",
+            "none": "The three branches are short and next to each other, so a split would move code more than it deletes."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "thermo-nuclear-code-quality-review",
+            "source": "Skill",
+            "sha256": "35f68c89a24f690eaba7f77c637d3b7dc1cb0fc7bf17670606ffd83f074fa626",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_012HthGpMaUJrPFWYHfNGxXZ",
+            "time": "2026-10-03T18:42:11.085Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "LTGDin+QPiOqH1FQKEZKYuD9hBYs7j537lZsnn5XtIa0+EUBgniVI8K2Qx+LhJZhh9Rw5roqOeKKSx97Uc5kAg=="
+          }
+        ]
+      },
+      {
+        "skill": "unslop",
+        "findings": [
+          {
+            "finding": "Scanned the docs and the commit messages of the range for dashes, colon connectors, filler, and AI vocabulary.",
+            "cites": "Process 1",
+            "none": "No pattern found."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "unslop",
+            "source": "Skill",
+            "sha256": "290a10a90e52f080fdf0f225f043088990b5cd8d8b8307c800a91cfeb1568aa4",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01Jj8y95WgpW4hvWBSopcu5M",
+            "time": "2026-10-03T18:41:00.503Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "B3Nhd0eqXTaNk1liIuHH/m10qS3H0lSJIpVHrNsKB/hKOwvwyxcYR6f32gbaVh0hVF9H7rVynwPVPDyVirmtCg=="
+          }
+        ]
+      },
+      {
+        "skill": "writing-for-agents",
+        "findings": [
+          {
+            "finding": "042160a made the AGENTS.md paragraph state the per-record rule and the limit of a receipt, and it names the commands the agent runs.",
+            "cites": "Context pointers",
+            "none": "The pointer is accurate."
+          }
+        ],
+        "receipts": [
+          {
+            "v": 1,
+            "client": "claude-code",
+            "skill": "writing-for-agents",
+            "source": "Skill",
+            "sha256": "a842323e664e5af104eac5c97ad22fda929ebeb62d81c501161ac1f6f482db58",
+            "partial": false,
+            "session": "20265c8a-fbf4-4054-80c3-0dd40a9bdc00",
+            "agent": "a2c79c3216e47e718",
+            "agentType": "pstack:poteto-agent-xhigh",
+            "toolUseId": "toolu_01NmWFgyuAztbrjbkGMHMTmj",
+            "time": "2026-10-03T18:42:11.432Z",
+            "cwd": "b2c433f2996673dd4711622f5261e0f050d8836ac20c5911d477f3891e6e1ecc",
+            "commonDir": "4483cc075d2605a13981f2ce05a5694220adfd585f614aa95aeb76baf60edf9d",
+            "branch": null,
+            "head": "068a79674e168e468cc50ba676fcdf705b62a501",
+            "headPatch": "5025fda6b6cb6dd18de43f2584a758d5c84abb51",
+            "sig": "fFNSYgcXWv6ekkriUchgEuuMawxu1yT8z3PMBeGLWLQmWacfj0KE3gxhIkauSEpRY7S3dHjjIUGEBBBbgrJNDw=="
+          }
+        ]
+      }
+    ]
+  }
+}

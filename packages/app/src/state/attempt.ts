@@ -13,7 +13,7 @@ import type { SavedMessage } from './archive';
 
 // Where a reply attempt stands between this phone and the server. The archive
 // stores it as v1 flags; phaseOf is the only reader of those flags.
-export type AttemptPhase =
+type AttemptPhase =
   | 'unsent' // saved here; the server may or may not hold it
   | 'accepted' // the server holds it; the result is not final here yet
   | 'cancel-pending' // Stop is saved here; the server has not confirmed it
@@ -145,7 +145,7 @@ export function applyEvent(message: SavedMessage, event: JobEvent): Applied {
   return { kind: 'progress', message: next };
 }
 
-export type FailurePlan =
+type FailurePlan =
   | { kind: 'retry'; error: string }
   // The server refused an attempt it never accepted.
   | { kind: 'reject'; error: string }

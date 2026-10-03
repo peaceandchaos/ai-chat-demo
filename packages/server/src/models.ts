@@ -1,18 +1,24 @@
 import type { ModelKey } from '../../../shared/contracts';
 
-export type ModelConfig = {
+type Limits = {
   id: string;
-  wire: 'responses' | 'gateway';
   window: number;
   maxOutput: number;
   // The server's working-context limit: text bytes plus a per-image estimate.
   threshold: number;
-  // OpenAI Responses only: the token count sent as compact_threshold.
-  compactThreshold?: number;
 };
 
+export type ModelConfig =
+  | (Limits & { wire: 'gateway' })
+  | (Limits & {
+      wire: 'responses';
+      // The token count sent as compact_threshold.
+      compactThreshold: number;
+    });
+export type ResponsesModel = Extract<ModelConfig, { wire: 'responses' }>;
+
 // Source links and the selected output budget are recorded in docs/providers.md.
-export const models: Record<ModelKey, ModelConfig> = {
+export const models = {
   kimi: {
     id: 'moonshotai/kimi-k3',
     wire: 'gateway',
@@ -43,7 +49,7 @@ export const models: Record<ModelKey, ModelConfig> = {
     threshold: 800_000,
     compactThreshold: 200_000,
   },
-};
+} satisfies Record<ModelKey, ModelConfig>;
 
 export function checkpointMethod(model: ModelKey) {
   if (model === 'kimi') return 'kimi-summary';
