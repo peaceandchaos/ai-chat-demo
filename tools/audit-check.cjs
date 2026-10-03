@@ -7,7 +7,12 @@ const serious = ['high', 'critical'];
 const unpatchedDays = 14;
 
 function isDate(value) {
-  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/u.test(value);
+  return (
+    typeof value === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/u.test(value) &&
+    !Number.isNaN(Date.parse(value)) &&
+    new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
+  );
 }
 
 function hasReason(disposition) {
@@ -35,6 +40,8 @@ function npmView(args) {
 const npmRegistry = {
   latest: name => npmView([name, 'version']),
   // A release outside the vulnerable range counts as a fix, even an older one.
+  // npm view leaves prereleases out of a range that names none, so a package
+  // with a prerelease inside the range always counts as fixed.
   unfixed(name, range) {
     const affected = [].concat(npmView([`${name}@${range}`, 'version']));
     return []
@@ -72,7 +79,10 @@ function seriousAdvisories(vulnerabilities) {
   for (const finding of Object.values(vulnerabilities))
     for (const advisory of finding.via)
       if (typeof advisory !== 'string' && serious.includes(advisory.severity))
-        advisories.set(keyOf(advisory), advisory);
+        advisories.set(keyOf(advisory), [
+          ...(advisories.get(keyOf(advisory)) ?? []),
+          advisory,
+        ]);
   return advisories;
 }
 
@@ -147,15 +157,18 @@ function evaluate(audit, dispositions, today, registry = npmRegistry) {
   const failures = new Set();
   const advisories = seriousAdvisories(audit.vulnerabilities);
   const excused = new Set();
-  for (const [key, advisory] of advisories) {
-    const problem = unpatchedProblem(
-      advisory,
-      dispositions[advisory.url],
-      today,
-      registry,
-    );
-    if (problem) failures.add(`${advisory.name}: ${advisory.url} ${problem}`);
-    else excused.add(key);
+  for (const [key, instances] of advisories) {
+    const problems = instances.flatMap(advisory => {
+      const problem = unpatchedProblem(
+        advisory,
+        dispositions[advisory.url],
+        today,
+        registry,
+      );
+      return problem ? [`${advisory.name}: ${advisory.url} ${problem}`] : [];
+    });
+    for (const problem of problems) failures.add(problem);
+    if (problems.length === 0) excused.add(key);
   }
   for (const [name, finding] of Object.entries(audit.vulnerabilities)) {
     if (
@@ -171,7 +184,9 @@ function evaluate(audit, dispositions, today, registry = npmRegistry) {
         failures.add(`${name}: needs current review (${advisory.url})`);
     }
   }
-  const seen = new Set([...advisories.values()].map(advisory => advisory.url));
+  const seen = new Set(
+    [...advisories.values()].flat().map(advisory => advisory.url),
+  );
   for (const [url, disposition] of Object.entries(dispositions))
     if (disposition.decision === 'track-unpatched' && !seen.has(url))
       failures.add(
