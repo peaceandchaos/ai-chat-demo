@@ -20,21 +20,6 @@
   ],
   "exports": [
     {
-      "file": "packages/app/src/device.ts",
-      "name": "loadDeviceId",
-      "reason": "work/ui-pr3-d imports it in src/state/appSession.ts."
-    },
-    {
-      "file": "packages/app/src/openai/protocol.ts",
-      "name": "ParsedServerEvent",
-      "reason": "Legacy demo module that work/ui-pr3-d deletes."
-    },
-    {
-      "file": "packages/app/src/state/archive.ts",
-      "name": "ChatRecord",
-      "reason": "work/ui-pr3-d imports it in src/state/chatView.ts and src/state/recents.ts."
-    },
-    {
       "file": "packages/app/src/state/chatStore.ts",
       "name": "MessageRole",
       "reason": "work/ui-pr3-d rewrites this UI-owned file and still re-exports it from src/state/chatView.ts with no importer; leave the change to that branch."
@@ -43,31 +28,6 @@
       "file": "packages/app/src/state/chatStore.ts",
       "name": "MessageStatus",
       "reason": "work/ui-pr3-d rewrites this UI-owned file and still re-exports it from src/state/chatView.ts with no importer; leave the change to that branch."
-    },
-    {
-      "file": "packages/app/src/state/nativeArchive.ts",
-      "name": "openArchive",
-      "reason": "work/ui-pr3-d imports it in src/state/appSession.ts and harness/appProbe.tsx."
-    },
-    {
-      "file": "packages/app/src/state/nativeSession.ts",
-      "name": "followAppState",
-      "reason": "work/ui-pr3-d imports it in src/state/appSession.ts."
-    },
-    {
-      "file": "packages/app/src/state/session.ts",
-      "name": "AttemptActivity",
-      "reason": "work/ui-pr3-d imports it in src/state/chatView.ts."
-    },
-    {
-      "file": "packages/server/tests/session-harness.ts",
-      "name": "MemoryStorage",
-      "reason": "work/ui-pr3-d imports it in tests/session-recents.test.ts."
-    },
-    {
-      "file": "packages/server/tests/session-harness.ts",
-      "name": "uuid",
-      "reason": "work/ui-pr3-d imports it in tests/session-recents.test.ts."
     },
     {
       "file": "shared/contracts.ts",

@@ -154,6 +154,9 @@ function setUpRecordFixture() {
   mkdirSync(repository);
   git(repository, ['init', '--quiet']);
   git(repository, ['config', 'core.hooksPath', '/dev/null']);
+  // Background maintenance can pack loose objects mid-run, and one test
+  // deletes a loose object.
+  git(repository, ['config', 'maintenance.auto', 'false']);
   git(repository, ['config', 'user.name', 'Records fixture']);
   git(repository, ['config', 'user.email', 'fixture@example.invalid']);
   write('tools/skills/routing.json', JSON.stringify(routing));
