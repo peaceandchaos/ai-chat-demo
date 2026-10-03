@@ -482,6 +482,110 @@ test('a high advisory with no fixed release passes only under a current, exact t
   ).toEqual([`${url}: track-unpatched disposition matches no high advisory`]);
 });
 
+test('the registry lookup counts any release outside the advisory range as a fix', () => {
+  const bin = mkdtempSync(join(tmpdir(), 'fake-npm-'));
+  const url = 'https://github.com/advisories/unpatched';
+  const audit = {
+    auditReportVersion: 2,
+    vulnerabilities: {
+      'fixture-pkg': {
+        severity: 'high',
+        via: [{ name: 'fixture-pkg', url, range: '<=3.0.3', severity: 'high' }],
+      },
+    },
+    metadata: { dependencies: { total: 1 } },
+  };
+  const dispositions = {
+    [url]: {
+      package: 'fixture-pkg',
+      range: '<=3.0.3',
+      severity: 'high',
+      decision: 'track-unpatched',
+      latest: '3.0.3',
+      reviewedAt: '2026-10-03',
+      reviewBy: '2026-10-17',
+      reason: 'No fixed release exists.',
+    },
+  };
+  const check = versions => {
+    writeFileSync(
+      join(bin, 'npm'),
+      `#!/usr/bin/env node
+const answer = {
+  'view fixture-pkg version --json': '"3.0.3"',
+  'view fixture-pkg@<=3.0.3 version --json': '["3.0.2","3.0.3"]',
+  'view fixture-pkg versions --json': ${JSON.stringify(JSON.stringify(versions))},
+}[process.argv.slice(2).join(' ')];
+if (answer === undefined) process.exit(1);
+process.stdout.write(answer);
+`,
+      { mode: 0o755 },
+    );
+    const result = spawnSync(
+      process.execPath,
+      [
+        '-e',
+        `const { evaluate } = require(${JSON.stringify(join(__dirname, '../audit-check.cjs'))});
+process.stdout.write(JSON.stringify(evaluate(${JSON.stringify(audit)}, ${JSON.stringify(dispositions)}, '2026-10-03')));`,
+      ],
+      {
+        encoding: 'utf8',
+        env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+      },
+    );
+    expect(result.stderr).toBe('');
+    return JSON.parse(result.stdout);
+  };
+  try {
+    expect(check(['3.0.2', '3.0.3'])).toEqual([]);
+    expect(check(['3.0.2', '3.0.3', '3.0.4'])).toEqual([
+      `fixture-pkg: ${url} may be fixed, because fixture-pkg has a release outside <=3.0.3`,
+      'fixture-pkg: high',
+    ]);
+  } finally {
+    rmSync(bin, { recursive: true, force: true });
+  }
+});
+
+test('one advisory listed twice for one package must match the disposition both times, and impossible dates fail', () => {
+  const url = 'https://github.com/advisories/twice';
+  const instance = range => ({ name: 'braces', url, range, severity: 'high' });
+  const audit = ranges => ({
+    auditReportVersion: 2,
+    vulnerabilities: {
+      braces: { severity: 'high', via: ranges.map(instance) },
+    },
+    metadata: { dependencies: { total: 1 } },
+  });
+  const tracked = {
+    package: 'braces',
+    range: '<=3.0.3',
+    severity: 'high',
+    decision: 'track-unpatched',
+    latest: '3.0.3',
+    reviewedAt: '2026-10-03',
+    reviewBy: '2026-10-17',
+    reason: 'No fixed release exists.',
+  };
+  const registry = { latest: () => '3.0.3', unfixed: () => true };
+  const run = (ranges, disposition = tracked) =>
+    evaluate(audit(ranges), { [url]: disposition }, '2026-10-03', registry);
+
+  expect(run(['<=3.0.3'])).toEqual([]);
+  for (const ranges of [
+    ['<2.3.1', '<=3.0.3'],
+    ['<=3.0.3', '<2.3.1'],
+  ])
+    expect(run(ranges)).toEqual([
+      `braces: ${url} has a track-unpatched disposition for another package, range or severity`,
+      'braces: high',
+    ]);
+  for (const reviewedAt of ['2026-02-31', '2026-10-00'])
+    expect(run(['<=3.0.3'], { ...tracked, reviewedAt })).toContain(
+      'braces: high',
+    );
+});
+
 test('app security policy fails a real undisposed MEDIUM finding, keeps HIGH blocking, and leaves dependency advisories to audit:check', () => {
   const fixture = mkdtempSync(join(tmpdir(), 'security-fixture-'));
   try {
