@@ -317,42 +317,63 @@ test('a high advisory with no fixed release passes only under a current, exact t
     reviewBy: '2026-10-17',
     reason: 'No fixed release exists. Only build and test tools load it.',
   };
-  const check = (disposition, today = '2026-10-03', latest = '3.0.3') =>
-    evaluate(
-      audit,
-      disposition ? { [url]: disposition } : {},
-      today,
-      () => latest,
-    );
+  const registry = (latest = '3.0.3', unfixed = true) => ({
+    latest: () => latest,
+    unfixed: () => unfixed,
+  });
+  const check = (disposition, today = '2026-10-03', npm = registry()) =>
+    evaluate(audit, disposition ? { [url]: disposition } : {}, today, npm);
   const blocked = ['braces: high', 'micromatch: high', 'jest: high'];
+  const blocks = disposition =>
+    expect(check(disposition)).toEqual(expect.arrayContaining(blocked));
 
   expect(check(tracked)).toEqual([]);
-  expect(check(undefined)).toEqual(expect.arrayContaining(blocked));
+  expect(check(tracked, '2026-10-17')).toEqual([]);
   expect(check(tracked, '2026-10-18')).toEqual(expect.arrayContaining(blocked));
-  expect(check({ ...tracked, reviewBy: '2026-10-18' })).toEqual(
+  blocks(undefined);
+  blocks({ ...tracked, decision: 'track' });
+  blocks({ ...tracked, package: 'micromatch' });
+  blocks({ ...tracked, range: '<=3.0.2' });
+  blocks({ ...tracked, severity: 'moderate' });
+  blocks({ ...tracked, reviewBy: '2026-10-18' });
+  blocks({ ...tracked, reviewBy: '2026-10-1' });
+  blocks({ ...tracked, reviewedAt: '2026-10-04' });
+  blocks({ ...tracked, reviewedAt: undefined });
+  blocks({ ...tracked, reason: '  ' });
+  blocks({ ...tracked, latest: undefined });
+  blocks({ ...tracked, reviewedAt: '2026-10-01x' });
+  expect(
+    check({ ...tracked, latest: null }, '2026-10-03', registry(null)),
+  ).toEqual(expect.arrayContaining(blocked));
+  expect(check({ ...tracked, reviewBy: '2026-10-18' }, '2026-10-05')).toEqual(
     expect.arrayContaining(blocked),
   );
-  expect(check({ ...tracked, reviewBy: 'soon' })).toEqual(
-    expect.arrayContaining(blocked),
-  );
-  expect(check({ ...tracked, range: '<=3.0.2' })).toEqual(
-    expect.arrayContaining(blocked),
-  );
-  expect(check({ ...tracked, package: 'micromatch' })).toEqual(
-    expect.arrayContaining(blocked),
-  );
-  expect(check({ ...tracked, reason: '' })).toEqual(
-    expect.arrayContaining(blocked),
-  );
-  expect(check({ ...tracked, decision: 'track' })).toEqual(
-    expect.arrayContaining(blocked),
-  );
-  expect(check(tracked, '2026-10-03', '3.0.4')).toEqual(
+  expect(check(tracked, '2026-10-03', registry('3.0.4'))).toEqual(
     expect.arrayContaining([
       ...blocked,
       expect.stringContaining('braces 3.0.4 is released'),
     ]),
   );
+  expect(
+    check(
+      { ...tracked, latest: '3.0.4' },
+      '2026-10-03',
+      registry('3.0.4', false),
+    ),
+  ).toEqual(
+    expect.arrayContaining([
+      ...blocked,
+      expect.stringContaining('has a release outside <=3.0.3'),
+    ]),
+  );
+
+  audit.vulnerabilities.jest.via.push('ghost');
+  expect(check(tracked)).toEqual(['jest: high']);
+  audit.vulnerabilities.jest.via.pop();
+
+  audit.vulnerabilities.jest.severity = 'critical';
+  expect(check(tracked)).toEqual(['jest: critical']);
+  audit.vulnerabilities.jest.severity = 'high';
 
   advisory.severity = 'critical';
   audit.vulnerabilities.braces.severity = 'critical';
@@ -375,6 +396,58 @@ test('a high advisory with no fixed release passes only under a current, exact t
   );
   expect(second).not.toContain('braces: high');
   audit.vulnerabilities.micromatch.via.pop();
+
+  const sharedUrl = names => ({
+    ...audit,
+    vulnerabilities: Object.fromEntries(
+      names.map(name => [
+        name,
+        {
+          severity: 'high',
+          via: [
+            {
+              ...advisory,
+              name,
+              dependency: name,
+              range: name === 'braces' ? '<=3.0.3' : '<2.0.1',
+            },
+          ],
+        },
+      ]),
+    ),
+  });
+  for (const names of [
+    ['fixed-pkg', 'braces'],
+    ['braces', 'fixed-pkg'],
+  ]) {
+    const result = evaluate(
+      sharedUrl(names),
+      { [url]: tracked },
+      '2026-10-03',
+      registry(),
+    );
+    expect(result).toEqual([
+      `fixed-pkg: ${url} has a track-unpatched disposition for another package, range or severity`,
+      'fixed-pkg: high',
+    ]);
+  }
+
+  expect(() =>
+    evaluate(
+      {
+        ...audit,
+        vulnerabilities: {
+          braces: {
+            severity: 'high',
+            via: [{ ...advisory, severity: 'CRITICAL' }],
+          },
+        },
+      },
+      {},
+      '2026-10-03',
+      registry(),
+    ),
+  ).toThrow('Unknown advisory severity');
 
   const moderateOnly = {
     ...audit,
@@ -404,7 +477,7 @@ test('a high advisory with no fixed release passes only under a current, exact t
         [url]: tracked,
       },
       '2026-10-03',
-      () => '3.0.3',
+      registry(),
     ),
   ).toEqual([`${url}: track-unpatched disposition matches no high advisory`]);
 });
