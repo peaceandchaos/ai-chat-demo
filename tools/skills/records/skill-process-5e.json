@@ -1,7 +1,7 @@
 {
   "change": "skill-process-5e",
   "base": {
-    "commit": "fb88a0f1eba15b4c8880ace88280e4c86fcb292e",
+    "commit": "ad6d22a67ed130a6f812304d0ddec76fb9d36994",
     "patch": "f168805a31914ad95a2082b2367029a9986fda19"
   },
   "skills": [
@@ -99,13 +99,14 @@
         {
           "finding": "The pullSection comment said an author's receipt never stands in for a reviewer's, which the code does not guarantee (L7). It now states what the code does and the limit that the command cannot tell which pair runs it.",
           "cites": "Steps 4",
-          "commit": "06e4a3d48d93ab845391f903d75e3b21c319d317",
+          "commit": "663fce8b68a6",
           "patch": "ee3de23c9f0fa67c5a2f2980839dff52f15a955e"
         },
         {
-          "finding": "I applied this skill inline and did not spawn the comment-sicko agent, because this session spawns agents only when the user asks. I kept the comments that state a rule the code does not show: base resolution, range end, the pullSection limit, and the fixture isolation.",
+          "finding": "I applied this skill inline and did not spawn the comment-sicko agent, because this session spawns agents only when the user asks. I kept the comments that state a rule the code does not show: base resolution, range end, the pullSection limit, and the fixture isolation. A comment-sicko run over this range later deleted 21 comments and kept 2 with proof.",
           "cites": "Steps 1",
-          "open": "A comment-sicko run over fb88a0f..HEAD, by the reviewer or the owner."
+          "commit": "60d3fff6a4a08d852733876f486020f7d9c432dc",
+          "patch": "6b1cc8c5697f7bc478e2cc625890509f1c57554f"
         }
       ],
       "receipts": [
@@ -137,13 +138,13 @@
         {
           "finding": "H2, H3, and H4 share one root cause: the check pooled every record's entries and receipts and checked them against the whole range. Each record now stores its base and is checked against its own range, so one change removes all three gaps without a guard for each.",
           "cites": "Fix Root Causes",
-          "commit": "6e186e2a17c69c25cd3b91dae02c84c34a4f39a7",
+          "commit": "9edd3b470ded",
           "patch": "e861ecb23ab7ce6081efaec0a8b3326f843a2b2c"
         },
         {
           "finding": "L4: the first repair failed, because git appends a tab after a quoted path that holds a space. The second strips the tab, then unquotes C escapes and octal bytes, and passes. That is two attempts, within the limit.",
           "cites": "Fix Root Causes",
-          "commit": "c7667dece603111287e3f668b1c10a817aed5ce5",
+          "commit": "55d1752e8bcd",
           "patch": "9ec15626664a1817b669f610f81a300b3554468b"
         }
       ],
@@ -184,7 +185,7 @@
         {
           "finding": "The fixture exported four helpers that only the check tests use. They now live in skill-records.test.js, so the fixture exports only what its setup and both test files use.",
           "cites": "Minimize Reader Load 1",
-          "commit": "a44490db215af8808c43c7d7cdedfbfb9cae2701",
+          "commit": "5bc0adf2ebfe",
           "patch": "061c4a62f30d44047039259d9cd68d2f7e0a551a"
         }
       ],
@@ -289,13 +290,13 @@
         {
           "finding": "L8: plannedSettings already knew each settings change, so the 44-line diff function is deleted and the dry run prints that list.",
           "cites": "Subtract Before You Add",
-          "commit": "25c6e4a5d456bcd00c01fb5bde00954f6d12a07f",
+          "commit": "7d5b1eaca946",
           "patch": "b9e2deb6aff6a05d77599aa4530477fed3df92b6"
         },
         {
           "finding": "Disclosure: loaded after b58395d, like principle-minimize-reader-load. Applied afterward, it moved the check-only helpers out of the new fixture module.",
           "cites": "Subtract Before You Add",
-          "commit": "a44490db215af8808c43c7d7cdedfbfb9cae2701",
+          "commit": "5bc0adf2ebfe",
           "patch": "061c4a62f30d44047039259d9cd68d2f7e0a551a"
         }
       ],
@@ -341,13 +342,13 @@
         {
           "finding": "The octal mutation that decodes in base 10 survived the first L4 test, because \\u0001 is 001 in both bases. The test now uses \\u001f, and the mutation fails.",
           "cites": "Test behavior, not implementation",
-          "commit": "c7667dece603111287e3f668b1c10a817aed5ce5",
+          "commit": "55d1752e8bcd",
           "patch": "9ec15626664a1817b669f610f81a300b3554468b"
         },
         {
           "finding": "The mutation that binds author receipts to the later range survived the first stack test. A lower record that reloads its skills after the upper base now fails under it.",
           "cites": "Test behavior, not implementation",
-          "commit": "6e186e2a17c69c25cd3b91dae02c84c34a4f39a7",
+          "commit": "9edd3b470ded",
           "patch": "e861ecb23ab7ce6081efaec0a8b3326f843a2b2c"
         }
       ],
@@ -380,7 +381,7 @@
         {
           "finding": "docs/skills.md, README.md, and AGENTS.md said a receipt proves a load and described per-record coverage that the check did not enforce. They now state the per-record rule and what a receipt does not show.",
           "cites": "Voice and repo specifics",
-          "commit": "8e1afe338a36cac7e07712775bcfea2b58f1dd0c",
+          "commit": "042160af68ce",
           "patch": "9df3aa5adb8836f7f7c70ac37dadf05aff05b552"
         }
       ],
@@ -452,13 +453,13 @@
         {
           "finding": "The range took tools/__tests__/skill-records.test.js from 751 to 1,041 lines. The fixture and the record-writing tests now live in their own files.",
           "cites": "Non-Negotiable Additional Standards 1",
-          "commit": "b58395d4b155d3295bad5de8e0dd875c1bb52b72",
+          "commit": "061178ca5931",
           "patch": "2ba4effa5faede6c42747a468fe694e9a9881ee9"
         },
         {
           "finding": "One per-record range replaces the union checks behind H2, H3, and H4, instead of a guard for each gap.",
           "cites": "Non-Negotiable Additional Standards 0",
-          "commit": "6e186e2a17c69c25cd3b91dae02c84c34a4f39a7",
+          "commit": "9edd3b470ded",
           "patch": "e861ecb23ab7ce6081efaec0a8b3326f843a2b2c"
         }
       ],
@@ -523,7 +524,7 @@
         {
           "finding": "AGENTS.md:38 is always loaded, so it now states exactly what the check enforces: each record, in its own range, with a receipt that shows a signed call, not a fresh read.",
           "cites": "Context pointers",
-          "commit": "8e1afe338a36cac7e07712775bcfea2b58f1dd0c",
+          "commit": "042160af68ce",
           "patch": "9df3aa5adb8836f7f7c70ac37dadf05aff05b552"
         }
       ],

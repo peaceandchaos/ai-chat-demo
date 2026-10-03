@@ -1,8 +1,8 @@
 {
   "change": "skill-process-1",
   "base": {
-    "commit": "e22c06d6553fe1465e67fa558db1a2d93e2f7569",
-    "patch": "1fe66208be68d67a4ee6cf844c7ef1caa7e16206"
+    "commit": "973c97195b1a3cccebacbcd1819ff0cb90047803",
+    "patch": "627d05804023f8ca726f60f103bf075a66c97d88"
   },
   "skills": [
     {
@@ -24,7 +24,7 @@
         {
           "finding": "Second author pass, looking past grep at the diff wire format: an added line whose text starts with \"++ \" prints as \"+++ ...\" in the --unified=0 diff, and parseAddedLines took it for a file header. The real file then lost its later added lines, so addedLines rules such as network-calls and credential-lines missed it. The header-lookalike test failed before the fix with network-care missing.",
           "cites": "Steps 3",
-          "commit": "58ed89f0cd6b",
+          "commit": "a49b005f44b5",
           "patch": "7afd2f94fdc49b1754fbccae31ecc268baa7cb27"
         }
       ],
@@ -57,7 +57,7 @@
         {
           "finding": "printRequired wrapped the skill id in a template literal that added nothing.",
           "cites": "Focus Areas",
-          "commit": "2958652b9656",
+          "commit": "25fbc84ce4a0",
           "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         }
       ],
@@ -90,7 +90,7 @@
         {
           "finding": "requiredSkills carried a comment that restated its name.",
           "cites": "Steps 3",
-          "commit": "2958652b9656",
+          "commit": "25fbc84ce4a0",
           "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         },
         {
@@ -133,13 +133,13 @@
         {
           "finding": "Routing JSON was parsed at the boundary but globs and patterns were rebuilt for every file inside the matcher.",
           "cites": "Boundary Discipline",
-          "commit": "2958652b9656",
+          "commit": "25fbc84ce4a0",
           "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         },
         {
           "finding": "network-calls and credential-lines matched routing.json, which holds their own pattern text.",
           "cites": "Boundary Discipline",
-          "commit": "89272af3c116",
+          "commit": "9957b0a7a721",
           "patch": "eb2d0fd8bbc1f8ef8dfbd63a9c6889535a9f8cae"
         }
       ],
@@ -172,19 +172,19 @@
         {
           "finding": "Root cause of the change-rule bug: changeMatch modeled its filters as early returns, so the first filter decided the result. The fix makes the filters a conjunction instead of adding a special case for commitSubject.",
           "cites": "Fix Root Causes",
-          "commit": "2958652b9656",
+          "commit": "25fbc84ce4a0",
           "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         },
         {
           "finding": "Found in independent review: added-line rules never matched a path with a space, because git diff ends that \"+++ b/\" path with a tab. The new test failed with the skill missing, and passes after the tab is stripped. Paths that git still C-quotes, such as those with a tab or a double quote, are not handled.",
           "cites": "Fix Root Causes",
-          "commit": "8113bfe",
+          "commit": "41bcb12a2c5c",
           "patch": "1b4d4f869ee399691d84a3b27a32bf5293283065"
         },
         {
           "finding": "Second author pass: the root cause of the header misread is that the parser had no state for where a file header ends. The fix reads headers only between \"diff --git\" and the first \"@@\" instead of filtering lookalike paths. A search of tools/ found no other diff parser with the same flaw.",
           "cites": "Fix Root Causes",
-          "commit": "58ed89f0cd6b",
+          "commit": "a49b005f44b5",
           "patch": "7afd2f94fdc49b1754fbccae31ecc268baa7cb27"
         }
       ],
@@ -288,7 +288,7 @@
         {
           "finding": "The rename mutation survived the first fixture, so the plan case gained a rename out of src/ before the feature commit.",
           "cites": "Sequence work into verifiable units",
-          "commit": "63bbc172e48f",
+          "commit": "43386c48f8ec",
           "patch": "6d7ec468381cf9a6b5978e81ccbaefda47f82b45"
         }
       ],
@@ -328,13 +328,13 @@
         {
           "finding": "routing.cjs exported a globs schema that nothing imported.",
           "cites": "Subtract Before You Add",
-          "commit": "89272af3c116",
+          "commit": "9957b0a7a721",
           "patch": "eb2d0fd8bbc1f8ef8dfbd63a9c6889535a9f8cae"
         },
         {
           "finding": "Second author pass: routing.cjs still exported matchesAny and change.cjs exported exportNames, and nothing in the stack imports either. The earlier pass removed one unused export but not the pattern.",
           "cites": "Subtract Before You Add",
-          "commit": "9ce299914797",
+          "commit": "355b2be01232",
           "patch": "9e02ad3f04c3748aef6fcc4146a534250430f7cb"
         }
       ],
@@ -406,7 +406,7 @@
         {
           "finding": "docs/skills.md said a change rule tests one filter after the fix made filters a conjunction.",
           "cites": "Voice and repo specifics",
-          "commit": "ef208e624b22",
+          "commit": "e784cb72fe63",
           "patch": "0507620d82f180c443ae6f04cf2168cde1d27444"
         }
       ],
@@ -444,7 +444,7 @@
         {
           "finding": "Second author pass: the header-lookalike case shares the spaced-path test body through test.each, so both parse hazards run the real CLI and assert the full printed output. It failed before the fix with network-care missing for src/client.ts.",
           "cites": "Review questions",
-          "commit": "58ed89f0cd6b",
+          "commit": "a49b005f44b5",
           "patch": "7afd2f94fdc49b1754fbccae31ecc268baa7cb27"
         }
       ],
@@ -477,7 +477,7 @@
         {
           "finding": "Change-rule filters were not composed like file-rule filters, which made the two rule kinds read differently.",
           "cites": "Primary Review Questions",
-          "commit": "2958652b9656",
+          "commit": "25fbc84ce4a0",
           "patch": "cc94330a0f6de878408a52859cadfdf93d19672e"
         },
         {
