@@ -2,8 +2,19 @@ const { spawnSync } = require('node:child_process');
 const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 
+const severities = ['low', 'moderate', 'high', 'critical'];
 const serious = ['high', 'critical'];
 const unpatchedDays = 14;
+
+function isDate(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/u.test(value);
+}
+
+function hasReason(disposition) {
+  return (
+    typeof disposition.reason === 'string' && disposition.reason.trim() !== ''
+  );
+}
 
 function addDays(day, days) {
   const date = new Date(`${day}T00:00:00Z`);
@@ -11,15 +22,26 @@ function addDays(day, days) {
   return date.toISOString().slice(0, 10);
 }
 
-function latestRelease(name) {
-  const result = spawnSync('npm', ['view', name, 'version', '--json'], {
+function npmView(args) {
+  const result = spawnSync('npm', ['view', ...args, '--json'], {
     encoding: 'utf8',
     timeout: 60_000,
   });
   if (result.error || result.signal || result.status !== 0)
-    throw new Error(`npm view ${name} did not complete.`);
+    throw new Error(`npm view ${args.join(' ')} did not complete.`);
   return JSON.parse(result.stdout);
 }
+
+const npmRegistry = {
+  latest: name => npmView([name, 'version']),
+  // A release outside the vulnerable range counts as a fix, even an older one.
+  unfixed(name, range) {
+    const affected = [].concat(npmView([`${name}@${range}`, 'version']));
+    return []
+      .concat(npmView([name, 'versions']))
+      .every(version => affected.includes(version));
+  },
+};
 
 function assertAudit(audit) {
   if (
@@ -31,22 +53,40 @@ function assertAudit(audit) {
     throw new Error('Audit response is missing or invalid.');
   }
   for (const [name, finding] of Object.entries(audit.vulnerabilities)) {
-    if (!['low', 'moderate', 'high', 'critical'].includes(finding.severity)) {
+    if (!severities.includes(finding.severity)) {
       throw new Error(`Unknown advisory severity for ${name}.`);
     }
+    for (const advisory of finding.via)
+      if (
+        typeof advisory !== 'string' &&
+        !severities.includes(advisory.severity)
+      )
+        throw new Error(`Unknown advisory severity in ${name}.`);
   }
 }
+
+const keyOf = advisory => `${advisory.url} ${advisory.name}`;
 
 function seriousAdvisories(vulnerabilities) {
   const advisories = new Map();
   for (const finding of Object.values(vulnerabilities))
     for (const advisory of finding.via)
       if (typeof advisory !== 'string' && serious.includes(advisory.severity))
-        advisories.set(advisory.url, advisory);
+        advisories.set(keyOf(advisory), advisory);
   return advisories;
 }
 
-function unpatchedProblem(advisory, disposition, today, latestOf) {
+function inWindow(disposition, today) {
+  return (
+    isDate(disposition.reviewedAt) &&
+    isDate(disposition.reviewBy) &&
+    disposition.reviewedAt <= today &&
+    disposition.reviewBy >= today &&
+    disposition.reviewBy <= addDays(disposition.reviewedAt, unpatchedDays)
+  );
+}
+
+function unpatchedProblem(advisory, disposition, today, registry) {
   if (disposition?.decision !== 'track-unpatched')
     return 'has no track-unpatched disposition';
   if (advisory.severity !== 'high')
@@ -57,38 +97,38 @@ function unpatchedProblem(advisory, disposition, today, latestOf) {
     disposition.severity !== advisory.severity
   )
     return 'has a track-unpatched disposition for another package, range or severity';
-  if (
-    !/^\d{4}-\d{2}-\d{2}$/u.test(disposition.reviewBy) ||
-    disposition.reviewBy < today ||
-    disposition.reviewBy > addDays(today, unpatchedDays)
-  )
-    return `needs a reviewBy date from today to ${unpatchedDays} days ahead`;
-  if (!disposition.reason) return 'needs a reason';
-  const latest = latestOf(advisory.name);
+  if (!inWindow(disposition, today))
+    return `needs a reviewedAt date no later than today, and a reviewBy date from today to ${unpatchedDays} days after reviewedAt`;
+  if (!hasReason(disposition)) return 'needs a reason';
+  if (typeof disposition.latest !== 'string' || !disposition.latest)
+    return 'needs the latest release';
+  const latest = registry.latest(advisory.name);
   if (latest !== disposition.latest)
     return `may be fixed, because ${advisory.name} ${latest} is released`;
+  if (!registry.unfixed(advisory.name, advisory.range))
+    return `may be fixed, because ${advisory.name} has a release outside ${advisory.range}`;
   return null;
 }
 
-// A name the audit doesn't list yields undefined, which nothing excuses, so
-// the package stays blocked.
+// A name the audit doesn't list yields a key that nothing excuses, so the
+// package stays blocked.
 function reached(vulnerabilities, name, seen = new Set()) {
   if (seen.has(name)) return [];
   seen.add(name);
   const finding = vulnerabilities[name];
-  if (!finding) return [undefined];
+  if (!finding) return [`missing ${name}`];
   return finding.via.flatMap(entry =>
     typeof entry === 'string'
       ? reached(vulnerabilities, entry, seen)
       : serious.includes(entry.severity)
-        ? [entry.url]
+        ? [keyOf(entry)]
         : [],
   );
 }
 
 function covered(vulnerabilities, name, excused) {
-  const urls = reached(vulnerabilities, name);
-  return urls.length > 0 && urls.every(url => excused.has(url));
+  const keys = reached(vulnerabilities, name);
+  return keys.length > 0 && keys.every(key => excused.has(key));
 }
 
 function needsReview(advisory, disposition, today) {
@@ -96,31 +136,32 @@ function needsReview(advisory, disposition, today) {
     !disposition ||
     disposition.range !== advisory.range ||
     disposition.decision !== 'track' ||
-    !/^\d{4}-\d{2}-\d{2}$/u.test(disposition.reviewBy) ||
+    !isDate(disposition.reviewBy) ||
     disposition.reviewBy < today ||
-    !disposition.reason
+    !hasReason(disposition)
   );
 }
 
-function evaluate(audit, dispositions, today, latestOf = latestRelease) {
+function evaluate(audit, dispositions, today, registry = npmRegistry) {
   assertAudit(audit);
   const failures = new Set();
   const advisories = seriousAdvisories(audit.vulnerabilities);
   const excused = new Set();
-  for (const [url, advisory] of advisories) {
+  for (const [key, advisory] of advisories) {
     const problem = unpatchedProblem(
       advisory,
-      dispositions[url],
+      dispositions[advisory.url],
       today,
-      latestOf,
+      registry,
     );
-    if (problem) failures.add(`${advisory.name}: ${url} ${problem}`);
-    else excused.add(url);
+    if (problem) failures.add(`${advisory.name}: ${advisory.url} ${problem}`);
+    else excused.add(key);
   }
   for (const [name, finding] of Object.entries(audit.vulnerabilities)) {
     if (
-      serious.includes(finding.severity) &&
-      !covered(audit.vulnerabilities, name, excused)
+      finding.severity === 'critical' ||
+      (finding.severity === 'high' &&
+        !covered(audit.vulnerabilities, name, excused))
     )
       failures.add(`${name}: ${finding.severity}`);
     for (const advisory of finding.via) {
@@ -130,8 +171,9 @@ function evaluate(audit, dispositions, today, latestOf = latestRelease) {
         failures.add(`${name}: needs current review (${advisory.url})`);
     }
   }
+  const seen = new Set([...advisories.values()].map(advisory => advisory.url));
   for (const [url, disposition] of Object.entries(dispositions))
-    if (disposition.decision === 'track-unpatched' && !advisories.has(url))
+    if (disposition.decision === 'track-unpatched' && !seen.has(url))
       failures.add(
         `${url}: track-unpatched disposition matches no high advisory`,
       );
