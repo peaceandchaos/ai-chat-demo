@@ -580,6 +580,19 @@ test('one advisory listed twice for one package must match the disposition both 
       `braces: ${url} has a track-unpatched disposition for another package, range or severity`,
       'braces: high',
     ]);
+  expect(
+    evaluate(
+      audit(['<=3.0.3']),
+      {
+        [url]: { ...tracked, reviewedAt: '2026-02-31', reviewBy: '2026-03-17' },
+      },
+      '2026-03-01',
+      registry,
+    ),
+  ).toEqual([
+    `braces: ${url} needs a reviewedAt date no later than today, and a reviewBy date from today to 14 days after reviewedAt`,
+    'braces: high',
+  ]);
   for (const reviewedAt of ['2026-02-31', '2026-10-00'])
     expect(run(['<=3.0.3'], { ...tracked, reviewedAt })).toContain(
       'braces: high',
