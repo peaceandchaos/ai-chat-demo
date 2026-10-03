@@ -1,5 +1,3 @@
-// The git fixture that the skill-record tests share. Each test file that
-// requires it gets its own copy, because Jest isolates modules per file.
 const { spawnSync } = require('node:child_process');
 const {
   mkdirSync,
@@ -39,6 +37,7 @@ const skillText = name =>
 
 let scratch;
 let repository;
+let reviewFolder;
 let skillsRoot;
 let hook;
 let base;
@@ -66,8 +65,6 @@ function writeRecords(records) {
     );
 }
 
-// Commits records on `from`. A record without a base starts at the fixture's
-// base commit.
 function recordOn(branch, records, remove = [], from = work) {
   git(repository, ['checkout', '--quiet', '-B', branch, from]);
   git(repository, ['clean', '--force', '-d', '--quiet']);
@@ -76,9 +73,9 @@ function recordOn(branch, records, remove = [], from = work) {
   return commit(`chore: record ${branch}`);
 }
 
-function skills(args, env = {}) {
+function skills(args, env = {}, cwd = repository) {
   return spawnSync(process.execPath, [cli, ...args], {
-    cwd: repository,
+    cwd,
     encoding: 'utf8',
     env: {
       ...process.env,
@@ -90,13 +87,19 @@ function skills(args, env = {}) {
   });
 }
 
-// Signs a receipt through the real hook, in `cwd` at its current HEAD.
 function sign(skill, options = {}) {
   const { cwd = repository, key = 'key', state = 'state', ...extra } = options;
   return signReceipt(hook, skillPayload(skill, cwd, extra), {
     SKILL_RECEIPTS_DIR: join(scratch, state),
     SKILL_RECEIPTS_KEY: join(scratch, `${key}.pem`),
   });
+}
+
+// Signs a receipt in the reviewer's worktree, a separate folder of the same
+// clone, after moving that worktree to `commit`.
+function signInReview(commit, skill, options = {}) {
+  git(reviewFolder, ['checkout', '--quiet', '--force', '--detach', commit]);
+  return sign(skill, { cwd: reviewFolder, ...options });
 }
 
 const range = (head, commits) =>
@@ -139,6 +142,7 @@ const noAuthorReceipt = (change, skill) =>
 function setUpRecordFixture() {
   scratch = realpathSync(mkdtempSync(join(tmpdir(), 'records-fixture-')));
   repository = join(scratch, 'repository');
+  reviewFolder = join(scratch, 'review');
   skillsRoot = join(scratch, 'skills');
   for (const name of ['always', 'source-care', 'extra', 'ghost']) {
     mkdirSync(join(skillsRoot, name), { recursive: true });
@@ -164,7 +168,6 @@ function setUpRecordFixture() {
   write('README.md', '# Fixture\n');
   const locked = skills(['catalog', '--lock']);
   if (locked.status !== 0) throw new Error(locked.stderr);
-  // A merged record covers everything, but it is not part of any later range.
   write(
     'tools/skills/records/merged.json',
     JSON.stringify({
@@ -183,12 +186,26 @@ function setUpRecordFixture() {
   work = commit('feat: add a');
   receipt.always = sign('always');
   receipt.source = sign('source-care');
-  receipt.reviewAlways = sign('always', { session_id: 'session-review' });
-  receipt.reviewSource = sign('source-care', { session_id: 'session-review' });
-  receipt.subagentAlways = sign('always', { agent_id: 'agent-review' });
-  receipt.subagentSource = sign('source-care', { agent_id: 'agent-review' });
-  // A stack: the lower record covers base..middle, and each test adds an
-  // upper record whose base is middle and whose range adds src/b.ts.
+  git(repository, [
+    'worktree',
+    'add',
+    '--quiet',
+    '--detach',
+    reviewFolder,
+    work,
+  ]);
+  receipt.reviewAlways = signInReview(work, 'always', {
+    session_id: 'session-review',
+  });
+  receipt.reviewSource = signInReview(work, 'source-care', {
+    session_id: 'session-review',
+  });
+  receipt.subagentAlways = signInReview(work, 'always', {
+    agent_id: 'agent-review',
+  });
+  receipt.subagentSource = signInReview(work, 'source-care', {
+    agent_id: 'agent-review',
+  });
   git(repository, ['checkout', '--quiet', '-B', 'stack', work]);
   writeRecords([
     {
@@ -211,13 +228,16 @@ function setUpRecordFixture() {
   receipt.upperAlways = sign('always');
   receipt.upperSource = sign('source-care');
   receipt.upperExtra = sign('extra');
-  receipt.upperReviewAlways = sign('always', { session_id: 'session-review' });
-  receipt.upperReviewSource = sign('source-care', {
+  receipt.upperReviewAlways = signInReview(later, 'always', {
+    session_id: 'session-review',
+  });
+  receipt.upperReviewSource = signInReview(later, 'source-care', {
     session_id: 'session-review',
   });
   return {
     scratch,
     repository,
+    reviewFolder,
     skillsRoot,
     hook,
     base,
@@ -241,6 +261,7 @@ module.exports = {
   recordOn,
   skills,
   sign,
+  signInReview,
   range,
   patchOf,
   cite,

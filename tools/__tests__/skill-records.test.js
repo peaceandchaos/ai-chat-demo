@@ -10,6 +10,7 @@ const {
   recordOn,
   skills,
   sign,
+  signInReview,
   range,
   cite,
   looked,
@@ -22,6 +23,7 @@ const {
 
 let scratch;
 let repository;
+let reviewFolder;
 let skillsRoot;
 let hook;
 let base;
@@ -33,7 +35,6 @@ let receipt;
 const noReviewerReceipt = (change, skill) =>
   `tools/skills/records/${change}.json: review of ${skill} has no valid receipt from a session and agent pair that made none of this record's author receipts. The reviewer loads it with the Skill tool, then runs npm run skills:record -- ${change} <base> --review.`;
 const upperPath = 'tools/skills/records/upper.json';
-// Commits an upper record on top of the stack.
 const upperOn = (branch, skills, review) =>
   recordOn(
     branch,
@@ -43,11 +44,30 @@ const upperOn = (branch, skills, review) =>
   );
 const noReview = change =>
   `tools/skills/records/${change}.json has no review section, and a pull request needs an independent review of every record. The reviewer loads each required skill with the Skill tool, then runs npm run skills:record -- ${change} <base> --review.`;
+const authorFolder = (change, skill, made) =>
+  `tools/skills/records/${change}.json: review of ${skill} receipt ${made.toolUseId} was made in the folder of one of this record's author receipts.`;
+const reviewers = (change, ...made) =>
+  `tools/skills/records/${change}.json: one session and agent pair in one folder reviews a record, but its review receipts come from ${made.length}: ${made.map(({ session, agent, cwd }) => `${session} ${agent} in ${cwd.slice(0, 12)}`).join(', ')}.`;
+// A record of the work commit, with the fixture's author receipts.
+const reviewedBy = (change, reviewer) => ({
+  change,
+  skills: [
+    authored('always', ['<change>'], receipt.always),
+    authored('source-care', ['src/**'], receipt.source),
+  ],
+  review: {
+    skills: [
+      reviewed('always', reviewer.always),
+      reviewed('source-care', reviewer.source),
+    ],
+  },
+});
 
 beforeAll(() => {
   ({
     scratch,
     repository,
+    reviewFolder,
     skillsRoot,
     hook,
     base,
@@ -328,39 +348,17 @@ test('rejects tampered, foreign-key, stale, partial, misfiled, and out-of-range 
 }, 20000);
 
 test('a review section needs receipts from a session and agent pair that wrote no author receipt', () => {
-  const entry = (skill, files, author) => ({
-    skill,
-    files,
-    findings: [looked()],
-    receipts: [author],
-  });
-  const reviewed = (change, reviewer) => ({
-    change,
-    skills: [
-      entry('always', ['<change>'], receipt.always),
-      entry('source-care', ['src/**'], receipt.source),
-    ],
-    review: {
-      skills: [
-        { skill: 'always', findings: [looked()], receipts: [reviewer.always] },
-        {
-          skill: 'source-care',
-          findings: [looked()],
-          receipts: [reviewer.source],
-        },
-      ],
-    },
-  });
   const selfReviewed = recordOn('self-reviewed', [
-    reviewed('self-reviewed', {
-      always: receipt.always,
-      source: receipt.reviewSource,
+    reviewedBy('self-reviewed', {
+      always: signInReview(work, 'always'),
+      source: signInReview(work, 'source-care'),
     }),
   ]);
   expect(skills(['check', base]).stderr).toBe(
     [
       `Skill records for ${range(selfReviewed, 2)} fail:`,
       noReviewerReceipt('self-reviewed', 'always'),
+      noReviewerReceipt('self-reviewed', 'source-care'),
       '',
     ].join('\n'),
   );
@@ -374,10 +372,63 @@ test('a review section needs receipts from a session and agent pair that wrote n
       { always: receipt.subagentAlways, source: receipt.subagentSource },
     ],
   ]) {
-    recordOn(branch, [reviewed(branch, reviewer)]);
+    recordOn(branch, [reviewedBy(branch, reviewer)]);
     const result = skills(['check', base]);
     expect([branch, result.stderr, result.status]).toEqual([branch, '', 0]);
   }
+});
+
+test('rejects a review receipt made in the folder of an author receipt of the same record, even from another pair', () => {
+  git(repository, ['checkout', '--quiet', '-B', 'author-folder', work]);
+  const intruder = {
+    always: sign('always', { session_id: 'session-review' }),
+    source: sign('source-care', { session_id: 'session-review' }),
+  };
+  const head = recordOn('author-folder', [
+    reviewedBy('author-folder', intruder),
+  ]);
+  const result = skills(['check', base]);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toBe(
+    [
+      `Skill records for ${range(head, 2)} fail:`,
+      authorFolder('author-folder', 'always', intruder.always),
+      noReviewerReceipt('author-folder', 'always'),
+      authorFolder('author-folder', 'source-care', intruder.source),
+      noReviewerReceipt('author-folder', 'source-care'),
+      '',
+    ].join('\n'),
+  );
+});
+
+test('one reviewer, a single session and agent pair in a single folder, makes every review receipt of a record', () => {
+  const twoPairs = recordOn('two-pairs', [
+    reviewedBy('two-pairs', {
+      always: receipt.reviewAlways,
+      source: receipt.subagentSource,
+    }),
+  ]);
+  expect(skills(['check', base]).stderr).toBe(
+    [
+      `Skill records for ${range(twoPairs, 2)} fail:`,
+      reviewers('two-pairs', receipt.reviewAlways, receipt.subagentSource),
+      '',
+    ].join('\n'),
+  );
+  const nested = signInReview(work, 'source-care', {
+    session_id: 'session-review',
+    cwd: join(reviewFolder, 'src'),
+  });
+  const twoFolders = recordOn('two-folders', [
+    reviewedBy('two-folders', { always: receipt.reviewAlways, source: nested }),
+  ]);
+  expect(skills(['check', base]).stderr).toBe(
+    [
+      `Skill records for ${range(twoFolders, 2)} fail:`,
+      reviewers('two-folders', receipt.reviewAlways, nested),
+      '',
+    ].join('\n'),
+  );
 });
 
 test('a pull request run needs every record reviewed by a pair that made none of its author receipts', () => {
@@ -410,8 +461,6 @@ test('a pull request run needs every record reviewed by a pair that made none of
     ].join('\n'),
   );
 
-  // The lower record's review holds a valid reviewer receipt for every skill,
-  // and that must not stand in for the upper record's own review.
   const selfReviewed = upperOn('pr-self-reviewed', authors, {
     skills: [
       reviewed('always', receipt.upperAlways),
@@ -421,6 +470,8 @@ test('a pull request run needs every record reviewed by a pair that made none of
   expect(skills(['check', base], pullRequest).stderr).toBe(
     [
       `Skill records for ${range(selfReviewed, 4)} fail:`,
+      reviewers('upper', receipt.upperAlways, receipt.upperReviewSource),
+      authorFolder('upper', 'always', receipt.upperAlways),
       noReviewerReceipt('upper', 'always'),
       '',
     ].join('\n'),

@@ -89,7 +89,7 @@ A finding has exactly one status. It names the commit that fixes it under `commi
 - a commit in the range falls in no changed record's own range
 - a skill that a record's own range requires has no entry in that record whose `files` globs cover each file that requires it
 - an author entry has no valid receipt
-- a record has a `review` section, and a review entry has no valid receipt from a session and agent pair that made none of the record's author receipts, or a skill that the record's range requires has no review entry
+- a record has a `review` section, and a review entry has no valid receipt from a session and agent pair that made none of the record's author receipts, or a review receipt was made in the folder of one of the record's author receipts, or the review receipts come from more than one pair or folder, or a skill that the record's range requires has no review entry
 - a pull request run finds a record in the range without a `review` section
 - a record holds an invalid receipt
 - a finding cites a heading or rule that the lock does not list for its skill
@@ -149,7 +149,7 @@ The Skill tool reports only the skill name. The hook finds the `SKILL.md` throug
 }
 ```
 
-The command reads only receipts made in this clone, matched by the hash of the git common dir. It keeps each entry's valid receipts and adds the earliest valid receipt to an entry that has none. The author side skips the reviewer's receipts, and the review side skips the author's. It names each required skill that still has no receipt.
+The command reads only receipts made in this clone, matched by the hash of the git common dir. It keeps each entry's valid receipts and adds the earliest valid receipt to an entry that has none. The author side skips the reviewer's receipts, and the review side skips the author's. A `--review` run keeps and pulls only receipts made in the folder it runs in, by the hash of `git rev-parse --show-toplevel`, so a rerun in the same folder changes nothing and a run in another folder replaces the review receipts. It names each required skill that still has no receipt.
 
 A `--review` run needs the author's record, and its `<base>` must be the record's `base` or a commit with the same patch-id. It writes only the `review` section. It never changes `base`, the author entries, or their findings.
 
@@ -163,7 +163,7 @@ The check verifies each receipt with the committed public key. A receipt is vali
 - it is not partial
 - it belongs to this change
 
-An author receipt belongs to the record when its `head` is the record's base or a commit in the record's own range, or when its `headPatch` equals the patch-id of one of them. A review receipt and a finding's cited commit may also come from a later commit up to the head, because review and fixes follow the change. Review receipts count only when their session and agent pair appears in none of the record's author receipts.
+An author receipt belongs to the record when its `head` is the record's base or a commit in the record's own range, or when its `headPatch` equals the patch-id of one of them. A review receipt and a finding's cited commit may also come from a later commit up to the head, because review and fixes follow the change. Review receipts count only when their session and agent pair appears in none of the record's author receipts, their folder holds none of the author receipts, and one pair in one folder made all of them.
 
 This rule survives a cherry-pick and a rebase that keep the patches, because a copied commit keeps its patch-id. A time bound was the other candidate. It would reject every receipt after a rebase onto a newer `main`, and it would still accept a receipt from another change made after the same base. A receipt's `head` is always older than the commit that records it, so a receipt copied from a merged record can match this range only through a re-landed patch. The rule treats that patch as the same work.
 
@@ -174,7 +174,7 @@ This rule survives a cherry-pick and a rebase that keep the patches, because a c
 - A receipt made on the base by another change in the same clone also counts for this change. `skills:record` reads only this clone's receipts, but CI cannot check the clone, because the common-dir hash differs in CI.
 - The deny rules stop an agent that names the key, the hook, or the receipts. A program that opens those files without naming them can still read the key and sign a receipt. The receipts stop lazy and mistaken claims. They do not stop deliberate forgery by a process running as the same user.
 - A subagent that the author's session starts has its own agent id, so its receipts count as a reviewer's. The check cannot tell an independent reviewer from the author's helper. Review policy decides who may review.
-- `skills:record --review` cannot tell which agent runs it. The hook reads the agent id from the payload that Claude Code passes to it. A command that an agent runs gets the session id in `CLAUDE_CODE_SESSION_ID`, which every agent in the session shares, and no agent id. A review run can therefore pull a receipt that another agent made. Before you commit a review, confirm that each pulled receipt is from your own load, by its `cwd` hash when you work in your own worktree.
+- `skills:record --review` cannot tell which agent runs it, because a command gets the session id but no agent id. It binds the review to a folder instead: it keeps and pulls only receipts whose `cwd` hash is the folder it runs in. So run each review from a worktree that only the reviewer uses. Two pairs that load skills in one folder mix their receipts, and the check then fails the one-reviewer rule.
 - The pull request rule applies only where the skill-record check runs. Hosted CI runs `verify:current` without `--base`, so it skips the range checks, and the rule has no effect there yet. It takes effect when the workflow fetches history and passes the pull request's base as `--base`.
 - The rule reads `GITHUB_EVENT_NAME`. A run without that value applies the author rule, so only the protected CI check can enforce review.
 - A push run on `main` checks no range. After a merge, the merge base of `main` and `origin/main` is the pushed commit, so the range is empty. `verify:current` lists the range checks under `notRun`, and `verify:commit` fails until it gets an earlier `--base`.

@@ -145,8 +145,6 @@ function isCommit(root, commit) {
   );
 }
 
-// A base resolves to itself when it is HEAD or an ancestor of HEAD. After a
-// rebase it resolves to the commit in the range that has its patch-id.
 function resolveBase(root, head, base, commits) {
   if (isCommit(root, base.commit) && isAncestor(root, base.commit, head))
     return base.commit;
@@ -160,8 +158,6 @@ function baseOf(root, commit) {
   return patch ? { commit, patch } : { commit };
 }
 
-// The resolved bases of the records in `texts`. A record without a valid base
-// bounds no other record's range.
 function startsOf(root, texts, head, commits) {
   const starts = new Set();
   for (const text of texts) {
@@ -178,8 +174,6 @@ function startsOf(root, texts, head, commits) {
   return starts;
 }
 
-// A record's range runs from its base to the nearest later record base, or to
-// HEAD when no record starts later.
 function rangeEnd(root, start, starts, head) {
   let end = head;
   let distance = Infinity;
@@ -201,8 +195,6 @@ const requiredOf = (routing, change) =>
     ]),
   );
 
-// `own` is the record's range. `later` runs from its base to HEAD, where the
-// fixes that findings cite and the reviewer's loads land.
 function recordScope(root, routing, start, end, head) {
   const later = rangeCommits(root, { base: start, head });
   const own = readRange(root, start, end);
@@ -215,8 +207,6 @@ function recordScope(root, routing, start, end, head) {
   return { own, ownCommits, later, required: requiredOf(routing, own) };
 }
 
-// Returns null for a path that the head commit does not hold, and lets every
-// other git error through.
 function headReader(root, head) {
   return path =>
     git(root, ['ls-tree', head, '--', path])
@@ -334,8 +324,6 @@ function findingProblems(section, commits, pullRequest) {
   return problems;
 }
 
-// `path` names the record that must cover the skills, or is null when the
-// range has no record at all.
 function coverageProblems(required, entries, path) {
   const holder = path
     ? { prefix: `${path}: `, gap: 'this record does not cover it' }
@@ -358,8 +346,6 @@ function coverageProblems(required, entries, path) {
   return problems;
 }
 
-// Checks one record against its own range. `context` holds { routing, lock,
-// key, pullRequest }.
 function recordProblems(path, record, start, scope, context) {
   const { routing, lock, key, pullRequest } = context;
   const problems = [];
@@ -514,7 +500,8 @@ function scaffoldReview(record, required) {
 
 // Pulls receipts for one side of the record, skipping every session and agent
 // pair that holds a receipt on the other side. The command cannot tell which
-// pair runs it, so a review run may pull another non-author agent's receipt.
+// pair runs it, so a review run keeps and pulls only receipts made in the
+// folder it runs in. In a worktree of the reviewer's own, those are its loads.
 function pullSection(record, start, scope, pull) {
   const own = record.review ? record.review.skills : [];
   const [entries, others] = pull.review
@@ -527,6 +514,7 @@ function pullSection(record, start, scope, pull) {
     routing: pull.routing,
     change: { base: start, basePatch: record.base.patch },
     commits: pull.review ? scope.later : scope.ownCommits,
+    folder: pull.review ? pull.folder : null,
   };
   const missing = [];
   for (const entry of entries) {
@@ -537,8 +525,6 @@ function pullSection(record, start, scope, pull) {
   return missing;
 }
 
-// A review run needs the author's record and its base, and writes only the
-// review section.
 function reviewedRecord(root, change, path, id) {
   const relativePath = `${recordsDirectory}/${id}.json`;
   if (!existsSync(path))
@@ -557,10 +543,6 @@ function reviewedRecord(root, change, path, id) {
   return record;
 }
 
-// `pull` holds { review, candidates, key, lock, routing }, read from the
-// working tree and the receipts file. An author run writes the base and the
-// author section, and a review run writes only the review section. Returns the
-// path and the skills that still have no receipt.
 function writeRecord(root, change, id, pull) {
   if (!changeId.test(id))
     throw new Error('Name the change in lowercase-with-dashes.');

@@ -86,6 +86,8 @@ function checkLedger(root) {
   );
 }
 
+const sha256 = text => createHash('sha256').update(text).digest('hex');
+
 function format(path) {
   const formatted = spawnSync(oxfmt, ['--write', path], { encoding: 'utf8' });
   if (formatted.status !== 0)
@@ -107,10 +109,7 @@ function readCandidates(root) {
   ]);
   return {
     file,
-    candidates: parseReceipts(
-      readFileSync(file, 'utf8'),
-      createHash('sha256').update(commonDir).digest('hex'),
-    ),
+    candidates: parseReceipts(readFileSync(file, 'utf8'), sha256(commonDir)),
   };
 }
 
@@ -122,8 +121,12 @@ function record(root, args) {
   const { lock, problems } = readLock(read, routing);
   const key = readPublicKey(read);
   const { file, candidates } = readCandidates(root);
+  // The hook hashes the folder that Claude Code reports, and Claude Code
+  // resolves it as pwd -P does. git resolves the top level too, so a worktree
+  // reached through a link such as /tmp hashes the same on both sides.
   const { path, missing } = writeRecord(root, readRange(root, base, head), id, {
     review,
+    folder: sha256(root),
     candidates,
     key,
     lock,

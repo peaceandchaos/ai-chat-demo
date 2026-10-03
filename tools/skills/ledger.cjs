@@ -46,7 +46,6 @@ function isNamedTest(node, name) {
   );
 }
 
-// A `describe.skip` or `xdescribe` block disables every test inside it.
 function isDisabledBlock(node) {
   if (!ts.isCallExpression(node)) return false;
   const callee = node.expression;
@@ -69,7 +68,6 @@ function definesTest(path, name) {
   );
 }
 
-// The test files that the tracked Jest configs discover, as repository paths.
 function discoveredTests(root) {
   const jest = require.resolve('jest/bin/jest');
   const configs = git(root, ['ls-files'])

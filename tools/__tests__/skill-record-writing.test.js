@@ -1,4 +1,9 @@
-const { existsSync, readFileSync, writeFileSync } = require('node:fs');
+const {
+  existsSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} = require('node:fs');
 const { join } = require('node:path');
 const { git } = require('../verification/snapshot.cjs');
 const {
@@ -9,10 +14,12 @@ const {
   recordOn,
   skills,
   sign,
+  signInReview,
   range,
   patchOf,
   cite,
   looked,
+  authored,
   reviewed,
   noAuthorReceipt,
   setUpRecordFixture,
@@ -21,19 +28,36 @@ const {
 
 let scratch;
 let repository;
+let reviewFolder;
 let skillsRoot;
 let base;
 let work;
 let receipt;
 
 beforeAll(() => {
-  ({ scratch, repository, skillsRoot, base, work, receipt } =
+  ({ scratch, repository, reviewFolder, skillsRoot, base, work, receipt } =
     setUpRecordFixture());
 }, 30000);
 
+const reviewReceipts = (folder, change) =>
+  JSON.parse(
+    readFileSync(join(folder, `tools/skills/records/${change}.json`), 'utf8'),
+  ).review.skills.map(entry => entry.receipts);
+// Commits a record of the work commit with the fixture's author receipts.
+const recordWork = change =>
+  recordOn(change, [
+    {
+      change,
+      skills: [
+        authored('always', ['<change>'], receipt.always),
+        authored('source-care', ['src/**'], receipt.source),
+      ],
+    },
+  ]);
+
 afterAll(removeRecordFixture);
 
-test('scaffolds a record, pulls author and reviewer receipts from this clone, and changes nothing when run again', () => {
+test('scaffolds a record, pulls author receipts from this clone and review receipts from the folder the review runs in, and changes nothing when run again', () => {
   git(repository, ['checkout', '--quiet', '-B', 'scaffold', work]);
   git(repository, ['clean', '--force', '-d', '--quiet']);
   const clone = join(scratch, 'clone');
@@ -49,14 +73,14 @@ test('scaffolds a record, pulls author and reviewer receipts from this clone, an
     always: sign('always', { state: 'pull' }),
     source: sign('source-care', { state: 'pull' }),
   };
-  const reviewer = {
-    always: sign('always', { state: 'pull', session_id: 'session-review' }),
-    source: sign('source-care', {
-      state: 'pull',
-      session_id: 'session-review',
-      agent_id: 'agent-2',
-    }),
+  const asReviewer = {
+    state: 'pull',
+    session_id: 'session-review',
+    agent_id: 'agent-2',
   };
+  // The reviewer's earliest loads are in the author's folder.
+  sign('always', asReviewer);
+  sign('source-care', asReviewer);
   expect(elsewhere.head).toBe(work);
   expect(partial.partial).toBe(true);
   const pull = { SKILL_RECEIPTS_DIR: join(scratch, 'pull') };
@@ -87,9 +111,22 @@ test('scaffolds a record, pulls author and reviewer receipts from this clone, an
     ],
   });
 
-  const review = skills(['record', 'scaffold', base, '--review'], pull);
-  expect(review.stderr).toBe('');
-  const reviewed = JSON.parse(readFileSync(path, 'utf8'));
+  for (const entry of scaffold.skills) entry.findings.push(looked('Kept.'));
+  writeFileSync(path, JSON.stringify(scaffold));
+  const recorded = commit('chore: record the scaffold');
+
+  const reviewer = {
+    always: signInReview(recorded, 'always', asReviewer),
+    source: signInReview(recorded, 'source-care', asReviewer),
+  };
+  const run = skills(
+    ['record', 'scaffold', base, '--review'],
+    pull,
+    reviewFolder,
+  );
+  expect(run.stderr).toBe('');
+  const reviewedPath = join(reviewFolder, 'tools/skills/records/scaffold.json');
+  const reviewed = JSON.parse(readFileSync(reviewedPath, 'utf8'));
   expect(reviewed.skills).toEqual(scaffold.skills);
   expect(reviewed.review).toEqual({
     skills: [
@@ -97,20 +134,117 @@ test('scaffolds a record, pulls author and reviewer receipts from this clone, an
       { skill: 'source-care', findings: [], receipts: [reviewer.source] },
     ],
   });
-  for (const entry of [...reviewed.skills, ...reviewed.review.skills])
+  for (const entry of reviewed.review.skills)
     entry.findings.push(looked('Kept.'));
-  writeFileSync(path, JSON.stringify(reviewed));
-  expect(skills(['record', 'scaffold', base], pull).status).toBe(0);
-  const again = readFileSync(path, 'utf8');
+  writeFileSync(reviewedPath, JSON.stringify(reviewed));
+  expect(skills(['record', 'scaffold', base], pull, reviewFolder).status).toBe(
+    0,
+  );
+  const again = readFileSync(reviewedPath, 'utf8');
   expect(JSON.parse(again)).toEqual(reviewed);
-  expect(skills(['record', 'scaffold', base, '--review'], pull).status).toBe(0);
-  expect(readFileSync(path, 'utf8')).toBe(again);
+  expect(
+    skills(['record', 'scaffold', base, '--review'], pull, reviewFolder).status,
+  ).toBe(0);
+  expect(readFileSync(reviewedPath, 'utf8')).toBe(again);
 
-  const head = commit('chore: record the scaffold');
-  const result = skills(['check', base]);
+  git(reviewFolder, [
+    'commit',
+    '--quiet',
+    '--all',
+    '-m',
+    'chore: review scaffold',
+  ]);
+  const head = git(reviewFolder, ['rev-parse', 'HEAD']);
+  const result = skills(['check', base], {}, reviewFolder);
   expect(result.stderr).toBe('');
   expect(result.stdout).toBe(
-    `Skill records for ${range(head, 2)} cover all 2 required skills (tools/skills/records/scaffold.json).\n`,
+    `Skill records for ${range(head, 3)} cover all 2 required skills (tools/skills/records/scaffold.json).\n`,
+  );
+}, 30000);
+
+test('a review run in another folder replaces the review receipts, and a review run in the author folder fails the check', () => {
+  const recorded = recordWork('moved');
+  const state = { SKILL_RECEIPTS_DIR: join(scratch, 'moved') };
+  const asReviewer = { state: 'moved', session_id: 'session-review' };
+  const inReview = [
+    signInReview(recorded, 'always', asReviewer),
+    signInReview(recorded, 'source-care', asReviewer),
+  ];
+  const first = skills(
+    ['record', 'moved', base, '--review'],
+    state,
+    reviewFolder,
+  );
+  expect(first.stderr).toBe('');
+  expect(reviewReceipts(reviewFolder, 'moved')).toEqual(
+    inReview.map(made => [made]),
+  );
+  git(reviewFolder, [
+    'commit',
+    '--quiet',
+    '--all',
+    '-m',
+    'chore: review moved',
+  ]);
+  const reviewedCommit = git(reviewFolder, ['rev-parse', 'HEAD']);
+
+  git(repository, ['checkout', '--quiet', '--detach', reviewedCommit]);
+  const inAuthor = [
+    sign('always', asReviewer),
+    sign('source-care', asReviewer),
+  ];
+  const second = skills(['record', 'moved', base, '--review'], state);
+  expect(second.stderr).toBe('');
+  expect(reviewReceipts(repository, 'moved')).toEqual(
+    inAuthor.map(made => [made]),
+  );
+
+  const path = 'tools/skills/records/moved.json';
+  const moved = JSON.parse(readFileSync(join(repository, path), 'utf8'));
+  for (const entry of moved.review.skills) entry.findings.push(looked());
+  writeFileSync(join(repository, path), JSON.stringify(moved));
+  const head = commit('chore: review moved in the author folder');
+  const result = skills(['check', base]);
+  const rejected = (skill, made) => [
+    `${path}: review of ${skill} receipt ${made.toolUseId} was made in the folder of one of this record's author receipts.`,
+    `${path}: review of ${skill} has no valid receipt from a session and agent pair that made none of this record's author receipts. The reviewer loads it with the Skill tool, then runs npm run skills:record -- moved <base> --review.`,
+  ];
+  expect(result.status).toBe(1);
+  expect(result.stderr).toBe(
+    [
+      `Skill records for ${range(head, 4)} fail:`,
+      ...rejected('always', inAuthor[0]),
+      ...rejected('source-care', inAuthor[1]),
+      '',
+    ].join('\n'),
+  );
+}, 30000);
+
+// Claude Code keeps its working folder as a resolved path, so the hook signs
+// the physical folder even when the agent's shell entered it through a link.
+test('a review run through a symlink, from a subfolder, pulls receipts signed with the resolved worktree path', () => {
+  const recorded = recordWork('linked');
+  const asReviewer = { state: 'linked', session_id: 'session-review' };
+  // An earlier load in the author's folder, which the review must skip.
+  sign('always', asReviewer);
+  const loaded = [
+    signInReview(recorded, 'always', asReviewer),
+    signInReview(recorded, 'source-care', asReviewer),
+  ];
+  const link = join(scratch, 'review-link');
+  symlinkSync(reviewFolder, link);
+  const inside = join(link, 'src');
+  const result = skills(
+    ['record', 'linked', base, '--review'],
+    { SKILL_RECEIPTS_DIR: join(scratch, 'linked'), PWD: inside },
+    inside,
+  );
+  expect(result.stderr).toBe('');
+  expect(result.stdout).toBe(
+    "Wrote tools/skills/records/linked.json. Add each skill's findings, the heading or rule each cites, and their resolutions.\n",
+  );
+  expect(reviewReceipts(reviewFolder, 'linked')).toEqual(
+    loaded.map(made => [made]),
   );
 }, 30000);
 

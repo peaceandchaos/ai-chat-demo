@@ -55,9 +55,6 @@ function signed(receipt, key) {
   }
 }
 
-// A receipt belongs to a change when the agent loaded the skill on the base or
-// on a commit of the range, or on a commit with the same patch-id as the base
-// or one in the range, so cherry-picked and rebased copies keep their receipts.
 function bound(receipt, change, commits) {
   if (receipt.head === change.base || commits.has(receipt.head)) return true;
   return (
@@ -67,9 +64,6 @@ function bound(receipt, change, commits) {
   );
 }
 
-// `context` holds { key, lock, routing, change, commits }, where `change` is
-// { base, basePatch }. `key` may be null only while pulling, before the owner
-// commits a public key.
 function receiptFault(receipt, skill, context) {
   if (receipt.skill !== skill) return `is for ${receipt.skill}`;
   if (context.key && !signed(receipt, context.key))
@@ -85,17 +79,18 @@ function receiptFault(receipt, skill, context) {
 }
 
 const actor = receipt => `${receipt.session} ${receipt.agent}`;
+const reviewer = receipt =>
+  `${actor(receipt)} in ${String(receipt.cwd).slice(0, 12)}`;
 
-// Every author entry needs a valid receipt for the record's own range. When
-// the record has a review section, every review entry needs a valid receipt
-// from a session and agent pair that made none of this record's author
-// receipts, and every required skill needs a review entry. `contexts` holds
-// { author, review }.
 function receiptProblems(path, record, required, contexts) {
   const problems = [];
-  const validIn = (entry, context, label) =>
+  const validIn = (entry, context, label, authorFolders = new Set()) =>
     entry.receipts.filter(receipt => {
-      const fault = receiptFault(receipt, entry.skill, context);
+      const fault =
+        receiptFault(receipt, entry.skill, context) ??
+        (authorFolders.has(receipt.cwd)
+          ? "was made in the folder of one of this record's author receipts"
+          : null);
       if (fault)
         problems.push(
           `${path}: ${label}${entry.skill} receipt ${receipt.toolUseId ?? receipt.sig.slice(0, 12)} ${fault}.`,
@@ -108,12 +103,19 @@ function receiptProblems(path, record, required, contexts) {
         `${path}: ${entry.skill} has no valid author receipt. Load it with the Skill tool, then run npm run skills:record -- ${record.change} <base>.`,
       );
   if (!record.review) return problems;
-  const authors = new Set(
-    record.skills.flatMap(entry => entry.receipts).map(actor),
+  const authorReceipts = record.skills.flatMap(entry => entry.receipts);
+  const authors = new Set(authorReceipts.map(actor));
+  const authorFolders = new Set(authorReceipts.map(receipt => receipt.cwd));
+  const reviewers = new Set(
+    record.review.skills.flatMap(entry => entry.receipts).map(reviewer),
   );
+  if (reviewers.size > 1)
+    problems.push(
+      `${path}: one session and agent pair in one folder reviews a record, but its review receipts come from ${reviewers.size}: ${[...reviewers].join(', ')}.`,
+    );
   for (const entry of record.review.skills)
     if (
-      !validIn(entry, contexts.review, 'review of ').some(
+      !validIn(entry, contexts.review, 'review of ', authorFolders).some(
         receipt => !authors.has(actor(receipt)),
       )
     )
@@ -129,18 +131,17 @@ function receiptProblems(path, record, required, contexts) {
 }
 
 // Keeps an entry's valid receipts. An entry with none gets the earliest valid
-// candidate, so running skills:record again changes nothing.
+// candidate, so running skills:record again changes nothing. A `context.folder`
+// hash limits both the kept receipts and the candidates to that folder, so a
+// run in another folder replaces the receipts.
 function pullReceipts(entry, candidates, context, excluded) {
-  entry.receipts = entry.receipts.filter(
-    receipt => !receiptFault(receipt, entry.skill, context),
-  );
+  const usable = receipt =>
+    (context.folder === null || receipt.cwd === context.folder) &&
+    !receiptFault(receipt, entry.skill, context);
+  entry.receipts = entry.receipts.filter(usable);
   if (entry.receipts.length) return true;
   const found = candidates
-    .filter(
-      receipt =>
-        !excluded.has(actor(receipt)) &&
-        !receiptFault(receipt, entry.skill, context),
-    )
+    .filter(receipt => !excluded.has(actor(receipt)) && usable(receipt))
     .sort((a, b) => (a.time < b.time ? -1 : 1))[0];
   if (found) entry.receipts.push(found);
   return Boolean(found);
