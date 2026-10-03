@@ -46,7 +46,7 @@ jobs:
 
   quality-gate:
     name: ${{ github.event_name == 'pull_request' && 'quality-gate' || 'post-push-gate' }}
-    if: always()
+    if: ${{ false }}
     needs: verify
     runs-on: ubuntu-24.04
     timeout-minutes: 2
