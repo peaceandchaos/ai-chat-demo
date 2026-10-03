@@ -33,9 +33,10 @@
           "none": "The fix is the owner-applied CI patch, not a repository change."
         },
         {
-          "finding": "Under the per-record rule, the skill-process-3 review entries for blast-radius and principle-prove-it-works hold only receipts that agent ad1b4f1b47d1a5c1a made on 9f62d28, which is below record 3's base fb66468, so the check rejects them. I did not edit them.",
+          "finding": "Under the per-record rule, the skill-process-3 review entries for blast-radius and principle-prove-it-works hold only receipts that agent ad1b4f1b47d1a5c1a made on 9f62d28, which is below record 3's base fb66468, so the check rejects them. I did not edit them. The fresh review of every record replaced those receipts.",
           "cites": "Steps 4",
-          "open": "A fresh reviewer re-records the skill-process-3 review."
+          "commit": "039f967",
+          "patch": "2aec84713489765cce113bf2b92cbf48dd69e1e2"
         }
       ],
       "receipts": [
